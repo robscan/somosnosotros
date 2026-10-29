@@ -36,7 +36,8 @@ export const ADMIN = "55555555-5555-4555-8555-555555555555";
 export const ADMIN_SIN = "77777777-7777-4777-8777-777777777777";
 const perfilAdmin = { id: ADMIN, nombre: "Admin de prueba", foto: null, colonia: null, bio: null, rol: "admin", avisos_correo: false, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: hace(1) };
 const perfiles = [
-  { id: ANA, nombre: "Ana Rentería", foto: null, colonia: "Barrio de San Miguelito", bio: null, rol: "usuario", avisos_correo: true, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: hace(1) },
+  // OL-480: con `RESPALDO_SIN_PREGUNTAR=1` a Ana todavía no se le preguntó por los avisos: el primer «Voy» o «Seguir» abre la hoja.
+  { id: ANA, nombre: "Ana Rentería", foto: null, colonia: "Barrio de San Miguelito", bio: null, rol: "usuario", avisos_correo: true, avisos_push: false, avisos_preguntado: process.env.RESPALDO_SIN_PREGUNTAR !== "1", reservado: false, novedades_vistas_en: hace(1) },
   { id: MARCOS, nombre: "Marcos Ledesma", foto: null, colonia: "Centro", bio: null, rol: "usuario", avisos_correo: false, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: null },
 ];
 
@@ -1157,6 +1158,9 @@ Object.assign(rpcs, {
   panel_comunidad: () => ({ registradas: 14, hicieron_algo: 9, vuelven_base: 11, vuelven: 5 }),
   panel_aportes: () => ({ gestos_ahora: 18, gestos_antes: 13, voy: 11, me_interesa: 7, personas: 12, primeras_ahora: 2, primeras_antes: 1, han_publicado: 21 }),
   panel_fichas: () => ({ artistas: 19, lugares: 8, vias: { solicitud: 11, alta: 9, correo: 6, otra: 1 }, serie: [12, 13, 14, 15, 16, 18, 19, 21, 22, 24, 26, 27], artistas_por_reclamar: 667, artistas_visibles: 682, artistas_con_foto: 214 }),
+  // OL-480: «Avisos abiertos», las cifras del prototipo firmado (bitácora 510).
+  panel_avisos: () => ({ mandados: 48, mandados_antes: 41, abiertos: 11, abiertos_antes: 7,
+    tipos: { nuevo: { mandados: 28, abiertos: 8 }, cambio: { mandados: 9, abiertos: 2 }, recordatorio: { mandados: 3, abiertos: 1 }, cancelado: { mandados: 8, abiertos: 0 } } }),
   panel_capo: () => ({ invitados: 120, ya_vinculados_al_invitar: 4, elegibles: 116, solicitaron_despues: 7, vinculados_despues: 5, primer_envio: hace(20), ultimo_envio: hace(1), corte: hace(0) }),
 });
 
@@ -1440,6 +1444,17 @@ tablas.facebook_publicaciones = [
   { id: "eeee0461-0000-4000-8000-000000000001", instagram_id: "eeee0458-0000-4000-8000-000000000001", evento_id: E.master, formato: "4x5", estado: "publicada", error: null, post_id: "1374800000000461_122100000000000001", permalink: "https://www.facebook.com/1374800000000461/posts/122100000000000001", publicado_por: ADMIN, creado_en: hace(1) },
 ];
 tablas.instagram_ubicaciones = [{ tipo: "ciudad", clave: "san-luis-potosi", pagina_id: "108000000000458", nombre: "San Luis Potosí", enlace: "https://www.facebook.com/demo", actualizado_por: ADMIN, actualizado_en: hace(3) }];
+// OL-471: el estado de «Conectar Instagram» (sin token: el token vive en Vault y aquí no hay). Vacío al arrancar («Sin conexión propia»); con
+// `RESPALDO_INSTAGRAM_CONEXION=todo`, conectada con todos los permisos; con `=sin-lectura`, sin el de leer cuentas. Los permisos reales, en
+// `supabase/tests/pg/instagram-conexion.test.mjs`.
+{
+  const modo = process.env.RESPALDO_INSTAGRAM_CONEXION;
+  const permisos = ["business_management", "instagram_basic", "instagram_content_publish", "instagram_manage_insights", "pages_manage_posts", "pages_read_engagement", "pages_show_list"];
+  tablas.instagram_conexion =
+    modo === "todo" || modo === "sin-lectura"
+      ? [{ id: 1, pagina_id: "1374800000000461", pagina_nombre: "Somos Nosotrxs", instagram_id: "17841400000000458", instagram_usuario: "smsnstrsapp", permisos: modo === "todo" ? permisos : permisos.filter((x) => x !== "instagram_manage_insights"), conectado_por: ADMIN, conectado_en: hace(0) }]
+      : [];
+}
 // OL-465: la cola de redes (vacía al arrancar) y lo leído de los carteles; `redes_reciente` y `redes_encolar` con la regla de la base (en camino, o
 // publicado hace menos de 15 minutos; un carrusel cuenta como 4:5). Los permisos y el candado reales, en `supabase/tests/pg/redes-en-cola.test.mjs`.
 tablas.redes_trabajos = [];

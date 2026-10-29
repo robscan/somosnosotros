@@ -20,32 +20,19 @@
   font-weight: 700;
   margin: var(--espacio-2) 0;
 }
-.opciones {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--espacio-2);
-}
-.si,
-.no {
+/* Una sola opción (OL-480: ya no hay «Por correo»): el botón de acción a todo el ancho, sin envoltorio. */
+.si {
+  display: block;
+  width: 100%;
   min-height: var(--toque);
   padding: 0 var(--espacio-3);
+  border: none;
   border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
   font-size: var(--letra-md);
   font-weight: 700;
   cursor: pointer;
-}
-.si {
-  border: none;
-  background: var(--primario);
-  color: var(--primario-texto);
-}
-.no {
-  border: 1px solid var(--borde);
-  background: var(--fondo);
-  color: var(--texto);
-}
-.cortas button {
-  min-height: var(--toque-min);
 }
 .gracias {
   display: block;

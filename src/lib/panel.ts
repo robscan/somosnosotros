@@ -91,6 +91,27 @@ export function leerAportes(d: unknown): Aportes | null {
   return claves.every((c) => esCuenta(a[c])) ? (a as Aportes) : null;
 }
 
+/**
+ * Lo que devuelve `panel_avisos()` (OL-480, migración 20261029170000): los avisos al teléfono que salieron (entregas enviadas, sin contar a la
+ * administración) y los que se abrieron (conteo por día y tipo, sin saber quién), de los últimos 7 días y de los 7 anteriores.
+ */
+export type TipoAvisoPanel = "nuevo" | "cambio" | "recordatorio" | "cancelado";
+export type AvisosPanel = {
+  mandados: number;
+  mandados_antes: number;
+  abiertos: number;
+  abiertos_antes: number;
+  tipos: Record<TipoAvisoPanel, { mandados: number; abiertos: number }>;
+};
+const TIPOS_AVISO_PANEL: TipoAvisoPanel[] = ["nuevo", "cambio", "recordatorio", "cancelado"];
+
+export function leerAvisos(d: unknown): AvisosPanel | null {
+  const a = d as (Partial<Record<"mandados" | "mandados_antes" | "abiertos" | "abiertos_antes", unknown>> & { tipos?: Record<string, { mandados?: unknown; abiertos?: unknown }> }) | null;
+  if (!a || typeof a !== "object" || !a.tipos || typeof a.tipos !== "object") return null;
+  const numeros = [a.mandados, a.mandados_antes, a.abiertos, a.abiertos_antes, ...TIPOS_AVISO_PANEL.flatMap((t) => [a.tipos?.[t]?.mandados, a.tipos?.[t]?.abiertos])];
+  return numeros.every(esCuenta) ? (a as AvisosPanel) : null;
+}
+
 export function leerFichas(d: unknown): FichasVinculadas | null {
   const f = d as (Partial<Record<Exclude<keyof FichasVinculadas, "vias" | "serie">, unknown>> & { vias?: Record<string, unknown>; serie?: unknown }) | null;
   if (!f || typeof f !== "object" || !f.vias || !Array.isArray(f.serie) || f.serie.length === 0) return null;
@@ -252,7 +273,7 @@ export function textoCambio(ahora: number, antes: number): string {
   return "Igual que hace una semana";
 }
 
-export type ClaveIndicador = "activas" | "coincidencias" | "agenda" | "comunidad" | "gestos" | "primeras" | "vinculadas" | "foto";
+export type ClaveIndicador = "activas" | "coincidencias" | "agenda" | "comunidad" | "gestos" | "primeras" | "vinculadas" | "foto" | "avisos";
 export type Indicador = {
   clave: ClaveIndicador;
   nombre: string;
@@ -267,7 +288,8 @@ export type Indicador = {
   partes: string[];
   /** Lo que dice el desglose cuando no hay nada que contar; sin él, «Aún nada esta semana». */
   vacio?: string;
-  enlace: { texto: string; href: string };
+  /** La lista que lo respalda; sin ella (los avisos abiertos: no hay lista de nadie), el desglose no lleva enlace. */
+  enlace?: { texto: string; href: string };
 };
 
 export function indicadores(r: Resumen, hoy: string): Indicador[] {
@@ -410,6 +432,26 @@ export function notaFichas(lista: Indicador[]): string {
 }
 
 /** La nota bajo "Últimos 7 días": sin ninguna comparación posible, lo dice. */
+const NOMBRE_TIPO_AVISO: Record<TipoAvisoPanel, string> = { nuevo: "Evento nuevo", cambio: "Cambio de fecha o lugar", recordatorio: "Recordatorio", cancelado: "Se canceló" };
+
+/**
+ * «Avisos abiertos» (OL-480, lo firmado en OL-478): cuántos avisos al teléfono se tocaron de los que salieron en 7 días, con su desglose por tipo
+ * («Evento nuevo: 8 de 28»). Nunca por persona: la base solo guarda el conteo del día. Se compara con los 7 días anteriores.
+ */
+export function indicadorAvisos(a: AvisosPanel): Indicador {
+  return {
+    clave: "avisos",
+    nombre: "Avisos abiertos",
+    valor: a.abiertos,
+    base: `de ${a.mandados} ${a.mandados === 1 ? "mandado" : "mandados"}, sin saber quién`,
+    cambio: textoCambio(a.abiertos, a.abiertos_antes),
+    serie: null,
+    que: "Avisos al teléfono que se tocaron en los últimos 7 días, de los que salieron (sin contar a la administración). Se cuentan por día y tipo, nunca por persona. Se compara con los 7 días anteriores.",
+    partes: TIPOS_AVISO_PANEL.filter((t) => a.tipos[t].mandados || a.tipos[t].abiertos).map((t) => `${NOMBRE_TIPO_AVISO[t]}: ${a.tipos[t].abiertos} de ${a.tipos[t].mandados}`),
+    vacio: "No salió ningún aviso en los últimos 7 días",
+  };
+}
+
 export function notaSemana(lista: Indicador[]): string {
   return lista.some((i) => i.clave !== "comunidad" && i.cambio) ? "Comparado con hace una semana" : "Primera semana: aún sin comparación";
 }

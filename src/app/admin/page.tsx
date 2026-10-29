@@ -6,14 +6,14 @@ import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoInstagram, Ic
 import plantilla from "@/components/ui/Plantilla.module.css";
 import { propuestasPorRevisar, resumenCiudades } from "@/lib/ciudadesAdmin";
 import { diaLocal } from "@/lib/fechas";
-import { cuandoPaso, indicadores, indicadoresAportes, indicadoresFichas, notaFichas, notaSemana, renglonesGestionar } from "@/lib/panel";
+import { cuandoPaso, indicadorAvisos, indicadores, indicadoresAportes, indicadoresFichas, notaFichas, notaSemana, renglonesGestionar } from "@/lib/panel";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { GALLETA_CIUDAD, leerCiudad } from "@/lib/panel";
 import { CUENTA_INSTAGRAM } from "@/lib/instagram/texto";
 import { cargarResumenInstagram } from "./instagram/datos";
 import { resumenDeLaPortada } from "./instagram/semana";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
-import { cargarAportes, cargarComunidad, cargarResumen, cargarVinculadas } from "./consultas";
+import { cargarAportes, cargarAvisos, cargarComunidad, cargarResumen, cargarVinculadas } from "./consultas";
 import ComunidadComoVa from "./ComunidadComoVa";
 import CapoComoVa from "./CapoComoVa";
 import { cargarCapo } from "./capo-consultas";
@@ -50,14 +50,15 @@ export default async function Admin() {
   if (actual.perfil.rol !== "admin") redirect("/");
   const ciudadSesion = leerCiudad("eventos", (await cookies()).get(GALLETA_CIUDAD)?.value ?? null);
   const supabase = await clienteServidor();
-  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas, ciudades, porAprobar, instagram, semanaIg] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas(), cargarPanelCiudades(), cargarResumenPorAprobar(), supabase ? cargarResumenInstagram(supabase, ciudadSesion) : null, supabase ? resumenDeLaPortada(supabase, ciudadSesion ?? CIUDAD_INICIAL.slug).catch(() => null) : null]);
+  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas, ciudades, porAprobar, instagram, avisos, semanaIg] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas(), cargarPanelCiudades(), cargarResumenPorAprobar(), supabase ? cargarResumenInstagram(supabase, ciudadSesion) : null, cargarAvisos(), supabase ? resumenDeLaPortada(supabase, ciudadSesion ?? CIUDAD_INICIAL.slug).catch(() => null) : null]);
   const ahora = new Date();
   // Las propuestas de las rutinas por revisar suben a «Pendiente» (firma de OL-425); si Ciudades no se pudo leer, solo faltan ellas.
   // OL-446: primero las evidencias del showcase por aprobar (un solo renglón a «Por aprobar»); si no se pudieron leer, solo falta él.
   const showcase = renglonPorAprobar(porAprobar && { ...porAprobar, ultima: porAprobar.ultima && diaLocal(new Date(porAprobar.ultima)) }, diaLocal(ahora));
   const porRevisar = [...(showcase ? [showcase] : []), ...(ciudades ? propuestasPorRevisar(ciudades.corridas, ciudades.ciudades, ahora).filter((p) => p.tipo !== "showcase") : [])];
   // Los dos aportes nuevos (Voy / Me interesa y primeras publicaciones) vienen de su propia función: si falla, solo faltan ellos.
-  const lista = resumen ? [...indicadores(resumen, diaLocal(ahora)), ...(aportes ? indicadoresAportes(aportes) : [])] : [];
+  // OL-480: los avisos abiertos, de su propia función (si falla, solo falta él).
+  const lista = resumen ? [...indicadores(resumen, diaLocal(ahora)), ...(aportes ? indicadoresAportes(aportes) : []), ...(avisos ? [indicadorAvisos(avisos)] : [])] : [];
   const fichas = vinculadas ? indicadoresFichas(vinculadas) : [];
   const renglones = resumen ? renglonesGestionar(resumen.gestionar) : SECCIONES.map((s) => ({ ...s, total: null, detalle: null }));
   return (

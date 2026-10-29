@@ -7,6 +7,7 @@ import { cupo, publicar, publicarCarrusel } from "../instagram/api";
 import { PORTADA, type ImagenCarrusel } from "../instagram/carrusel";
 import { cargarFicha, cargarSemana, dibujarFicha, imagenesDeSemana } from "../instagram/ficha";
 import { armarImagen, bajarCartel, encajarCartel } from "../instagram/imagen";
+import { tokenPorPeticion } from "../instagram/token";
 import { enviarPush, marcarDireccionMuerta, pushActivo, type AvisoPush } from "../push";
 import type { ClienteServidor } from "../supabase/servidor";
 import type { Herramientas } from "./trabajar";
@@ -42,7 +43,10 @@ export async function avisarAlTelefono(db: SupabaseClient, usuarioId: string | n
   }
 }
 
+/** OL-471 (bitácora 503): el token sale de Vault (o, si no hay, de `INSTAGRAM_TOKEN`), leído una vez por petición del trabajador. */
 export function herramientasReales(): Herramientas {
+  const token = tokenPorPeticion();
+  const conToken = async () => ({ token: (await token()) ?? undefined });
   return {
     cargar: (db, eventoId, ahora) => cargarParaHoja(comoServidor(db), eventoId, ahora),
     dibujar: async (db, h, o) => {
@@ -65,10 +69,10 @@ export function herramientasReales(): Herramientas {
       const subida = await db.storage.from("fotos").upload(ruta, bytes, { contentType: "image/jpeg", upsert: false });
       return subida.error ? null : db.storage.from("fotos").getPublicUrl(ruta).data.publicUrl;
     },
-    cupo: () => cupo(),
-    publicar: (p) => publicar(p),
-    publicarCarrusel: (p) => publicarCarrusel(p),
-    publicarEnPagina: (p) => publicarEnPagina(p),
+    cupo: async () => cupo(await conToken()),
+    publicar: async (p) => publicar(p, await conToken()),
+    publicarCarrusel: async (p) => publicarCarrusel(p, await conToken()),
+    publicarEnPagina: async (p) => publicarEnPagina(p, await conToken()),
     cargarFicha: (db, tipo, id, ahora) => cargarFicha(db, tipo, id, ahora),
     dibujarFicha: (f, formato, ahora) => dibujarFicha(f, formato, ahora),
     cargarSemana: (db, eventos, ahora) => cargarSemana(db, eventos, ahora),

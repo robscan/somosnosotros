@@ -167,8 +167,9 @@ PASOS["admin-anadir"] = async (page) => {
   await aquietar(page);
 };
 // OL-458: Administración › Instagram con la hoja «Publicar en Instagram» abierta (el primer evento por publicar): la imagen ya dibujada.
+// OL-471: el primer renglón de evento (el de arriba es el bloque «Conexión», cuyo enlace lleva al inicio de sesión de Meta).
 PASOS["admin-instagram-hoja"] = async (page) => {
-  await page.locator("main li a").first().click();
+  await page.locator('main li a[href^="/eventos/"]').first().click();
   const hoja = page.getByRole("dialog", { name: "Publicar en Instagram" });
   await hoja.waitFor();
   await hoja.locator("img").first().waitFor();

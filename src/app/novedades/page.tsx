@@ -62,7 +62,7 @@ export default async function Novedades() {
           </section>
         ))
       )}
-      <TelefonoAun correo={actual.perfil.avisos_correo === true} llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
+      <TelefonoAun llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
     </main>
   );
 }

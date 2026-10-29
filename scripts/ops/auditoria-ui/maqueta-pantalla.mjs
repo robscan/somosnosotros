@@ -137,6 +137,14 @@ const PANTALLAS = [
   { id: "igc-hoja", reloj: true, url: "/admin/instagram?ciudad=san-luis-potosi&evento=bbbb0001-0000-4000-8000-000000000005", sesion: true, cuenta: "admin", paso: "igc-hoja" },
   { id: "igc-artista-menu", reloj: true, url: "/artistas/colectivo-nube-de-papel-demo", sesion: true, cuenta: "admin", paso: "menu-acciones" },
   { id: "igc-agenda", reloj: true, url: "/agenda", sesion: true },
+  // OL-478: lo que vive en la app para los avisos con hora y forma: Inicio con su carril Destacados (sin sesión y con la de Ana), Ajustes con su
+  // grupo Avisos, Novedades (a donde abre el resumen diario), la portada de Administración (sus indicadores de 7 días) y la hoja de ciudades.
+  { id: "av-inicio", reloj: true, url: "/" },
+  { id: "av-inicio-sesion", reloj: true, url: "/", sesion: true },
+  { id: "av-ajustes", reloj: true, url: "/ajustes", sesion: true },
+  { id: "av-novedades", reloj: true, url: "/novedades", sesion: true },
+  { id: "av-admin", reloj: true, url: "/admin", sesion: true, cuenta: "admin" },
+  { id: "av-hoja-ciudad", reloj: true, url: "/artistas", sesion: true, paso: "hoja-ciudad" },
 ];
 // OL-466: los dos carteles que se suben (inventados, dibujados aquí) y lo que «leería» el modelo de cada uno. Las fechas salen del reloj fijo
 // (`AHORA`, mié 7 de oct): la Noche de danzón es pasado mañana (vie 9) a las 20:00 y Feleal el mié 14 a las 19:00, los dos en el Teatro de la Paz.

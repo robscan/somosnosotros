@@ -19,17 +19,18 @@ type Props = {
   titulo: string;
   /** El id de quien contesta: la respuesta queda apuntada para su cuenta (lib/avisosPreguntados). */
   cuenta: string;
-  correo: string;
+  /** Ya no se usa (OL-480: la hoja no ofrece correo); se conserva para no tocar a quien la abre. */
+  correo?: string;
   llavePush: string;
   onListo?: () => void;
   /** Solo Voy: el archivo de calendario del evento, que se ofrece a quien no quiere avisos (decisión 14 de docs/rediseno/17). */
   calendarioUrl?: string;
 };
 
-const COPY: Record<Contexto, { motivo: (t: string) => string; porque: string; pregunta: string; cuando: string; promesa: string }> = {
-  voy: { motivo: (t) => `Vas a ${t}`, porque: "Ya estás en la lista de quien va.", pregunta: "¿Te recordamos ese día?", cuando: "ese día", promesa: "ese día" },
-  seguir: { motivo: (t) => `Sigues ${t}`, porque: "Sus eventos nuevos aparecerán en Siguiendo.", pregunta: "¿Te avisamos de sus eventos?", cuando: "cuando publiquen algo", promesa: "de sus eventos" },
-  "seguir-artista": { motivo: (t) => `Sigues a ${t}`, porque: "Sus fechas nuevas aparecerán en Siguiendo.", pregunta: "¿Te avisamos de sus fechas?", cuando: "cuando publiquen una fecha", promesa: "de sus fechas" },
+const COPY: Record<Contexto, { motivo: (t: string) => string; porque: string; pregunta: string; promesa: string }> = {
+  voy: { motivo: (t) => `Vas a ${t}`, porque: "Ya estás en la lista de quien va.", pregunta: "¿Te recordamos ese día?", promesa: "ese día" },
+  seguir: { motivo: (t) => `Sigues ${t}`, porque: "Sus eventos nuevos aparecerán en Siguiendo.", pregunta: "¿Te avisamos de sus eventos?", promesa: "de sus eventos" },
+  "seguir-artista": { motivo: (t) => `Sigues a ${t}`, porque: "Sus fechas nuevas aparecerán en Siguiendo.", pregunta: "¿Te avisamos de sus fechas?", promesa: "de sus fechas" },
 };
 /** El teléfono: sin contestar, dado de alta, falta instalar (iPhone en Safari) o no. */
 type Telefono = null | "hecho" | "pendiente" | "no";
@@ -37,18 +38,17 @@ type Telefono = null | "hecho" | "pendiente" | "no";
 type Problema = null | "bloqueado" | "fallo" | "no-soportado" | "otra-app";
 
 /**
- * Tras el primer "Voy" (o al seguir un lugar o artista): una pregunta, dos canales, una decisión a la vez
- * (docs/rediseno/02, decisión 10). "¿Te recordamos ese día?" Por correo · En el teléfono · No, gracias. Al elegir uno se
- * confirma con evidencia y se ofrece el otro una sola vez. El correo también se pide: un correo no pedido se marca como spam.
- * Con docs/rediseno/17: en iPhone sin instalar sale la hoja con los pasos y queda "Falta un paso" (nunca una palomita
- * antes de tiempo); lo que no se puede se dice con su causa y el correo como salida, y un "sí" nunca se guarda como "no";
+ * Tras el primer "Voy" (o al seguir un lugar o artista): una pregunta y una decisión (docs/rediseno/02, decisión 10).
+ * "¿Te recordamos ese día?" En el teléfono · No, gracias. OL-480 (founder, 2026-10-29: «separamos solicitud de aprobación por
+ * correo, la vamos a usar después para el boletín»): la hoja ya no ofrece «Por correo» ni el otro canal; por correo solo llegará el
+ * boletín, que se elige en Ajustes. Con docs/rediseno/17: en iPhone sin instalar sale la hoja con los pasos y queda "Falta un paso"
+ * (nunca una palomita antes de tiempo); lo que no se puede se dice con su causa y su salida, y un "sí" nunca se guarda como "no";
  * dado de alta en Chrome o Android se ofrece instalar en un toque; y a quien no quiere avisos, su calendario.
  */
-export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta, correo, llavePush, onListo, calendarioUrl }: Props) {
+export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta, llavePush, onListo, calendarioUrl }: Props) {
   const copy = COPY[contexto];
   const plataforma = usePlataforma();
   const { puede: puedeInstalar, instalar } = useInstalarApp();
-  const [correoOk, setCorreoOk] = useState<boolean | null>(null);
   const [telefono, setTelefono] = useState<Telefono>(null);
   const [problema, setProblema] = useState<Problema>(null);
   const [hoja, setHoja] = useState(false);
@@ -61,7 +61,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
 
   /**
    * Toda respuesta de la hoja pasa por aquí: la nueva cierra el aviso de un fallo anterior, cuyo Reintentar guardaría lo
-   * que la persona ya no eligió (un "No" tras un "Sí" que falló, "Ahora no" tras "Por correo").
+   * que la persona ya no eligió (un "No, gracias" tras un "En el teléfono" que falló).
    */
   const responder = (accion: () => unknown) => () => {
     setFallo(null);
@@ -86,17 +86,6 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
     return ok;
   }
 
-  async function porCorreo() {
-    if (!(await guardar(() => elegirAvisos({ correo: true }), porCorreo))) return;
-    medirCliente("aviso_activado", { canal: "correo" });
-    marcarAvisosContestados(cuenta);
-    setCorreoOk(true);
-    // Con un problema del teléfono a la vista, el correo cierra el asunto: el teléfono queda como estaba.
-    if (problema) {
-      setProblema(null);
-      setTelefono("no");
-    }
-  }
   async function enTelefono() {
     setTrabajando(true);
     try {
@@ -122,17 +111,15 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
     }
   }
   async function noGracias() {
-    // "Sin avisos" solo cuando quedó guardado; si no, la pregunta sigue a la vista con Reintentar.
-    if (!(await guardar(() => elegirAvisos({ correo: false, push: false }), noGracias))) return;
+    // "Sin avisos" solo cuando quedó guardado; si no, la pregunta sigue a la vista con Reintentar. El correo no se toca: es el del boletín.
+    if (!(await guardar(() => elegirAvisos({ push: false }), noGracias))) return;
     marcarAvisosContestados(cuenta);
-    setCorreoOk(false);
     setTelefono("no");
   }
   /** "Ahora no" ante un problema: no se guarda nada; la pregunta vuelve en el siguiente Voy o Seguir. */
   function ahoraNo() {
     setProblema(null);
     setTelefono("no");
-    if (correoOk === null) setCorreoOk(false);
   }
   async function cerrarHoja() {
     // Quiere avisos en el teléfono: queda dicho en la cuenta, y al abrir la app instalada se ofrece Activar (decisión 4).
@@ -146,9 +133,9 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
     if (await instalar()) setInstalada(true);
   }
 
-  const terminado = correoOk !== null && telefono !== null;
+  const terminado = telefono !== null;
   const conInstalar = terminado && telefono === "hecho" && (puedeInstalar || instalada);
-  const conCalendario = terminado && !correoOk && telefono === "no" && !!calendarioUrl;
+  const conCalendario = terminado && telefono === "no" && !!calendarioUrl;
   // Se cierra sola solo si no queda nada que leer ni tocar: el paso que falta, instalar o el calendario.
   const cierraSola = terminado && telefono !== "pendiente" && !conInstalar && !conCalendario;
   useEffect(() => {
@@ -160,19 +147,6 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
   const ok = <IconoOk width={18} height={18} />;
   const pendiente = <IconoPendiente width={18} height={18} />;
   const cambiar = <p className={styles.cambiar}>Se cambia en Ajustes.</p>;
-  const preguntaCorreo = (pregunta: string) => (
-    <>
-      <p className={styles.pregunta}>{pregunta}</p>
-      <div className={`${styles.opciones} ${styles.cortas}`}>
-        <button type="button" className={styles.si} onClick={responder(porCorreo)} disabled={trabajando}>
-          Sí
-        </button>
-        <button type="button" className={styles.no} onClick={responder(() => setCorreoOk(false))} disabled={trabajando}>
-          No
-        </button>
-      </div>
-    </>
-  );
   const faltaUnPaso = (
     <>
       <p className={`${styles.hecho} ${styles.pendiente}`}>
@@ -209,101 +183,42 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
           {pendiente}
           <span>{causa}</span>
         </p>
-        <div className={`${styles.opciones} ${styles.cortas}`}>
-          {problema === "fallo" && (
-            <button type="button" className={styles.si} onClick={responder(enTelefono)} disabled={trabajando}>
-              Intentar de nuevo
-            </button>
-          )}
-          {correoOk === null && (
-            <button type="button" className={problema === "fallo" ? styles.no : styles.si} onClick={responder(porCorreo)} disabled={trabajando}>
-              Por correo
-            </button>
-          )}
-        </div>
+        {problema === "fallo" && (
+          <button type="button" className={styles.si} onClick={responder(enTelefono)} disabled={trabajando}>
+            Intentar de nuevo
+          </button>
+        )}
         <button type="button" className={styles.gracias} onClick={responder(ahoraNo)} disabled={trabajando}>
           Ahora no
         </button>
       </>
     );
-  } else if (correoOk === null && telefono === null) {
+  } else if (telefono === null) {
     cuerpo = (
       <>
         <p className={styles.pregunta}>{copy.pregunta}</p>
-        <div className={styles.opciones}>
-          <button type="button" className={styles.si} onClick={responder(porCorreo)} disabled={trabajando}>
-            Por correo
-          </button>
-          <button type="button" className={styles.si} onClick={responder(enTelefono)} disabled={trabajando}>
-            {enElTelefono}
-          </button>
-        </div>
+        <button type="button" className={styles.si} onClick={responder(enTelefono)} disabled={trabajando}>
+          {enElTelefono}
+        </button>
         <button type="button" className={styles.gracias} onClick={responder(noGracias)} disabled={trabajando}>
           No, gracias
         </button>
-      </>
-    );
-  } else if (correoOk === true && telefono === null) {
-    cuerpo = (
-      <>
-        <p className={styles.hecho}>
-          {ok}
-          <span>
-            Te escribimos a {correo} {copy.cuando}.
-          </span>
-        </p>
-        <p className={styles.pregunta}>¿También {enElTelefono.toLowerCase()}?</p>
-        <div className={`${styles.opciones} ${styles.cortas}`}>
-          <button type="button" className={styles.si} onClick={responder(enTelefono)} disabled={trabajando}>
-            Sí
-          </button>
-          <button type="button" className={styles.no} onClick={responder(() => setTelefono("no"))} disabled={trabajando}>
-            No
-          </button>
-        </div>
-      </>
-    );
-  } else if (telefono === "hecho" && correoOk === null) {
-    cuerpo = (
-      <>
-        <p className={styles.hecho}>
-          {ok}
-          <span>
-            Te avisamos {aqui} {copy.cuando}.
-          </span>
-        </p>
-        {preguntaCorreo("¿También por correo?")}
       </>
     );
   } else if (telefono === "pendiente") {
     cuerpo = (
       <>
         {faltaUnPaso}
-        {correoOk === null ? (
-          preguntaCorreo("Mientras, ¿por correo?")
-        ) : (
-          <>
-            {correoOk && (
-              <p className={styles.hecho}>
-                {ok}
-                <span>
-                  Mientras, te escribimos a {correo} {copy.cuando}.
-                </span>
-              </p>
-            )}
-            {cambiar}
-          </>
-        )}
+        {cambiar}
       </>
     );
   } else {
-    const canales = [correoOk && "por correo", telefono === "hecho" && aqui].filter(Boolean);
-    cuerpo = canales.length ? (
+    cuerpo = telefono === "hecho" ? (
       <>
         <p className={styles.hecho}>
           {ok}
           <span>
-            Te avisamos {canales.join(" y ")} {copy.promesa}.
+            Te avisamos {aqui} {copy.promesa}.
           </span>
         </p>
         {cambiar}

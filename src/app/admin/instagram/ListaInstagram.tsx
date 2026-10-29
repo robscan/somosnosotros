@@ -29,8 +29,9 @@ const PALABRAS = { una: "evento", varias: "eventos", nota: "Cuenta los eventos d
  * OL-465 (bitácora 497): publicar va en segundo plano: el renglón dice «Publicando…» (o «Facebook: publicando…») mientras el trabajo está en la
  * cola, y la lista se refresca sola cada 20 s mientras lo haya y al volver a la app. Si ese evento ya se publicó en Facebook hace menos de 15
  * minutos, el botón pregunta antes de repetir.
+ * OL-471 (bitácora 503): `conexion`, el bloque «Conexión» (`ConexionInstagram`), va bajo la cabecera y arriba de la lista.
  */
-export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio, pestanas }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null; pestanas?: ReactNode }) {
+export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio, conexion, pestanas }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null; conexion?: ReactNode; pestanas?: ReactNode }) {
   const router = useRouter();
   const [hojaCiudad, setHojaCiudad] = useState(false);
   const [evento, setEvento] = useState<string | null>(abrir);
@@ -130,6 +131,7 @@ export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, cont
           onCerrar={() => setHojaCiudad(false)}
         />
       )}
+      {conexion}
       {conteo && <p className={lista.conteo}>{conteo}</p>}
       {vacio && <p className={lista.vacio}>{vacio}</p>}
       {para.length > 0 && (

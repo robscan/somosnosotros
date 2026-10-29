@@ -20,7 +20,7 @@ export default function Privacidad() {
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Aviso de privacidad</h1>
-        <p className="subtitulo">Última actualización: 27 de octubre de 2026.</p>
+        <p className="subtitulo">Última actualización: 29 de octubre de 2026.</p>
 
         <h2>Quién responde por tus datos</h2>
         <p>
@@ -29,20 +29,22 @@ export default function Privacidad() {
 
         <h2>Qué datos guardamos</h2>
         <ul>
-          <li>Al entrar: tu correo. Con él te mandamos el código de acceso y, si lo pides, los avisos. Si entras con Apple o con Google, ellos nos dan tu correo y tu nombre (Google, también tu foto de perfil); los cambias en «Mi perfil». Si en Apple eliges ocultar tu correo, guardamos la dirección que Apple te da y los avisos te llegan a través de Apple.</li>
+          <li>Al entrar: tu correo. Con él te mandamos el código de acceso y, cuando exista, el boletín. Si entras con Apple o con Google, ellos nos dan tu correo y tu nombre (Google, también tu foto de perfil); los cambias en «Mi perfil». Si en Apple eliges ocultar tu correo, guardamos la dirección que Apple te da y nuestros correos te llegan a través de Apple.</li>
           <li>Tu perfil, si lo llenas: nombre, foto, colonia y una línea sobre ti. El nombre y la foto son públicos: aparecen en «quién va» a un evento.</li>
           <li>Lo que haces en la app: a qué eventos dices «Voy» o «Me interesa», y qué lugares y artistas sigues. Quien abre tu perfil puede ver los eventos próximos a los que vas.</li>
           <li>Si activas avisos en el teléfono: la suscripción que nos da tu navegador para mandarte notificaciones. No es tu número.</li>
           <li>El último día que abriste la app: solo el día, no la hora ni qué miraste. Lo ve solo la administración, para saber si la gente vuelve.</li>
           <li>Tu ubicación, solo cuando la pides con un toque (por ejemplo «Cerca de mí» o al buscar una dirección al publicar un lugar o evento): sirve para ordenar la lista, centrar el mapa o acercar la búsqueda de direcciones. Vive en tu teléfono, aproximada y por poco tiempo; puede viajar a Mapbox para esa búsqueda, pero nunca se guarda en nuestra base ni queda asociada a tu cuenta.</li>
           <li>Cuántas veces se abre la ficha de un evento: una por persona al día, sin tu nombre, tu cuenta ni tu IP. Sirve para que lo más visto salga en Destacados. A quien publicó el evento y a la administración no se les cuenta.</li>
+          <li>Contamos cuántos avisos se abren, por tipo y por día, sin saber quién: no se guarda tu cuenta, tu teléfono ni de qué evento era.</li>
           <li>Lo que publicas: lugares, eventos, artistas, fotos y enlaces. Es público por definición.</li>
         </ul>
 
         <h2>Para qué</h2>
         <ul>
           <li>Para que entres sin contraseña y para que lo que publicas lleve tu nombre.</li>
-          <li>Para avisarte, si lo pediste, de eventos nuevos en los lugares que sigues y para recordarte el día de un evento al que vas. Cada aviso trae un enlace para dejar de recibirlos, sin entrar.</li>
+          <li>Para avisarte en el teléfono, si lo pediste, de eventos nuevos de lo que sigues, de cambios de fecha o lugar y del día de un evento al que vas. Lo mismo queda en Novedades, dentro de la app.</li>
+          <li>El correo de avisos viene encendido al crear tu cuenta, pero no te mandamos nada por correo hasta que exista el boletín. Lo apagas en Ajustes o con el enlace de baja que trae cada correo.</li>
           <li>Para que la administración pueda revisar reportes, contactarte si reclamas una ficha y escribirte si hace falta por tu cuenta o por lo que publicaste. Tu correo solo lo ve la administración.</li>
         </ul>
 

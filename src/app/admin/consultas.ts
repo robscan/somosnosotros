@@ -2,8 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { decididoVigente, SECCION_DE, SIN_DECIDIR, TIPO_DE, type Decidido, type Destacado, type FilaDestacada, type TipoFicha } from "@/lib/destacados";
 import { esUuid } from "@/lib/formulario";
-import type { Aportes, ArtistaFila, Comunidad, EventoFila, FichasVinculadas, Lista, LugarFila, Pendiente, PersonaFicha, PersonaFila, Resumen } from "@/lib/panel";
-import { leerAportes, leerFichas, PAGINA_PANEL } from "@/lib/panel";
+import type { Aportes, ArtistaFila, AvisosPanel, Comunidad, EventoFila, FichasVinculadas, Lista, LugarFila, Pendiente, PersonaFicha, PersonaFila, Resumen } from "@/lib/panel";
+import { leerAportes, leerAvisos, leerFichas, PAGINA_PANEL } from "@/lib/panel";
 import type { ArtistaPublicado, EventoPublicado, LugarPublicado, Publicado, TipoPublicado } from "@/lib/panelPublicado";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -33,6 +33,14 @@ export async function cargarAportes(): Promise<Aportes | null> {
   const supabase = (await clienteServidor())!;
   const { data, error } = await supabase.rpc("panel_aportes");
   return error ? null : leerAportes(data);
+}
+
+/** Los avisos al teléfono que salieron y los que se abrieron en 7 días (migración 20261029170000, OL-480). Aparte: si falla, o la respuesta
+ *  no trae todos los números, ese indicador no se pinta y el resto de la pantalla sigue. */
+export async function cargarAvisos(): Promise<AvisosPanel | null> {
+  const supabase = (await clienteServidor())!;
+  const { data, error } = await supabase.rpc("panel_avisos");
+  return error ? null : leerAvisos(data);
 }
 
 /** Las fichas con una cuenta ligada, por cualquier vía, y los artistas con foto (migración 20261007090000, OL-326). Aparte, por lo mismo. */

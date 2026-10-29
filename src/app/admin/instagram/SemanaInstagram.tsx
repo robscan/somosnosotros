@@ -28,7 +28,7 @@ const unir = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).
  * va, el aviso pendiente y, si ya salió, lo que dio y «Ver». Tocar un día abre su hoja (`HojaDia`). Mientras algo se publica, la semana se
  * refresca sola cada 20 s y al volver a la app.
  */
-export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestanas, abrir }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; semana: Semana | null; cual: "esta" | "viene"; pestanas: ReactNode; abrir: string | null }) {
+export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestanas, abrir, conexion }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; semana: Semana | null; cual: "esta" | "viene"; pestanas: ReactNode; abrir: string | null; conexion?: ReactNode }) {
   const router = useRouter();
   const ruta = usePathname();
   const params = useSearchParams();
@@ -120,6 +120,7 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
           onCerrar={() => setHojaCiudad(false)}
         />
       )}
+      {conexion}
       {!ciudad.slug ? (
         <p className={lista.vacio}>Cada ciudad tiene su semana en Instagram: elige una arriba.</p>
       ) : !semana ? (
