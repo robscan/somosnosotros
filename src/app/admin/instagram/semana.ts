@@ -64,10 +64,14 @@ export async function zonaDeCiudad(supabase: ClienteServidor, ciudad: string): P
   return data?.zona ?? ZONA_INICIAL;
 }
 
-/** Los días guardados de la semana que empieza en `lunes`. */
-async function leerDias(supabase: ClienteServidor, ciudad: string, lunes: string): Promise<FilaDia[] | null> {
+/**
+ * Los días guardados de la semana que empieza en `lunes`. `otraVez`: después de guardar, se vuelven a leer de verdad (Next guarda en la misma
+ * petición la respuesta de un GET igual y devolvería la de antes de guardar: una señal propia lo deja fuera de esa memoria).
+ */
+async function leerDias(supabase: ClienteServidor, ciudad: string, lunes: string, otraVez = false): Promise<FilaDia[] | null> {
   const dias = diasDe(lunes);
-  const { data, error } = await supabase.from("instagram_semana").select(COLUMNAS_DIA).eq("ciudad", ciudad).gte("fecha", dias[0]).lte("fecha", dias[6]).order("fecha");
+  const q = supabase.from("instagram_semana").select(COLUMNAS_DIA).eq("ciudad", ciudad).gte("fecha", dias[0]).lte("fecha", dias[6]).order("fecha");
+  const { data, error } = await (otraVez ? q.abortSignal(new AbortController().signal) : q);
   return error ? null : ((data ?? []) as FilaDia[]);
 }
 
@@ -77,8 +81,8 @@ export async function candidatos(supabase: ClienteServidor, ciudad: string, tipo
   return error || !Array.isArray(data) ? [] : (data as Candidato[]);
 }
 
-/** Arma y guarda los días que le faltan a una semana (los que ya están no se tocan). Devuelve cuántos guardó. */
-async function llenar(supabase: ClienteServidor, ciudad: string, lunes: string, zona: string, existentes: FilaDia[], ahora: Date): Promise<number> {
+/** Arma y guarda los días que le faltan a una semana (los que ya están no se tocan). Devuelve si intentó guardar alguno. */
+async function llenar(supabase: ClienteServidor, ciudad: string, lunes: string, zona: string, existentes: FilaDia[], ahora: Date): Promise<boolean> {
   const [artistas, lugares, sugeridos] = await Promise.all([
     candidatos(supabase, ciudad, "artista", lunes),
     candidatos(supabase, ciudad, "lugar", lunes),
@@ -87,9 +91,9 @@ async function llenar(supabase: ClienteServidor, ciudad: string, lunes: string, 
   const eventos = (Array.isArray(sugeridos.data) ? sugeridos.data : []) as EventoCandidato[];
   const usados = new Set(existentes.flatMap((d) => [d.artista_id, d.lugar_id, d.evento_id, ...(d.eventos ?? [])].filter((x): x is string => !!x)));
   const nuevas = armarSemana({ lunes, zona, ahora, artistas, lugares, eventos, existentes: new Set(existentes.map((d) => d.fecha)), usados });
-  if (!nuevas.length) return 0;
-  const { data, error } = await supabase.rpc("instagram_semana_guardar", { p_ciudad: ciudad, p_casillas: nuevas });
-  return error ? 0 : Number(data) || 0;
+  if (!nuevas.length) return false;
+  const { error } = await supabase.rpc("instagram_semana_guardar", { p_ciudad: ciudad, p_casillas: nuevas });
+  return !error;
 }
 
 /** La semana («esta» o «la que viene») de una ciudad: se arma lo que falte y se dice cada día. Null si no se pudo leer. */
@@ -98,7 +102,7 @@ export async function cargarSemana(supabase: ClienteServidor, ciudad: string, cu
   const lunes = lunesDeLaSemana(cual, ahora, zona);
   let filas = await leerDias(supabase, ciudad, lunes);
   if (!filas) return null;
-  if (filas.length < 7 && (await llenar(supabase, ciudad, lunes, zona, filas, ahora)) > 0) filas = (await leerDias(supabase, ciudad, lunes)) ?? filas;
+  if (filas.length < 7 && (await llenar(supabase, ciudad, lunes, zona, filas, ahora))) filas = (await leerDias(supabase, ciudad, lunes, true)) ?? filas;
   const dichos = await decirDias(supabase, filas, ahora, zona);
   // Un día que no se armó (ya había pasado su hora cuando se llenó la semana) se dice igual: la semana siempre tiene sus siete renglones.
   const dias = diasDe(lunes).map((fecha) => dichos.find((d) => d.fecha === fecha) ?? sinArmar(fecha, ahora, zona));

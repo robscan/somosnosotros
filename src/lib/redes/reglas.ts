@@ -85,6 +85,8 @@ export type ResultadoTrabajo = {
   /** `sinCoautor` (OL-479): se invitó al artista como coautor e Instagram no lo aceptó; salió sin él. */
   instagram?: { permalink: string | null; imagenes: number; sinEtiquetas: boolean; formato: "4x5" | "9x16" | "carrusel"; sinCoautor?: boolean };
   facebook?: EspejoFacebook | null;
+  /** OL-479: la historia que acompaña la publicación de un artista o un lugar de la semana. */
+  historia?: { ok: boolean; permalink: string | null };
   mensaje?: string;
 };
 

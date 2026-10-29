@@ -217,11 +217,10 @@ export function estadoDelDia(d: { estado: string; tipo: string; fecha: string; p
   return d.fecha === diaLocal(ahora, zona) ? "hoy" : "programado";
 }
 
-/** «Lun 5», «Hoy», «Mañana» (el día del renglón). */
+/** «Lun 5» u «Hoy» (el día del renglón, como en el prototipo firmado: mañana también lleva su día). */
 export function nombreDelDia(fecha: string, ahora: Date, zona: string): string {
   const hoy = diaLocal(ahora, zona);
   if (fecha === hoy) return "Hoy";
-  if (fecha === sumar(hoy, 1)) return "Mañana";
   const iso = localAIso(`${fecha}T12:00`, zona) ?? `${fecha}T18:00:00Z`;
   const d = diaConMes(iso, ahora, zona).replace(/ de .*$/, "");
   return d[0].toLocaleUpperCase("es-MX") + d.slice(1);

@@ -201,7 +201,9 @@
     "s43-admin-artistas": { "nodos": [100, 100, 136, 136], "profundidad": [10, 10, 10, 10] },
     "s44-admin-personas": { "nodos": [48, 48, 84, 84], "profundidad": [10, 10, 10, 10] },
     "s45-admin-portada": { "nodos": [211, 211, 247, 247], "profundidad": [8, 8, 8, 8] },
-    "s46-admin-instagram": { "nodos": [121, 121, 157, 157], "profundidad": [9, 9, 9, 9] },
-    "s47-admin-instagram-hoja": { "nodos": [154, 154, 190, 190], "profundidad": [9, 9, 9, 9] }
+    "s46-admin-instagram": { "nodos": [124, 124, 160, 160], "profundidad": [9, 9, 9, 9] },
+    "s47-admin-instagram-hoja": { "nodos": [157, 157, 193, 193], "profundidad": [9, 9, 9, 9] },
+    "s48-admin-instagram-semana": { "nodos": [73, 73, 109, 109], "profundidad": [9, 9, 9, 9] },
+    "s49-admin-instagram-dia": { "nodos": [83, 83, 119, 119], "profundidad": [9, 9, 9, 9] }
   }
 }

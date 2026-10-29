@@ -176,6 +176,16 @@ PASOS["admin-instagram-hoja"] = async (page) => {
   await aquietar(page);
 };
 
+// OL-479: la hoja del día de hoy en la pestaña «Semana» (sin la marca de la semana de Instagram, el respaldo no tiene fichas completas: el día
+// que toca puede descansar y su hoja lo dice).
+PASOS["admin-instagram-dia"] = async (page) => {
+  await page.locator("main section li", { hasText: "Hoy" }).locator("a").first().click();
+  await page.getByRole("dialog").waitFor();
+  await page.waitForFunction(() => !document.querySelector('[role="dialog"] [aria-label="Preparando la vista previa"]'));
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"] img')].every((i) => i.complete));
+  await aquietar(page);
+};
+
 // ---------- procesos ----------
 const hijos = [];
 process.on("exit", () => hijos.forEach((h) => h.exitCode === null && h.kill()));
