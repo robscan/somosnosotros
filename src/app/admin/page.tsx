@@ -2,9 +2,11 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
-import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoInstagram, IconoPersonas, IconoPin, IconoPincel, IconoUbicacion } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoEtiqueta, IconoInstagram, IconoPersonas, IconoPin, IconoPincel, IconoUbicacion } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
-import { propuestasPorRevisar, resumenCiudades } from "@/lib/ciudadesAdmin";
+import { credito, propuestasPorRevisar, resumenCiudades, usd } from "@/lib/ciudadesAdmin";
+import { CLAVE_SEMANAL, leerAjusteSemanal, lineaSemanal, SEMANA_MS } from "@/lib/rutinas/ajusteSemanal";
+import InterruptorFichas from "./rutinas/InterruptorFichas";
 import { diaLocal } from "@/lib/fechas";
 import { cuandoPaso, indicadorAvisos, indicadores, indicadoresAportes, indicadoresFichas, notaFichas, notaSemana, renglonesGestionar } from "@/lib/panel";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
@@ -50,7 +52,7 @@ export default async function Admin() {
   if (actual.perfil.rol !== "admin") redirect("/");
   const ciudadSesion = leerCiudad("eventos", (await cookies()).get(GALLETA_CIUDAD)?.value ?? null);
   const supabase = await clienteServidor();
-  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas, ciudades, porAprobar, instagram, avisos, semanaIg] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas(), cargarPanelCiudades(), cargarResumenPorAprobar(), supabase ? cargarResumenInstagram(supabase, ciudadSesion) : null, cargarAvisos(), supabase ? resumenDeLaPortada(supabase, ciudadSesion ?? CIUDAD_INICIAL.slug).catch(() => null) : null]);
+  const [{ resumen, pendientes, errorPendientes }, comunidad, capo, aportes, vinculadas, ciudades, porAprobar, instagram, avisos, semanaIg, semanal] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo(), cargarAportes(), cargarVinculadas(), cargarPanelCiudades(), cargarResumenPorAprobar(), supabase ? cargarResumenInstagram(supabase, ciudadSesion) : null, cargarAvisos(), supabase ? resumenDeLaPortada(supabase, ciudadSesion ?? CIUDAD_INICIAL.slug).catch(() => null) : null, supabase ? supabase.from("configuracion").select("valor").eq("clave", CLAVE_SEMANAL).maybeSingle() : null]);
   const ahora = new Date();
   // Las propuestas de las rutinas por revisar suben a «Pendiente» (firma de OL-425); si Ciudades no se pudo leer, solo faltan ellas.
   // OL-446: primero las evidencias del showcase por aprobar (un solo renglón a «Por aprobar»); si no se pudieron leer, solo falta él.
@@ -162,6 +164,29 @@ export default async function Admin() {
           </Link>
         </li>
       </ul>
+      {/* Rutinas (OL-489): las que corren solas una vez por semana, con su interruptor, y el gasto de todas, que se ve en Corridas. */}
+      <h2 className={styles.grupo}>Rutinas</h2>
+      {ciudades && semanal && !semanal.error ? (
+        <ul className={renglon.tarjeta}>
+          <li>
+            <div className={renglon.ajuste}>
+              <InterruptorFichas activa={leerAjusteSemanal(semanal.data?.valor).activa} lineas={lineaSemanal(leerAjusteSemanal(semanal.data?.valor), ciudades.corridas, ahora)} />
+            </div>
+          </li>
+          <li>
+            <Link href="/admin/corridas" className={renglon.ajuste}>
+              <IconoEtiqueta width={20} height={20} />
+              <b>Corridas</b>
+              <small>{`${usd(credito(ciudades.credito, ahora).queda)}\u00a0USD de crédito · ${usd(ciudades.corridas.filter((c) => Date.parse(c.creado_en) >= ahora.getTime() - SEMANA_MS).reduce((t, c) => t + c.gasto_usd, 0))}\u00a0USD esta semana`}</small>
+              <span>
+                <IconoChevronDerecha />
+              </span>
+            </Link>
+          </li>
+        </ul>
+      ) : (
+        <Reintentar texto="No pudimos leer las rutinas." />
+      )}
       {/* El showcase (OL-426, lo firmado en OL-425): al nivel del grafo, con su propio grupo. */}
       <GrupoShowcase />
     </main>

@@ -37,7 +37,7 @@ type Tanda = { alcance: string; total: number; va: number };
 /** El alcance de la búsqueda entera (ninguna fuente se llama así). */
 const TODA = "\u0000búsqueda";
 
-const ICONO: Record<TipoPropuesta, typeof IconoPin> = { lugar: IconoPin, evento: IconoCalendario, artista: IconoEstrella, cartel: IconoCartel };
+const ICONO: Record<TipoPropuesta, typeof IconoPin> = { lugar: IconoPin, evento: IconoCalendario, artista: IconoEstrella, cartel: IconoCartel, ficha: IconoDocumento };
 const ICONO_MOTIVO: Record<MotivoRechazo, typeof IconoPin> = { duplicado: IconoDocumento, no_cultural: IconoMascara, fuera_de_la_ciudad: IconoPin, otro: IconoPuntos };
 /** Los de la ficha de un evento: la etiqueta de «Parte de…» (festival y acto) y el calendario de «Sesiones», «Horarios» y «Hasta». */
 const ICONO_FORMA: Record<IconoForma, typeof IconoPin> = { festival: IconoEtiqueta, fechas: IconoCalendario };
@@ -251,6 +251,12 @@ export default function Bandeja({
                       </p>
                     )}
                     {forma?.detalle && <p className={css.formaDetalle}>{pegado(forma.detalle)}</p>}
+                    {/* OL-489: lo que propone «Completar fichas»: la imagen ya recortada o la descripción. */}
+                    {vista.miniatura && (
+                      // eslint-disable-next-line @next/next/no-img-element -- la miniatura ya viene chica y recortada del bucket.
+                      <img src={vista.miniatura.url} alt="" loading="lazy" className={[css.propuesto, vista.miniatura.forma === "cuadrada" && css.cuadrada].filter(Boolean).join(" ")} />
+                    )}
+                    {vista.texto && <p className={css.propuesto}>{vista.texto}</p>}
                     <small>
                       {vista.linea && `${pegado(vista.linea)} · `}
                       {vista.imagen && (

@@ -1345,7 +1345,40 @@ propuestas.push(
   // Teatro de la Paz), así la tanda la deja por revisar con su razón («Ya está … a esa hora: recházala como duplicado»).
   formaDe(15, AGENDAS_GOB, { titulo: "Feleal: un viaje por el mundo en acordeón", clase: "puntual", inicio: en(7, "19:00"), lugar: "Teatro de la Paz", precio: "$120 a $250" }),
 );
-Object.assign(tablas, { ciudades, ciudades_vistas, rutinas_corridas, propuestas });
+// OL-489 (bitácora 521): «Completar fichas». La tabla `configuracion` va siempre (vacía: el interruptor de Administración › Rutinas, apagado).
+// Solo con `RESPALDO_COMPLETAR=1` (`npm run medir` no lo pone): el interruptor encendido y una corrida de hoy en San Miguel de Allende con
+// cinco campos por revisar (dos de «Colectivo Marea» y su descripción, el Instagram de «Ana Lucía Rivas» y la portada de «Foro Lunaria»), con
+// sus miniaturas (`miniaturas.example`, las dibuja `capturar-rutina-fichas.mjs`) y dos fichas «sin fuente» en su informe. Todo inventado.
+export const CON_COMPLETAR = process.env.RESPALDO_COMPLETAR === "1";
+export const CORRIDA_FICHAS = "abab0001-0000-4000-8000-000000000489";
+const configuracion = CON_COMPLETAR ? [{ clave: "rutina_fichas_semanal", valor: { activa: true, tope_usd: 0.5, cambiado_en: hace(2), cambiado_por: ADMIN }, actualizado_en: hace(2) }] : [];
+if (CON_COMPLETAR) {
+  const FA = (n) => `a1a1a1a1-0489-4000-8000-${String(n).padStart(12, "0")}`;
+  rutinas_corridas.push({
+    ...corridaDe(CORRIDA_FICHAS, "fichas", "san-miguel-de-allende", { tope: 0.5, gasto: 0.0021, dias: 0.04, resumen: {
+      paso: "7 de 7 fichas", avance: 1, revisadas: 7, incompletas: 9, propuestos: 5, propuestas_por_campo: { foto: 1, portada: 2, descripcion: 1, instagram: 1 }, errores: 0,
+      descartados: { cartel_con_texto: 2, ninos: 0, sin_imagen_util: 0, imagen_chica: 1, imagen_no_baja: 0, cuenta_no_coincide: 1, descripcion_corta: 0, no_se_guardo: 0, rechazado_antes: 0, recientes: 1, de_mas: 0 },
+      lecturas_instagram: 9,
+      sin_fuente: [
+        { tipo: "lugar", id: FA(11), nombre: "Casa del Viento", faltan: ["portada", "descripcion", "instagram"], motivo: "Sin Instagram ni sitio, y no apareció una cuenta con su nombre y su ciudad" },
+        { tipo: "artista", id: FA(12), nombre: "Dúo Bruma", faltan: ["foto", "portada"], motivo: "Solo se encontraron carteles con texto o imágenes que no sirven" },
+        { tipo: "lugar", id: FA(13), nombre: "Galería Norte", faltan: ["descripcion"], motivo: "Su descripción tiene menos de 120 caracteres: se alarga a mano" },
+      ],
+    } }),
+    parametros: { horizonte_dias: 21, max_fichas: 20, semanal: true },
+  });
+  const mini = (n) => `https://miniaturas.example/${n}.jpg`;
+  const campoDe = (campo, fuente, datos) => ({ ...propuestaDe(CORRIDA_FICHAS, "ficha", fuente, { campo, leida: hace(0.04), ...datos }, "propuesta", 0.04), campo });
+  const marea = { ficha_tipo: "artista", ficha_id: FA(1), nombre: "Colectivo Marea", ciudad: "San Miguel de Allende" };
+  propuestas.push(
+    campoDe("foto", "Instagram de la ficha", { ...marea, imagen: mini("marea-foto"), miniatura: mini("marea-foto"), url: "https://www.instagram.com/colectivomarea/", confianza: "alta", razon: "Su foto de perfil" }),
+    campoDe("portada", "Instagram de la ficha", { ...marea, imagen: mini("marea-portada"), miniatura: mini("marea-portada"), url: "https://www.instagram.com/p/marea1/", confianza: "alta", razon: "Su publicación más reciente sin texto encima" }),
+    campoDe("descripcion", "Instagram de la ficha", { ...marea, valor: "Colectivo de teatro físico y danza contemporánea de San Miguel de Allende que crea piezas sobre el agua y la memoria desde 2015, con funciones y talleres abiertos.", url: "https://www.instagram.com/colectivomarea/", confianza: "alta", razon: "Su biografía de Instagram, reescrita" }),
+    campoDe("instagram", "Sitio de la ficha", { ficha_tipo: "artista", ficha_id: FA(2), nombre: "Ana Lucía Rivas", ciudad: "San Miguel de Allende", valor: "https://www.instagram.com/anarivas.arte/", usuario: "anarivas.arte", url: "https://anarivas.example/", confianza: "media", razon: "Su sitio enlaza a esta cuenta" }),
+    campoDe("portada", "Instagram de la ficha", { ficha_tipo: "lugar", ficha_id: FA(3), nombre: "Foro Lunaria", ciudad: "San Miguel de Allende", imagen: mini("lunaria-portada"), miniatura: mini("lunaria-portada"), url: "https://www.instagram.com/p/lunaria2/", confianza: "alta", razon: "Su publicación más reciente sin texto encima" }),
+  );
+}
+Object.assign(tablas, { ciudades, ciudades_vistas, rutinas_corridas, propuestas, configuracion });
 const cuentasDe = (id, t) => {
   const p = t.propuestas.filter((x) => x.corrida_id === id);
   return { propuestas: p.length, aceptadas: p.filter((x) => x.estado === "aceptada").length, rechazadas: p.filter((x) => x.estado === "rechazada").length, por_revisar: p.filter((x) => x.estado === "propuesta").length };

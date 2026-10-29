@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { etiquetaDisciplina } from "./artistas";
 import { ciudadCanonica } from "./ciudad";
-import { diaMes, ESTADOS_CORRIDA, TIPOS_CORRIDA } from "./ciudadesAdmin";
+import { CAMPOS_FICHA, diaMes, ESTADOS_CORRIDA, ETIQUETA_CAMPO, TIPOS_CORRIDA, type CampoFicha } from "./ciudadesAdmin";
 import { horaCorta, ZONA_INICIAL } from "./fechas";
 import { etiquetaLugar } from "./lugares";
 
@@ -13,6 +13,11 @@ import { etiquetaLugar } from "./lugares";
  *   · evento  { titulo, inicio, fin?, lugar, direccion?, municipio?, precio?, descripcion?, ciudad?, url?, leida? }   (OL-429)
  *   · cartel  { evento_id, titulo, inicio, lugar, imagen, pagina, url, ciudad?, leida? }   (OL-444: el cartel ya publicado de un evento que no
  *             tiene; `imagen` es el archivo, `pagina` (= `url`) la página donde aparece; aceptarlo lo sube a Storage y lo pone en el evento)
+ *   · ficha   { ficha_tipo (artista · lugar), ficha_id, nombre, ciudad, campo (foto · portada · descripcion · instagram, también en la columna
+ *             `campo`), imagen y miniatura (foto y portada: ya recortadas, en la carpeta de espera del bucket), valor (descripción: el texto;
+ *             instagram: el enlace), usuario?, origen (de dónde salió: la imagen original, la biografía o la cuenta), url (la página de la fuente),
+ *             confianza (alta · media · baja), razon, publicada?, leida }   (OL-489: «Completar fichas»; aceptarla completa la ficha si ese campo
+ *             está vacío, `src/lib/rutinas/aceptarFicha.ts`)
  * `url` es la página de la fuente que la rutina abrió y leyó (en un evento, la agenda: queda como `eventos.fuente_url` al publicarlo);
  * `leida`, cuándo (ISO). `redes`, enlaces (texto o { url }). En un evento, `inicio` y `fin` son ISO; `lugar`, el nombre exacto del lugar
  * registrado si la agenda es en uno, o el sitio como lo escribe la agenda; `precio`, «Gratis», «Cooperación solidaria» o el texto del costo;
@@ -29,7 +34,7 @@ import { etiquetaLugar } from "./lugares";
  * `scripts/instituciones/proponer.ts`).
  */
 
-export const TIPOS_PROPUESTA = ["lugar", "evento", "artista", "cartel"] as const;
+export const TIPOS_PROPUESTA = ["lugar", "evento", "artista", "cartel", "ficha"] as const;
 export type TipoPropuesta = (typeof TIPOS_PROPUESTA)[number];
 
 export const MOTIVOS_RECHAZO = [
@@ -128,11 +133,34 @@ function redesDe(v: unknown): string[] {
 /** El nombre de la propuesta: el del lugar o artista, o el título del evento (también el de un cartel: es el de su evento). */
 export function nombreDe(p: Pick<Propuesta, "tipo" | "datos">): string {
   if (p.tipo === "cartel") return texto(p.datos.titulo, 120) ? `el cartel de «${texto(p.datos.titulo, 120)}»` : "el cartel";
+  if (p.tipo === "ficha") {
+    const campo = campoDe(p.datos);
+    return `${campo ? `${ARTICULO_CAMPO[campo]} de` : "lo propuesto para"} «${texto(p.datos.nombre, 120) || "Sin nombre"}»`;
+  }
   return texto(p.tipo === "evento" ? p.datos.titulo : p.datos.nombre, 120) || "Sin nombre";
 }
 
-/** `imagen` (OL-444): en un cartel, el archivo que se propone, para abrirlo antes de aceptarlo. */
-export type VistaPropuesta = { que: string; titulo: string; linea: string | null; fuente: { texto: string; url: string } | null; leida: string | null; imagen?: string | null };
+/** El campo de una propuesta de ficha (OL-489), o null. */
+export function campoDe(d: Record<string, unknown>): CampoFicha | null {
+  return CAMPOS_FICHA.find((c) => c === d.campo) ?? null;
+}
+const ARTICULO_CAMPO: Record<CampoFicha, string> = { foto: "la foto", portada: "la portada", descripcion: "la descripción", instagram: "el Instagram" };
+const CONFIANZA: Record<string, string> = { alta: "confianza alta", media: "confianza media", baja: "confianza baja" };
+
+/**
+ * `imagen` (OL-444): en un cartel, el archivo que se propone, para abrirlo antes de aceptarlo. `miniatura` (OL-489): en una ficha, la imagen
+ * propuesta ya recortada, para verla en la tarjeta; `forma` dice cómo (cuadrada la foto, 3:2 la portada). `texto`: la descripción propuesta.
+ */
+export type VistaPropuesta = {
+  que: string;
+  titulo: string;
+  linea: string | null;
+  fuente: { texto: string; url: string } | null;
+  leida: string | null;
+  imagen?: string | null;
+  miniatura?: { url: string; forma: "cuadrada" | "3:2" } | null;
+  texto?: string | null;
+};
 
 /**
  * Lo que dice la tarjeta de una propuesta: «Foro · propuesto por la rutina», el nombre, dónde, la fuente con su enlace y cuándo se leyó. En un
@@ -154,6 +182,20 @@ export function vistaPropuesta(
     const c = texto(d.ciudad, 80) || ciudad || "";
     return c && !lugar.toLowerCase().includes(c.toLowerCase()) ? (lugar ? `${lugar}, ${c}` : c) : lugar;
   };
+  if (p.tipo === "ficha") {
+    const campo = campoDe(d);
+    const mini = urlSegura(d.miniatura);
+    const usuario = texto(d.usuario, 30);
+    return {
+      que: `${campo ? ETIQUETA_CAMPO[campo] : "Dato"} de ${d.ficha_tipo === "lugar" ? "lugar" : "artista"} · ${CONFIANZA[texto(d.confianza, 10)] ?? "propuesta por la rutina"}`,
+      titulo: texto(d.nombre, 120) || "Sin nombre",
+      linea: [campo === "instagram" && usuario ? `@${usuario}` : null, texto(d.razon, 120) || null].filter(Boolean).join(" · ") || null,
+      fuente,
+      leida,
+      miniatura: mini && (campo === "foto" || campo === "portada") ? { url: mini, forma: campo === "foto" ? "cuadrada" : "3:2" } : null,
+      texto: campo === "descripcion" ? texto(d.valor, 600) || null : null,
+    };
+  }
   if (p.tipo === "lugar") {
     const tipo = texto(d.tipo, 40);
     return { que: `${tipo ? etiquetaLugar({ tipo, detalle: texto(d.detalle, 40) || null }) : "Lugar"} · propuesto por la rutina`, titulo: nombreDe(p), linea: enCiudad(texto(d.direccion, 200)) || null, fuente, leida };
@@ -294,7 +336,7 @@ export function pasoDeTanda(
   return suyo ? { accion: "aceptar" } : { accion: "dejar", razon: textoActoSinFestival(nombre) };
 }
 
-const PLURAL: Record<TipoPropuesta, string> = { lugar: "lugares", evento: "eventos", artista: "artistas", cartel: "carteles" };
+const PLURAL: Record<TipoPropuesta, string> = { lugar: "lugares", evento: "eventos", artista: "artistas", cartel: "carteles", ficha: "datos de fichas" };
 
 /**
  * La hoja de «Aceptar las N» de una búsqueda: cuántas, de qué y de qué ciudad, y qué pasa con las que no se puedan publicar. Los ejemplos son
@@ -310,6 +352,7 @@ export function textoConfirmarTodas(propuestas: readonly { tipo: TipoPropuesta; 
     ...(tipos.has("lugar") || tipos.has("evento") ? ["un sitio sin punto"] : []),
     ...(propuestas.some((p) => p.festival) ? ["un acto cuyo festival no se ha aceptado"] : []),
     ...(tipos.has("cartel") ? ["una imagen que ya no responde"] : []),
+    ...(tipos.has("ficha") ? ["una ficha que ya tiene ese dato"] : []),
   ];
   return {
     que: `Vas a aceptar ${n === 1 ? "1 propuesta" : `${n} propuestas`}${de}${ciudad ? ` de ${ciudad}` : ""}.`,

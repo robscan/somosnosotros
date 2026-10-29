@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import Cabecera from "@/components/ui/Cabecera";
 import { Chip, Cuenta } from "@/components/ui/Chip";
-import { IconoCalendario, IconoCartel, IconoDestello, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoCartel, IconoDestello, IconoDocumento, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { avanceDe, credito, detalleCorrida, fechaVence, gruposDeCorridas, pildoraCorrida, tituloCorrida, usd, usdCorto, type CorridaPanel, type Pildora, type TipoCorrida } from "@/lib/ciudadesAdmin";
@@ -16,7 +16,7 @@ import { tituloDePagina } from "@/lib/marca";
 
 export const metadata = { title: tituloDePagina("Corridas", "Administración"), robots: { index: false, follow: false } };
 
-const ICONO: Record<TipoCorrida, typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, showcase: IconoDestello, carteles: IconoCartel };
+const ICONO: Record<TipoCorrida, typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, showcase: IconoDestello, carteles: IconoCartel, fichas: IconoDocumento };
 const TONO: Record<Pildora["tono"], string | undefined> = { gris: undefined, violeta: styles.etiquetaRol, verde: css.ok, naranja: styles.destacada, rojo: css.fallo };
 /** Los filtros: las corridas de Ciudades (sus tres botones) y las del showcase. Solo salen si hay de más de un tipo. */
 const FILTROS = [
@@ -127,9 +127,15 @@ function GrupoCorridas({ titulo, corridas, nombre, ahora }: { titulo: string; co
               )}
             </>
           );
+          // OL-489: una corrida de «Completar fichas» lleva a su informe (revisadas, propuestas por campo, gasto y «sin fuente»).
+          const informe = r.tipo === "fichas" && r.estado !== "pendiente" && r.estado !== "cancelada";
           return (
             <li key={r.id}>
-              {r.propuestas > 0 ? (
+              {informe ? (
+                <Link href={`/admin/corridas/${r.id}`} className={renglon.ajuste}>
+                  {contenido}
+                </Link>
+              ) : r.propuestas > 0 ? (
                 <Link href={`/admin/ciudades/propuestas/${r.id}`} className={renglon.ajuste}>
                   {contenido}
                 </Link>

@@ -123,7 +123,7 @@ describe("aceptar una corrida desde la Mac (OL-453)", () => {
     expect(llamadas.filter((l) => l.p_autor === ADMIN).map((l) => l.p_id)).toEqual(expect.arrayContaining([ID(2), ID(1), ID(4)]));
 
     const texto = lineasDeInforme({ simular: false, corrida: CORRIDA, resumen: { lineas }, minutos: 1 }).join("\n");
-    expect(texto).toContain("- Aceptadas: 3 (lugar 1 · artista 0 · evento 2)");
+    expect(texto).toContain("- Aceptadas: 3 (lugar 1 · artista 0 · evento 2 · ficha 0)");
     expect(texto).toContain("- Eventos con imagen: 1 · con cartel 0 · sin cartel 1");
     expect(texto).toContain("- No aceptadas (se quedan en la bandeja como estaban): 1");
     expect(texto).toContain(`- ${NOTA_SIN_CARTEL}: 1`);
