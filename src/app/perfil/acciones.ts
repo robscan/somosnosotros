@@ -120,7 +120,8 @@ async function guardarSuscripcionPushWeb(sub: { endpoint: string; keys: { p256dh
     if (!supabase) return false;
     const { data: { user }, error: errorSesion } = await supabase.auth.getUser();
     if (errorSesion || !user) return false;
-    const { error } = await supabase.from("suscripciones_push").upsert({ endpoint: valida.endpoint, usuario_id: user.id, p256dh: valida.keys.p256dh, auth: valida.keys.auth });
+    // Volver a darla de alta la revive si el proveedor la había dado por muerta (OL-476, `muerta_en`).
+    const { error } = await supabase.from("suscripciones_push").upsert({ endpoint: valida.endpoint, usuario_id: user.id, p256dh: valida.keys.p256dh, auth: valida.keys.auth, muerta_en: null });
     if (error) return false;
     const { data: activado, error: errorPerfil } = await supabase.rpc("activar_mis_avisos_push");
     if (errorPerfil || activado !== true) return false;
@@ -149,7 +150,7 @@ async function guardarTokenApns(apns: { token: string; entorno: "sandbox" | "pro
     const { data: { user }, error: errorSesion } = await supabase.auth.getUser();
     if (errorSesion || !user) return false;
     const { error } = await supabase.from("dispositivos_apns")
-      .upsert({ token: valido.token, usuario_id: user.id, entorno: valido.entorno, actualizado_en: new Date().toISOString() });
+      .upsert({ token: valido.token, usuario_id: user.id, entorno: valido.entorno, actualizado_en: new Date().toISOString(), muerta_en: null });
     if (error) return false;
     const { data: activado, error: errorPerfil } = await supabase.rpc("activar_mis_avisos_push");
     if (errorPerfil || activado !== true) return false;
