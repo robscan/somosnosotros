@@ -28,6 +28,12 @@ Herramientas de operación (no son código de la app). Las dos primeras son las 
   `"letra": 2` vale solo ahí), `CHROME_EXECUTABLE` (el navegador; sin él, el Chrome de la Mac y si no el Chromium de
   Playwright, que se instala con `npx playwright-core install chromium`) y `MEDIR_HILOS` (los cuatro navegadores en paralelo).
 
+Desde Next 16.4 la app compilada nombra las clases de los módulos CSS `<hash>_clase`, sin el archivo (`next dev` las deja
+largas); `medir` las devuelve a «Archivo/clase» con la tabla que saca de los mapas de fuentes del servidor (`clases-css.mjs`,
+OL-483), así que las excepciones y el primer cuadro se siguen escribiendo con el nombre del archivo. Los guiones sueltos de
+captura que buscan `Archivo-module__…` en una app compilada ya no lo encuentran: al volver a usarlos, pasarlos a
+`[class*="clase"]` o a esa tabla.
+
 Lo que no revisan: el desplazamiento interior de la hoja de Lugares ni las hojas cerradas (Ciudad, Cuándo, Filtros); el
 toque se mide con la resolución de un píxel.
 
