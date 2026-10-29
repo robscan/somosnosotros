@@ -46,6 +46,7 @@ const acciones = `
     return { ok: true, id: 't1' };
   }
   export async function estadoTrabajo() { return null; }
+  export async function estadosTrabajos() { return {}; }
   export async function publicarEnFacebook(...a) { apuntar('publicarEnFacebook', a); return { ok: true, id: 't2' }; }
 `;
 const mocks = {

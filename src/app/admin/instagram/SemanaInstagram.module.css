@@ -10,6 +10,14 @@
   font-weight: 600;
 }
 
+/* 3. OL-488: un día que ya pasó sin publicación: una sola línea gris, sin miniatura ni hoja (lo que importa es lo que viene). */
+.pasado {
+  padding: var(--espacio-2) 0;
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+
 .ver {
   min-width: var(--toque-min);
   justify-content: center;

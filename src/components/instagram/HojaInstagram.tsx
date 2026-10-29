@@ -14,7 +14,8 @@ import { estadoTrabajo, prepararInstagram, publicarEnFacebook, publicarEnInstagr
 import { elegirImagenes, PORTADA, resumenCarrusel, textoImagenes } from "@/lib/instagram/carrusel";
 import { ESTADO_FACEBOOK } from "@/lib/instagram/frases";
 import { armarTexto, CUENTA_INSTAGRAM, etiquetasDeLaFoto, etiquetasQueNoCaben, TOPE_CARACTERES, TOPE_ETIQUETAS_FOTO } from "@/lib/instagram/texto";
-import { botonReciente, enCamino, mensajeDeFallo, preguntaRepetir, REFRESCO_MS, type EstadoTrabajo, type Reciente } from "@/lib/redes/reglas";
+import Girando from "@/components/ui/Girando";
+import { botonReciente, enCamino, mensajeDeFallo, preguntaRepetir, REFRESCO_MS, textoEnCamino, type EstadoTrabajo, type Reciente } from "@/lib/redes/reglas";
 import styles from "./HojaInstagram.module.css";
 
 type Formato = "4x5" | "9x16";
@@ -89,7 +90,7 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
     };
   }, [eventoId]);
 
-  // Mientras el trabajo va: preguntar cada 20 s (si la pantalla se ve) y al volver a la app. Al terminar, la lista se refresca.
+  // Mientras el trabajo va: preguntar cada 5 s (si la pantalla se ve) y al volver a la app. Al terminar, la lista se refresca (OL-488).
   const idEnCamino = enCamino(trabajo) ? trabajo!.id : null;
   const alPublicar = useRef(onPublicado);
   useEffect(() => {
@@ -109,11 +110,14 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
         () => undefined,
       );
     };
+    const alMostrar = (e: PageTransitionEvent) => e.persisted && preguntar();
     document.addEventListener("visibilitychange", preguntar);
+    window.addEventListener("pageshow", alMostrar);
     const reloj = window.setInterval(preguntar, REFRESCO_MS);
     return () => {
       vivo = false;
       document.removeEventListener("visibilitychange", preguntar);
+      window.removeEventListener("pageshow", alMostrar);
       window.clearInterval(reloj);
     };
   }, [idEnCamino]);
@@ -239,7 +243,7 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
     <div role="status">
       <p className={`${admin.hecho} ${styles.enCamino}`}>
         {trabajo.red === "facebook" ? <IconoFacebook width={22} height={22} /> : <IconoInstagram width={22} height={22} />}
-        <span>{trabajo.red === "facebook" ? "Facebook: publicando…" : "Instagram: publicando…"}</span>
+        <Girando texto={textoEnCamino(trabajo, true)} />
       </p>
       {trabajo.conFacebook && (
         <p className={`${admin.hecho} ${styles.enCamino}`}>

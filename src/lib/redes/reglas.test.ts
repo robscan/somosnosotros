@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { avisoDeTrabajo, botonReciente, enCamino, esPasajero, leerEstadoTrabajo, leerReciente, lineaDeTrabajo, mensajeDeFallo, preguntaRepetir, trasFallo } from "./reglas";
+import { trabajosPorEvento } from "@/app/admin/instagram/colaPorEvento";
+import { avisoDeTrabajo, botonReciente, enCamino, esPasajero, leerEstadoTrabajo, leerReciente, lineaDeTrabajo, mensajeDeFallo, preguntaRepetir, REFRESCO_MS, textoEnCamino, trasFallo } from "./reglas";
 
 /** OL-465 (bitácora 497): las reglas de la cola de redes, sin base ni red. */
 describe("qué se reintenta", () => {
@@ -71,7 +72,7 @@ describe("el aviso al terminar", () => {
 describe("el trabajo como lo ven la hoja y la lista", () => {
   it("lee la fila y dice si va en camino", () => {
     const e = leerEstadoTrabajo({ id: "t1", red: "instagram", formato: "9x16", estado: "publicando", pedido: { facebook: true }, resultado: null, error: null })!;
-    expect(e).toEqual({ id: "t1", red: "instagram", formato: "9x16", estado: "publicando", conFacebook: true, resultado: null, error: null });
+    expect(e).toEqual({ id: "t1", red: "instagram", formato: "9x16", estado: "publicando", conFacebook: true, resultado: null, error: null, reintentando: false });
     expect(enCamino(e)).toBe(true);
     expect(enCamino({ estado: "publicado" })).toBe(false);
     expect(leerEstadoTrabajo(null)).toBeNull();
@@ -82,6 +83,28 @@ describe("el trabajo como lo ven la hoja y la lista", () => {
     expect(lineaDeTrabajo({ ...e, red: "facebook" })).toBe("Facebook: publicando…");
     expect(lineaDeTrabajo({ ...e, estado: "fallido", error: "imagen" })).toBe("No se publicó: Instagram no aceptó la imagen");
     expect(lineaDeTrabajo({ ...e, estado: "publicado" })).toBeNull();
+  });
+  it("OL-488: «Reintentando…» si la cola va en otro intento (un fallo pasajero anotado o más de un intento), solo mientras va en camino", () => {
+    const en = (o: Record<string, unknown>) => leerEstadoTrabajo({ id: "t1", red: "instagram", formato: "4x5", estado: "en_cola", pedido: {}, ...o })!;
+    expect(en({ intentos: 1, fallos: 0 }).reintentando).toBe(false);
+    expect(en({ intentos: 1, fallos: 1 }).reintentando).toBe(true);
+    expect(en({ intentos: 2, fallos: 0, estado: "publicando" }).reintentando).toBe(true);
+    expect(en({ intentos: 2, fallos: 1, estado: "publicado" }).reintentando).toBe(false);
+    expect(en({}).reintentando).toBe(false);
+    expect(lineaDeTrabajo(en({ fallos: 1 }))).toBe("Reintentando…");
+    expect(lineaDeTrabajo({ ...en({ fallos: 1 }), red: "facebook" })).toBe("Facebook: reintentando…");
+    expect(textoEnCamino(en({}), true)).toBe("Instagram: publicando…");
+    expect(textoEnCamino(en({ fallos: 1 }), true)).toBe("Instagram: reintentando…");
+    expect(REFRESCO_MS).toBe(5_000);
+  });
+  it("OL-488: la cola por evento dice qué trabajos van en camino (para preguntar por ellos)", () => {
+    const { vivos } = trabajosPorEvento([
+      { id: "t2", evento_id: "e1", red: "instagram", formato: "4x5", estado: "en_cola", pedido: {}, intentos: 1, fallos: 1 },
+      { id: "t1", evento_id: "e1", red: "instagram", formato: "4x5", estado: "publicado", pedido: {} },
+      { id: "t3", evento_id: "e2", red: "facebook", formato: "4x5", estado: "publicando", pedido: {} },
+    ]);
+    expect(vivos.get("e1")).toEqual([{ id: "t2", reintentando: true }]);
+    expect(vivos.get("e2")).toEqual([{ id: "t3", reintentando: false }]);
   });
   it("la frase larga de un fallo: la que guardó el trabajador o, si no, la corta", () => {
     const e = leerEstadoTrabajo({ id: "t1", red: "instagram", formato: "4x5", estado: "fallido", error: "permiso", resultado: { mensaje: "Instagram ya no nos deja publicar." } })!;

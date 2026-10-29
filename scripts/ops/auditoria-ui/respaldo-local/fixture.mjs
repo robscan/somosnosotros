@@ -653,6 +653,7 @@ if (CON_HISTORIAL) {
 // sábado 10 en el museo y la noche de Íñigo. Las portadas nuevas las dibuja `fotos-instagram.mjs` en la misma carpeta (`RESPALDO_CARRUSEL_DIR`).
 // Todo inventado; `npm run medir` no lo pone.
 export const CON_IG_SEMANA = CON_HISTORIAL && process.env.RESPALDO_INSTAGRAM_SEMANA === "1";
+export const CON_IG_MATERIAL = CON_IG_SEMANA && process.env.RESPALDO_IG_MATERIAL === "1";
 if (CON_IG_SEMANA) {
   const fotoI = (n) => `${process.env.RESPALDO_URL ?? "http://127.0.0.1:8889"}/storage/v1/object/public/fotos/demo-carrusel/${n}.jpg`;
   const igDe = (usuario) => [{ url: `https://www.instagram.com/${usuario}` }];
@@ -706,6 +707,19 @@ if (CON_IG_SEMANA) {
   const guitarra = idI();
   eventos.push(evento({ id: guitarra, slug: "inigo-montalvo-guitarra-sola-demo", titulo: "Íñigo Montalvo: guitarra sola", dias: 3, hora: "20:00", lugar_id: L.aether, precio: "$120", creadoHace: 7, imagen: fotoI("hist-cartel-5") }));
   eventos_artistas.push({ evento_id: guitarra, artista_id: inigo.id, orden: 1 });
+  // OL-488 (bitácora 520), con `RESPALDO_IG_MATERIAL=1`: a Íñigo Montalvo (fecha el domingo) le falta la portada y lo lleva Marcos; el museo
+  // Leonora Carrington no tiene portada y las del Museo del Ferrocarril y Los Ecos del Tangamanga son de otra página (la tarjeta no las puede
+  // dibujar): ningún lugar tiene material y los que tienen fecha se quedan fuera. Así se recorren «Nadie con material», «Falta material»,
+  // «Pedírselo» y «Subir yo».
+  if (CON_IG_MATERIAL) {
+    inigo.portada = null;
+    artistas_cuentas.push({ artista_id: inigo.id, perfil_id: MARCOS, creado_en: hace(20) });
+    museo.portada = null;
+    ferro.portada = "https://otra-pagina.test/museo-ferrocarril.jpg";
+    ecos.portada = "https://otra-pagina.test/los-ecos.jpg";
+    // Una fecha por venir en el Ferrocarril, para que salga en «Falta material» con su portada de otra página.
+    eventos.push(evento({ id: idI(), slug: "concierto-en-el-anden-demo", titulo: "Concierto en el andén", dias: 2, hora: "19:00", lugar_id: L.ferro, creadoHace: 4, imagen: fotoI("hist-cartel-3") }));
+  }
 }
 
 /** `eventos_parecidos` en corto (la regla completa y sus pruebas viven en la base, OL-384): solo con `RESPALDO_CARTEL_EXISTENTE=1`. */
@@ -822,6 +836,7 @@ export const FK = {
   seguimientos: { lugares: "lugar_id", artistas: "artista_id", perfiles: "usuario_id" },
   artistas_cuentas: { artistas: "artista_id", perfiles: "perfil_id" },
   lugares_cuentas: { lugares: "lugar_id", perfiles: "perfil_id" },
+  instagram_material_pedidos: { artistas: "artista_id", lugares: "lugar_id", perfiles: "usuario_id" },
   bloqueos: { perfiles: "bloqueado" },
   novedades: { eventos: "evento_id", perfiles: "usuario_id" },
   novedades_artista: { artistas: "artista_id" },
@@ -1520,10 +1535,14 @@ Object.assign(rpcs, {
 // pestaña. Todo inventado.
 tablas.instagram_semana = [];
 tablas.instagram_fuera = [];
+// OL-488: «Pedírselo» (una fila por persona; en memoria).
+tablas.instagram_material_pedidos = [];
 const MEDIDAS_SEMANA = new Map();
 const ZONA_OFFSET = "-06:00";
 const sumarDiaIso = (dia, n) => { const [a, m, d] = dia.split("-").map(Number); return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10); };
 const lunesIso = (dia) => { const [a, m, d] = dia.split("-").map(Number); const n = (new Date(Date.UTC(a, m - 1, d)).getUTCDay() + 6) % 7; return sumarDiaIso(dia, -n); };
+// OL-488: material es la imagen del Storage de la app (en el respaldo, su bucket `fotos`): la base lo pide con `instagram_material_propio`.
+const propioIg = (u) => typeof u === "string" && /^https?:\/\/[^/]+\/storage\/v1\/object\/public\/fotos\/[^?#\s]+$/.test(u);
 const conInstagram = (redes) => /instagram\.com\/[A-Za-z0-9._]/i.test(JSON.stringify(redes ?? []));
 const hashEstable = (s) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
 const pedidoDia = (c, extra = {}) => {
@@ -1551,8 +1570,8 @@ function candidatosEnMemoria({ p_ciudad, p_tipo, p_desde }, t) {
   const desde = Date.parse(`${p_desde}T00:00:00${ZONA_OFFSET}`);
   const fuera = (id) => t.instagram_fuera.some((f) => f.artista_id === id || f.lugar_id === id);
   const fichas = p_tipo === "artista"
-    ? t.artistas.filter((a) => a.visible && a.foto && a.portada && (a.descripcion ?? "").length >= 120 && conInstagram(a.redes) && !fuera(a.id)).map((a) => ({ ...a, clase: a.disciplina, direccion: null }))
-    : t.lugares.filter((l) => l.visible && !l.privado && l.portada && (l.descripcion ?? "").length >= 120 && !fuera(l.id)).map((l) => ({ ...l, clase: l.tipo, foto: null }));
+    ? t.artistas.filter((a) => a.visible && propioIg(a.foto) && propioIg(a.portada) && (a.descripcion ?? "").length >= 120 && conInstagram(a.redes) && !fuera(a.id)).map((a) => ({ ...a, clase: a.disciplina, direccion: null }))
+    : t.lugares.filter((l) => l.visible && !l.privado && propioIg(l.portada) && (l.descripcion ?? "").length >= 120 && !fuera(l.id)).map((l) => ({ ...l, clase: l.tipo, foto: null }));
   const vale = (e) => e.visible !== false && !e.borrador && !e.cancelado && !e.retirado_por_admin;
   return fichas
     .map((f) => {
@@ -1624,6 +1643,7 @@ Object.assign(rpcs, {
     if (!c) return errorSql("23503", "No existe ese día.");
     if (c.tipo !== "descanso" && c.tipo !== p_tipo) return errorSql("22023", "Cambio inválido.");
     if (cerradaDia(t, c)) return errorSql("55000", "Ese día ya salió en Instagram.");
+    if (!conMaterialIg(t, p_tipo, p_ficha)) return errorSql("22023", "A esa ficha le falta material: foto o portada.");
     if (t.instagram_fuera.some((f) => f.artista_id === p_ficha || f.lugar_id === p_ficha)) return errorSql("22023", "Fuera de Instagram.");
     const hora = c.hora ?? "19:00:00";
     Object.assign(c, { tipo: p_tipo, artista_id: p_tipo === "artista" ? p_ficha : null, lugar_id: p_tipo === "lugar" ? p_ficha : null, evento_id: p_tipo === "evento" ? p_ficha : null, eventos: null, hora, programado_para: new Date(`${c.fecha}T${hora}${ZONA_OFFSET}`).toISOString(), estado: "programado", elegido_por: "persona", motivo: p_motivo, reemplaza: p_reemplaza, aviso_en: null, dijo_no_en: null });
@@ -1683,6 +1703,78 @@ Object.assign(rpcs, {
       .sort((x, y) => x.fecha.localeCompare(y.fecha));
   },
 });
+// OL-488 (bitácora 520, migración 20261029240000): la semana solo con material. «Falta material», «Pedírselo» y «Programar» o «Publicar
+// ahora» un día sin publicación, en corto; las reglas y los permisos reales, en PostgreSQL (`supabase/tests/pg/instagram-material.test.mjs`).
+function conMaterialIg(t, tipo, id) {
+  if (tipo === "artista") return t.artistas.some((a) => a.id === id && propioIg(a.foto) && propioIg(a.portada));
+  if (tipo === "lugar") return t.lugares.some((l) => l.id === id && propioIg(l.portada));
+  return t.eventos.some((e) => e.id === id && propioIg(e.imagen));
+}
+const quienLlevaIg = (t, tipo, id) => {
+  const cuentas = tipo === "artista" ? t.artistas_cuentas.filter((c) => c.artista_id === id) : t.lugares_cuentas.filter((c) => c.lugar_id === id);
+  const ficha = (tipo === "artista" ? t.artistas : t.lugares).find((x) => x.id === id);
+  const ids = [...cuentas.map((c) => c.perfil_id), ficha?.creado_por].filter(Boolean);
+  return [...new Set(ids)].filter((u) => t.perfiles.some((p) => p.id === u && p.rol !== "admin"));
+};
+Object.assign(rpcs, {
+  instagram_falta_material: ({ p_ciudad, p_desde }, t, { sub } = {}) => {
+    if (sub !== ADMIN || !p_ciudad || !p_desde) return [];
+    const desde = Date.parse(`${p_desde}T00:00:00${ZONA_OFFSET}`);
+    const vale = (e) => e.visible !== false && !e.borrador && !e.cancelado && !e.retirado_por_admin && Date.parse(e.inicio) >= Math.max(desde, Date.now()) && Date.parse(e.inicio) < desde + 30 * 86400e3;
+    const falta = (u, campo) => (!u || !String(u).trim() ? [campo] : propioIg(u) ? [] : [`${campo}_ajena`]);
+    const fichas = [
+      ...t.artistas.filter((a) => a.visible !== false).map((a) => ({ tipo: "artista", f: a, foto: a.foto || a.portada || null, falta: [...falta(a.foto, "foto"), ...falta(a.portada, "portada")], otros: [...((a.descripcion ?? "").length < 120 ? ["descripcion"] : []), ...(conInstagram(a.redes) ? [] : ["instagram"])], suyos: t.eventos.filter((e) => vale(e) && t.eventos_artistas.some((x) => x.evento_id === e.id && x.artista_id === a.id)) })),
+      ...t.lugares.filter((l) => l.visible !== false && !l.privado).map((l) => ({ tipo: "lugar", f: l, foto: l.portada || null, falta: falta(l.portada, "portada"), otros: (l.descripcion ?? "").length < 120 ? ["descripcion"] : [], suyos: t.eventos.filter((e) => vale(e) && e.lugar_id === l.id) })),
+    ];
+    return fichas
+      .filter((x) => x.falta.length && x.suyos.length && !t.instagram_fuera.some((f) => f.artista_id === x.f.id || f.lugar_id === x.f.id))
+      .map((x) => ({ ...x, prox: [...x.suyos].sort((a, b) => a.inicio.localeCompare(b.inicio))[0] }))
+      .filter((x) => slugCiudad(x.f.ciudad) === p_ciudad || slugCiudad(x.prox.ciudad) === p_ciudad)
+      .sort((a, b) => a.prox.inicio.localeCompare(b.prox.inicio) || a.f.nombre.localeCompare(b.f.nombre))
+      .slice(0, 100)
+      .map((x) => {
+        const lleva = quienLlevaIg(t, x.tipo, x.f.id);
+        const pedido = t.instagram_material_pedidos.filter((m) => (m.artista_id ?? m.lugar_id) === x.f.id && m.semana === p_desde).map((m) => m.creado_en).sort()[0] ?? null;
+        return { tipo: x.tipo, id: x.f.id, slug: x.f.slug, nombre: x.f.nombre, foto: x.foto, falta: x.falta, otros: x.otros, proxima_titulo: x.prox.titulo, proxima_inicio: x.prox.inicio, proxima_zona: x.prox.zona ?? ZONA, lleva, lleva_nombre: t.perfiles.find((p) => p.id === lleva[0])?.nombre ?? null, pedido_en: pedido };
+      });
+  },
+  instagram_pedir_material: ({ p_tipo, p_ficha, p_desde }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return errorSql("42501", "Solo la administración pide material.");
+    if (t.instagram_material_pedidos.some((m) => (m.artista_id ?? m.lugar_id) === p_ficha && m.semana === p_desde)) return errorSql("23505", "Ya se lo pedimos esta semana.");
+    const f = (p_tipo === "artista" ? t.artistas : t.lugares).find((x) => x.id === p_ficha);
+    if (!f) return errorSql("23503", "No existe esa ficha.");
+    const falta = [...(p_tipo === "artista" && !propioIg(f.foto) ? ["foto"] : []), ...(!propioIg(f.portada) ? ["portada"] : [])];
+    if (!falta.length) return errorSql("22023", "Esa ficha ya tiene su material.");
+    const para = quienLlevaIg(t, p_tipo, p_ficha);
+    if (!para.length) return errorSql("P0002", "Nadie lleva esa ficha.");
+    for (const u of para) t.instagram_material_pedidos.push({ id: crypto.randomUUID(), artista_id: p_tipo === "artista" ? p_ficha : null, lugar_id: p_tipo === "lugar" ? p_ficha : null, semana: p_desde, usuario_id: u, falta, pedido_por: sub, creado_en: new Date().toISOString() });
+    return para;
+  },
+  instagram_semana_programar: ({ p_ciudad, p_casilla, p_ahora = false }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return errorSql("42501", "Solo la administración programa la semana de Instagram.");
+    const c = p_casilla ?? {};
+    if (!["artista", "lugar", "evento", "semana"].includes(c.tipo)) return errorSql("22023", "Ese día no lleva publicación.");
+    const n = (new Date(`${c.fecha}T12:00:00Z`).getUTCDay() + 6) % 7 + 1;
+    if (n === 7) return errorSql("22023", "Los domingos la cuenta descansa.");
+    if (c.fecha < hoyEn(ZONA)) return errorSql("22023", "Ese día ya pasó.");
+    if (p_ahora && c.fecha !== hoyEn(ZONA)) return errorSql("22023", "Solo lo de hoy se publica ahora.");
+    const hora = `${String(c.hora).slice(0, 5)}:00`;
+    const cuando = new Date(`${c.fecha}T${hora}${ZONA_OFFSET}`).toISOString();
+    if (!p_ahora && Date.parse(cuando) <= Date.now()) return errorSql("22023", "Esa hora ya pasó: publícalo ahora.");
+    const ids = c.tipo === "semana" ? c.eventos ?? [] : [c.artista_id ?? c.lugar_id ?? c.evento_id];
+    if (!ids.length || !ids.every((id) => conMaterialIg(t, c.tipo === "semana" ? "evento" : c.tipo, id))) return errorSql("22023", "Le falta material: foto, portada o cartel.");
+    let fila = t.instagram_semana.find((x) => x.ciudad === p_ciudad && x.fecha === c.fecha);
+    if (fila && (cerradaDia(t, fila) || !(fila.tipo === "descanso" || (fila.estado === "programado" && !fila.trabajo_id)))) return errorSql("23505", "Ese día ya tiene su publicación.");
+    const datos = { tipo: c.tipo, artista_id: c.artista_id ?? null, lugar_id: c.lugar_id ?? null, evento_id: c.evento_id ?? null, eventos: c.tipo === "semana" ? c.eventos : null, hora, programado_para: cuando, estado: "programado", elegido_por: "sistema", motivo: c.motivo ?? null, reemplaza: null, aviso_en: null, dijo_no_en: null, actualizado_por: sub, actualizado_en: new Date().toISOString() };
+    if (fila) Object.assign(fila, datos);
+    else t.instagram_semana.push((fila = { id: crypto.randomUUID(), ciudad: p_ciudad, fecha: c.fecha, trabajo_id: null, creado_en: new Date().toISOString(), armada_por: "pestana", ...datos }));
+    return encolarDia(t, fila, !!p_ahora, null, sub);
+  },
+});
+function hoyEn(zona) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: zona }).format(new Date());
+}
+
 if (CON_IG_SEMANA) {
   // Lo ya publicado de esta semana: el lunes (Renata Saldaña, a las 7:00 pm) y el martes (Los Ecos del Tangamanga, a las 9:00 am).
   const lunes = lunesIso(hoyLocal);

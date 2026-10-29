@@ -2,6 +2,9 @@ import "server-only";
 import { primerNombre } from "@/lib/comunidad";
 import { nombreSitio } from "@/lib/eventos";
 import { diaLocal, eventoPaso, formatearCuando, inicioDelDia } from "@/lib/fechas";
+import { cartelDescargable } from "@/lib/cartelDescarga";
+import { configPublica } from "@/lib/config";
+import { razonDelPedido } from "@/lib/instagram/semana";
 import { DIAS_NOVEDADES, esNueva, hayNuevas, queCambio, queJuntos, type Novedad } from "@/lib/novedades";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -19,10 +22,12 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
   const desde = new Date(ahora.getTime() - DIAS_NOVEDADES * 86400000).toISOString();
   // Topes explícitos (una sola persona): de sobra para lo que sigue, a lo que va y sus novedades recientes;
   // guardan del corte silencioso de PostgREST en 1 000 filas sin tocar lo que hoy se ve (revisión 2026-09-14, A1).
-  const [{ data: seguidos }, { data: van }, { data: cambios }] = await Promise.all([
+  const [{ data: seguidos }, { data: van }, { data: cambios }, { data: pedidos }] = await Promise.all([
     supabase.from("seguimientos").select("lugar_id, artista_id, lugar:lugares(nombre), artista:artistas(nombre)").eq("usuario_id", usuarioId).limit(1000),
     supabase.from("asistencias").select(`evento:eventos!inner(${CAMPOS})`).eq("usuario_id", usuarioId).eq("estado", "voy").limit(1000),
     supabase.from("novedades").select(`detalle, creado_en, evento:eventos!inner(${CAMPOS})`).eq("usuario_id", usuarioId).gte("creado_en", desde).limit(500),
+    // OL-488: lo que la administración le pidió completar para presentarla en Instagram («Pedírselo»); la base solo le da lo suyo.
+    supabase.from("instagram_material_pedidos").select("id, falta, creado_en, artista:artistas(slug, nombre, foto, portada), lugar:lugares(slug, nombre, portada)").eq("usuario_id", usuarioId).gte("creado_en", desde).limit(50),
   ]);
   const lugares = new Map<string, string>();
   const artistas = new Map<string, string>();
@@ -60,6 +65,17 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
     const e = uno(c.evento);
     if (!e) continue;
     lista.push({ clave: `cambio-${e.id}-${c.creado_en}`, tipo: "cambio", que: queCambio(c.detalle), eventoId: e.id, eventoSlug: e.slug, titulo: e.titulo, cuando: `Ahora es ${cuandoDe(e)}`, inicio: e.inicio, fecha: c.creado_en, nueva: esNueva(c.creado_en, vistasEn) });
+  }
+  // 2b. OL-488: completa tu ficha y te presentamos en Instagram. Sale de la lista en cuanto la ficha ya tiene lo que le faltaba.
+  type Pedida = { slug: string; nombre: string; foto?: string | null; portada: string | null };
+  for (const p of (pedidos ?? []) as { id: string; falta: string[]; creado_en: string; artista: Pedida | Pedida[] | null; lugar: Pedida | Pedida[] | null }[]) {
+    const a = uno(p.artista);
+    const f = a ?? uno(p.lugar);
+    if (!f) continue;
+    const sigue = p.falta.filter((x) => !cartelDescargable(x === "foto" ? (a?.foto ?? null) : f.portada, configPublica().supabaseUrl));
+    if (!sigue.length) continue;
+    const ruta = `/${a ? "artistas" : "lugares"}/${f.slug}/editar`;
+    lista.push({ clave: `material-${p.id}`, tipo: "material", que: razonDelPedido(sigue), eventoId: "", titulo: f.nombre, cuando: "Toca para completar tu ficha", inicio: p.creado_en, fecha: p.creado_en, nueva: esNueva(p.creado_en, vistasEn), href: ruta });
   }
   // 3. Hoy vas: cuenta como novedad del día (nueva hasta que se abre la sección ese día).
   // Hoy es el del evento, en su zona; la novedad cuenta desde las 00:00 de ese día (antes, las 00:00 del reloj del

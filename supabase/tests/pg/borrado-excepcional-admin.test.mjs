@@ -11,7 +11,9 @@ export async function run({ query, as, check, expectError, connection }) {
   // `vistas_ficha`: son la cuenta de Instagram de la marca (lo que publicó del lugar, su día en la semana, «Fuera de Instagram») y las vistas que
   // llegaron desde ahí; solo administración, on delete cascade como las de un evento. No son contenido de nadie más ni cambian el impacto que se
   // confirma.
-  check(JSON.stringify(hijos)===JSON.stringify(['agendas_invitaciones_enviadas','contactos_importados','destacados','eventos','facebook_publicaciones','instagram_fuera','instagram_publicaciones','instagram_semana','lugares_cuentas','lugares_horarios','obras_colectivas','redes_trabajos','seguimientos','vistas_ficha']), 'impacto cubre todas las FK del lugar; una dependencia nueva requiere revisar esta operación');
+  // OL-488 (bitácora 520) revisó `instagram_material_pedidos`: «Pedírselo» de la semana de Instagram (a quién se le pidió completar la portada del
+  // lugar); solo lo lee quien lo recibe y la administración, on delete cascade. Tampoco cambia el impacto que se confirma.
+  check(JSON.stringify(hijos)===JSON.stringify(['agendas_invitaciones_enviadas','contactos_importados','destacados','eventos','facebook_publicaciones','instagram_fuera','instagram_material_pedidos','instagram_publicaciones','instagram_semana','lugares_cuentas','lugares_horarios','obras_colectivas','redes_trabajos','seguimientos','vistas_ficha']), 'impacto cubre todas las FK del lugar; una dependencia nueva requiere revisar esta operación');
   const admin = randomUUID(), otra = randomUUID(), tercero = randomUUID();
   const lugares = [], eventos = [];
   await query("insert into public.admin_correos(correo) values ('ol259-admin@example.com')");
