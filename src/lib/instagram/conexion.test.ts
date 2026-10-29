@@ -115,11 +115,16 @@ describe("la vuelta", () => {
     ]);
   });
 
-  it("state inválido: sin galleta, otra galleta, caducado, de otra cuenta o tocado; no llama a Meta", async () => {
+  it("sin galleta o con otra galleta (la vuelta desde la app del iPhone llega por Safari, OL-481): la firma, la vigencia y la sesión bastan", async () => {
     const otro = firmarEstado(ADMIN, AHORA, SECRETO);
+    for (const c of [{ galleta: null }, { galleta: otro }] as Partial<EntradaVuelta>[]) {
+      const g = graphFalsa();
+      expect(await atenderVuelta(entrada(c), CONFIG, { traer: g.traer, guardar: async () => true })).toBe("conectado");
+    }
+  });
+
+  it("state inválido: caducado, de otra cuenta o tocado; no llama a Meta", async () => {
     const casos: Partial<EntradaVuelta>[] = [
-      { galleta: null },
-      { galleta: otro },
       { ahora: AHORA + VIGENCIA_ESTADO_MS + 1 },
       { adminId: OTRO },
       { state: "basura", galleta: "basura" },

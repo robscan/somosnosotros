@@ -77,7 +77,7 @@ export type EntradaVuelta = {
   state: string | null;
   /** `?error=` de Meta (quien conecta tocó «Cancelar»). */
   errorMeta: string | null;
-  /** La galleta que dejó `/api/instagram/conectar`. */
+  /** La galleta que dejó `/api/instagram/conectar`, si el navegador de la vuelta es el mismo (desde la app del iPhone no lo es); no se exige. */
   galleta: string | null;
   /** Quien tiene la sesión ahora (la administración). */
   adminId: string;
@@ -106,8 +106,11 @@ const esToken = (x: unknown): x is string => typeof x === "string" && TOKEN.test
 /** La vuelta del inicio de sesión de Meta, de principio a fin: devuelve `conectado` (y la conexión quedó guardada) o la clave del error. */
 export async function atenderVuelta(e: EntradaVuelta, c: ConfigVuelta, dep: DependenciasVuelta): Promise<ClaveVuelta> {
   if (!c.secreto) return "config";
-  // El `state`: el de la galleta, firmado por nosotros, sin caducar y de quien tiene la sesión.
-  if (!e.state || !e.galleta || e.state !== e.galleta) return "estado";
+  // El `state`: firmado por nosotros, sin caducar y de quien tiene la sesión. La galleta de `/conectar` NO se exige (OL-481): desde la app
+  // del iPhone el inicio de sesión de Meta se abre en Safari, que no comparte las galletas del WebView de la app, y la vuelta llegaba sin
+  // ella («El enlace para conectar caducó», founder 2026-10-29). La firma con el id de quien conecta, los 10 minutos y la sesión bastan
+  // para que un `state` ajeno o viejo no sirva; la galleta, cuando viene, se borra en la vuelta.
+  if (!e.state) return "estado";
   const estado = leerEstado(e.state, c.secreto, e.ahora);
   if (!estado || estado.adminId !== e.adminId) return "estado";
   if (e.errorMeta) return "cancelado";
