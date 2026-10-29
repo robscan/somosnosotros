@@ -167,6 +167,28 @@ export async function run({ as, check, expectError, query }) {
     has_function_privilege('anon','public.mi_push_activo(text,text)','execute') n`)).rows[0];
   check(mpa.a && !mpa.n, "mi_push_activo: solo authenticated", mpa);
 
+  // ---------- el relleno de la migración: las que ya respondieron 404/410 antes quedan marcadas ----------
+  // Se corre el mismo `update` del archivo de la migración sobre filas sembradas aquí (la base de la suite nace vacía).
+  const { readFileSync } = await import("node:fs");
+  const migracion = readFileSync(new URL("../../migrations/20261029120000_avisos_direcciones_muertas.sql", import.meta.url), "utf8");
+  const relleno = migracion.match(/update public\.suscripciones_push s set muerta_en = x\.cuando[\s\S]*?;\n/)?.[0];
+  check(!!relleno, "la migración trae el relleno de las direcciones que ya respondieron 404/410");
+  const RELLENO = randomUUID();
+  await query("insert into auth.users(id,email) values($1,'muertas-relleno@local.test')", [RELLENO]);
+  await as("authenticated", RELLENO, async () => { for (const e of ["r-410", "r-revivio", "r-400"].map(web)) await query(INSERT_WEB, [e, KEY, AUTH]); });
+  const jobRelleno = (await query("select job_id from public.avisos_entregas where id=$1", [segunda[0].id])).rows[0].job_id;
+  const sembrar = (endpoint, estado, codigo, haceMin) => query(`insert into public.avisos_entregas(job_id,usuario_id,canal,endpoint,estado,codigo,terminado_en)
+    values($1,$2,'push',$3,$4,$5,clock_timestamp() - make_interval(mins => $6))`, [jobRelleno, RELLENO, endpoint, estado, codigo, haceMin]);
+  await sembrar(web("r-410"), "fallida", "push_410", 60);
+  await sembrar(web("r-revivio"), "fallida", "push_410", 60);
+  await query("insert into public.avisos_entregas(job_id,usuario_id,canal,endpoint,estado,codigo,terminado_en) values($1,$2,'push',$3,'enviada','aceptado',clock_timestamp())",
+    [(await query("select job_id from public.avisos_entregas where id=$1", [primera[0].id])).rows[0].job_id, RELLENO, web("r-revivio")]);
+  await sembrar(web("r-400"), "fallida", "push_400", 60);
+  await query(relleno);
+  check(await muertaWeb(web("r-410")) !== null, "relleno: la que respondió 410 queda marcada");
+  check(await muertaWeb(web("r-revivio")) === null, "relleno: la que después recibió un aviso con éxito no se marca");
+  check(await muertaWeb(web("r-400")) === null, "relleno: un 400 no la marca");
+
   // Limpieza: lo pendiente de esta prueba no queda para los slots globales de las siguientes.
   await query(`update public.avisos_entregas set estado='descartada',codigo='prueba',token=null,lease_hasta=null
     where usuario_id=$1 and estado in ('pendiente','tomada')`, [PERSONA]);

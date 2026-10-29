@@ -21,6 +21,24 @@ comment on column public.suscripciones_push.muerta_en is
 comment on column public.dispositivos_apns.muerta_en is
   'OL-476: cuando APNs respondió 410 o 400 BadDeviceToken. Ya no recibe entregas; si la app vuelve a registrar el token, revive.';
 
+-- Las que ya respondieron 404/410 antes de esta migración (las 22 de Safari y Chrome) quedan marcadas desde su último
+-- fallo, salvo que después de ese fallo hayan recibido un aviso con éxito. Solo llena la columna nueva.
+update public.suscripciones_push s set muerta_en = x.cuando
+  from (
+    select f.usuario_id, f.endpoint, max(coalesce(f.terminado_en, f.disponible)) as cuando from (
+      select usuario_id, endpoint, terminado_en, disponible from public.avisos_entregas
+        where canal = 'push' and estado = 'fallida' and codigo in ('push_404', 'push_410')
+      union all
+      select usuario_id, endpoint, terminado_en, disponible from public.avisos_admin_entregas
+        where estado = 'fallida' and codigo in ('push_404', 'push_410')
+    ) f group by 1, 2
+  ) x
+  where s.usuario_id = x.usuario_id and s.endpoint = x.endpoint and s.muerta_en is null
+    and not exists (select 1 from public.avisos_entregas ok where ok.usuario_id = s.usuario_id and ok.endpoint = s.endpoint
+      and ok.estado = 'enviada' and ok.terminado_en > x.cuando)
+    and not exists (select 1 from public.avisos_admin_entregas ok where ok.usuario_id = s.usuario_id and ok.endpoint = s.endpoint
+      and ok.estado = 'enviada' and ok.terminado_en > x.cuando);
+
 -- ---------- avisos_expandir: sin entregas para direcciones muertas ----------
 create or replace function public.avisos_expandir() returns boolean
 language plpgsql security definer set search_path='' as $$
