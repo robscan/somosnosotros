@@ -134,6 +134,23 @@ describe("enviarPushApns: la petición HTTP/2", () => {
     const payload = JSON.parse((sesion.request.mock.results[0].value as FlujoFalso).end.mock.calls[0][0] as string);
     expect(payload).toEqual({ aps: { alert: { title: "Nuevo en la Casa", body: "Concierto · hoy" }, sound: "default" }, url: "https://somosnosotros.org/eventos/x" });
   });
+  it("OL-480: el subtítulo (la razón) va en alert.subtitle y el hilo en aps.thread-id; la vida, hasta la hora límite con tope de un día", async () => {
+    const { enviarPushApns } = await cargarPush();
+    const cuerpo = JSON.stringify({ titulo: "Noche de danzón", subtitulo: "Nuevo en Teatro de la Paz", cuerpo: "vie 9 · 8 pm",
+      url: "https://somosnosotros.org/eventos/noche?desde=aviso&tipo=nuevo", tag: "aviso-job-1", hilo: "evento-e1" });
+    const antes = Math.floor(Date.now() / 1000);
+    const p = enviarPushApns(SUB, cuerpo, 200_000);
+    responder(sesion.request.mock.results[0].value as FlujoFalso, 200);
+    await p;
+    const payload = JSON.parse((sesion.request.mock.results[0].value as FlujoFalso).end.mock.calls[0][0] as string);
+    expect(payload).toEqual({ aps: { alert: { title: "Noche de danzón", subtitle: "Nuevo en Teatro de la Paz", body: "vie 9 · 8 pm" }, sound: "default", "thread-id": "evento-e1" },
+      url: "https://somosnosotros.org/eventos/noche?desde=aviso&tipo=nuevo" });
+    const headers = sesion.request.mock.calls[0][0] as Record<string, string>;
+    expect(headers["apns-collapse-id"]).toBe("aviso-job-1");
+    const vida = Number(headers["apns-expiration"]) - antes;
+    expect(vida).toBeGreaterThanOrEqual(86_399);
+    expect(vida).toBeLessThanOrEqual(86_401);
+  });
   it("abre una sesión HTTP/2 por envío y la cierra al terminar (una guardada puede despertar muerta en Vercel)", async () => {
     const { enviarPushApns } = await cargarPush();
     const uno = enviarPushApns(SUB, "{}", 3600);

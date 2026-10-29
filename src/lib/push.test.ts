@@ -17,8 +17,11 @@ describe("push por endpoint", () => {
     expect(m.enviar).not.toHaveBeenCalled();
   });
   it("conserva payload, limita TTL y timeout", async () => {
-    expect((await enviarPushEndpoint(s, '{"tag":"job"}', 6000)).estado).toBe("enviada");
-    expect(m.cifrar).toHaveBeenCalledWith(s, '{"tag":"job"}', expect.objectContaining({ TTL: 3600 }));
+    // OL-480: la vida del aviso llega hasta su hora límite, con tope de un día (antes, una hora).
+    expect((await enviarPushEndpoint(s, '{"tag":"job"}', 200_000)).estado).toBe("enviada");
+    expect(m.cifrar).toHaveBeenCalledWith(s, '{"tag":"job"}', expect.objectContaining({ TTL: 86_400 }));
+    await enviarPushEndpoint(s, '{"tag":"job"}', 6000);
+    expect(m.cifrar).toHaveBeenLastCalledWith(s, '{"tag":"job"}', expect.objectContaining({ TTL: 6000 }));
     expect(m.enviar).toHaveBeenCalledWith(s.endpoint, expect.objectContaining({ redirect: "error", signal: expect.any(AbortSignal), body: new Uint8Array(Buffer.from("cifrado")) }));
   });
   it.each([404, 410, 400, 403])("%i es fallo permanente de este endpoint", async (statusCode) => {

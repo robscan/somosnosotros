@@ -8,6 +8,7 @@ import Navegacion from "@/components/Navegacion";
 import NavSecciones from "@/components/NavSecciones";
 import PerfilEnNav from "@/components/PerfilEnNav";
 import AbrirEnlaceApp from "@/components/AbrirEnlaceApp";
+import AvisoAbierto from "@/components/AvisoAbierto";
 import AnalyticsGoogle from "@/components/AnalyticsGoogle";
 import AnalyticsVercel from "@/components/AnalyticsVercel";
 import MarcaAdmin from "@/components/MarcaAdmin";
@@ -104,6 +105,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Lee la consulta de la URL: en las pantallas estáticas se monta ya en el teléfono, sin frenar al resto. */}
         <Suspense fallback={null}>
           <MemoriaScroll />
+        </Suspense>
+        {/* Abrir la app desde un aviso al teléfono (`?desde=aviso&tipo=…`): se cuenta sin saber quién y se limpia la dirección (OL-480). */}
+        <Suspense fallback={null}>
+          <AvisoAbierto />
         </Suspense>
         <TituloInstalada />
         {/* La medición (OL-325) arranca cuando la sesión dice quién mira: `MarcaAdmin` pinta la marca del rol y, solo si no es

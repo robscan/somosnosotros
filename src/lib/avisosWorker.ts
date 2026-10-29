@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
-import { contenidoCorreo, contenidoPush, contenidoPushAdmin, type Cambio, type EventoParaAviso, type TipoAviso } from "./avisos";
+import { contenidoCorreo, contenidoPush, contenidoPushAdmin, cuerpoPush, type Cambio, type EventoParaAviso, type TipoCola } from "./avisos";
 import { urlBaja } from "./baja";
 import { cuerpoCorreo, enviarCorreoIdempotente, type ResultadoEnvio } from "./correo";
 import { codigoSeguro, enviarPush } from "./push";
@@ -9,8 +9,15 @@ import { configPublica } from "./config";
 
 export type Claim = { id: string; token: string; lease_hasta: string };
 export type Entrega = { id: string; job_id: string; usuario_id: string; canal: "correo" | "push";
-  cuerpo: string | null; evento: EventoParaAviso; tipo: TipoAviso; cambio: Cambio;
-  creado_en: string; vence: string; suscripcion: unknown };
+  cuerpo: string | null; evento: EventoParaAviso; tipo: TipoCola; cambio: Cambio;
+  creado_en: string; vence: string; suscripcion: unknown;
+  /** OL-480: por qué le llega (`artista:<nombre>` o `lugar`, de `avisos_entregas.motivo`), la descripción y la dirección del lugar (públicas). */
+  motivo?: string | null; descripcion?: string | null; direccion?: string | null };
+
+/** ¿Va a la app del iPhone (un token APNs) o a un navegador? La entrega lo sabe por la forma de su suscripción. */
+export function aparatoDe(suscripcion: unknown): "app" | "web" {
+  return !!suscripcion && typeof suscripcion === "object" && "apns" in suscripcion ? "app" : "web";
+}
 export type DependenciasAvisos = {
   rpc: <T>(nombre: string, args?: Record<string, unknown>, timeoutMs?: number) => Promise<T>;
   correoDe: (id: string, timeoutMs?: number) => Promise<string>;
@@ -109,7 +116,9 @@ export async function procesarEntrega(c: Claim, d: DependenciasAvisos, fin = d.a
         cuerpo = cuerpoCorreo({ para, ...contenidoCorreo(entrega.tipo, entrega.evento, entrega.cambio, new Date(entrega.creado_en), bajaUrl), bajaUrl });
       }
     } else if (!cuerpo) {
-      cuerpo = JSON.stringify({ ...contenidoPush(entrega.tipo, entrega.evento, entrega.cambio, new Date(entrega.creado_en)), tag: `aviso-${entrega.job_id}` });
+      const forma = contenidoPush(entrega.tipo, entrega.evento, entrega.cambio, new Date(entrega.creado_en),
+        { motivo: entrega.motivo, descripcion: entrega.descripcion, direccion: entrega.direccion });
+      cuerpo = JSON.stringify(cuerpoPush(forma, aparatoDe(entrega.suscripcion), entrega.job_id));
     }
     // La confirmacion durable precede a cualquier efecto externo. Un timeout aqui NO envia.
     cuerpo = await rpc<string | null>("avisos_preparar", { ...args, p_cuerpo: cuerpo });

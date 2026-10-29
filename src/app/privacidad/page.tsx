@@ -20,7 +20,7 @@ export default function Privacidad() {
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Aviso de privacidad</h1>
-        <p className="subtitulo">Última actualización: 27 de octubre de 2026.</p>
+        <p className="subtitulo">Última actualización: 29 de octubre de 2026.</p>
 
         <h2>Quién responde por tus datos</h2>
         <p>
@@ -36,6 +36,7 @@ export default function Privacidad() {
           <li>El último día que abriste la app: solo el día, no la hora ni qué miraste. Lo ve solo la administración, para saber si la gente vuelve.</li>
           <li>Tu ubicación, solo cuando la pides con un toque (por ejemplo «Cerca de mí» o al buscar una dirección al publicar un lugar o evento): sirve para ordenar la lista, centrar el mapa o acercar la búsqueda de direcciones. Vive en tu teléfono, aproximada y por poco tiempo; puede viajar a Mapbox para esa búsqueda, pero nunca se guarda en nuestra base ni queda asociada a tu cuenta.</li>
           <li>Cuántas veces se abre la ficha de un evento: una por persona al día, sin tu nombre, tu cuenta ni tu IP. Sirve para que lo más visto salga en Destacados. A quien publicó el evento y a la administración no se les cuenta.</li>
+          <li>Contamos cuántos avisos se abren, por tipo y por día, sin saber quién: no se guarda tu cuenta, tu teléfono ni de qué evento era.</li>
           <li>Lo que publicas: lugares, eventos, artistas, fotos y enlaces. Es público por definición.</li>
         </ul>
 

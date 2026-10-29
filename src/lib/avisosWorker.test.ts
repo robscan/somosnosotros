@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { codigoDeExcepcion, drenarAvisos, drenarAvisosAdmin, mensajeSeguro, procesarEntrega, procesarEntregaAdmin, type Claim, type ClaimAdmin,
+import { aparatoDe, codigoDeExcepcion, drenarAvisos, drenarAvisosAdmin, mensajeSeguro, procesarEntrega, procesarEntregaAdmin, type Claim, type ClaimAdmin,
   type DependenciasAvisos, type Entrega, type EntregaAdmin } from "./avisosWorker";
 
 const NOW = Date.parse("2030-10-01T12:00:00Z");
@@ -86,7 +86,30 @@ describe("worker durable sin red real", () => {
     await procesarEntrega(claim("push-1"), b.d);
     expect(cuerpos).toHaveLength(2);
     expect(cuerpos[0]).toBe(cuerpos[1]);
-    expect(JSON.parse(cuerpos[0]).tag).toBe("aviso-job");
+    // OL-480: en la web el `tag` es el hilo del evento (el aviso nuevo de un evento sustituye al anterior); el cuerpo guardado no cambia.
+    expect(JSON.parse(cuerpos[0]).tag).toBe("evento-evento");
+  });
+  it("OL-480: la misma entrega arma un cuerpo para la app (subtítulo, hilo, tag del trabajo) y otro para la web (la razón abre el cuerpo)", async () => {
+    const web = entrega("w", "push");
+    const app = { ...entrega("a", "push"), suscripcion: { apns: { token: "a".repeat(64), entorno: "produccion" } } };
+    for (const f of [web, app]) Object.assign(f, { motivo: "artista:Luna Hermoso", tipo: "nuevo_evento" });
+    const b = banco([web, app]);
+    const cuerpos = new Map<string, string>();
+    b.d.push = vi.fn(async (suscripcion: unknown, cuerpo: string) => {
+      cuerpos.set(aparatoDe(suscripcion), cuerpo);
+      return { estado: "enviada" as const, codigo: "aceptado" };
+    });
+    await procesarEntrega(claim("w"), b.d);
+    await procesarEntrega(claim("a"), b.d);
+    const deApp = JSON.parse(cuerpos.get("app")!);
+    const deWeb = JSON.parse(cuerpos.get("web")!);
+    expect(deApp.subtitulo).toBe("De Luna Hermoso, a quien sigues");
+    expect(deApp.hilo).toBe("evento-evento");
+    expect(deApp.tag).toBe("aviso-job");
+    expect(deWeb.subtitulo).toBeUndefined();
+    expect(deWeb.cuerpo.startsWith("De Luna Hermoso, a quien sigues · ")).toBe(true);
+    expect(deWeb.titulo).toBe(deApp.titulo);
+    expect(deApp.url.endsWith("?desde=aviso&tipo=nuevo")).toBe(true);
   });
   it("correo y cada endpoint tienen resultados independientes", async () => {
     const b = banco([entrega("1"), entrega("2", "push"), entrega("3", "push")]);

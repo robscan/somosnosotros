@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
-const m = vi.hoisted(() => ({ enviar: vi.fn(), marcar: vi.fn(), diagnostico: vi.fn(), filas: vi.fn(), eq: vi.fn() }));
+const m = vi.hoisted(() => ({ enviar: vi.fn(), marcar: vi.fn(), diagnostico: vi.fn(), filas: vi.fn(), eq: vi.fn(), evento: vi.fn() }));
 vi.mock("@/lib/push", async (original) => ({
   huellaToken: (await original<typeof import("@/lib/push")>()).huellaToken,
   enviarPushApns: m.enviar, marcarDireccionMuerta: m.marcar, diagnosticoLlaveApns: m.diagnostico,
 }));
-vi.mock("@/lib/supabase/admin", () => ({ clienteAdmin: () => ({ from: () => ({ select: () => ({
-  eq: (col: string, val: string) => { m.eq(col, val); return { order: () => ({ limit: m.filas }) }; } }) }) }) }));
+vi.mock("@/lib/supabase/admin", () => ({ clienteAdmin: () => ({ from: (tabla: string) => ({ select: () => ({
+  eq: (col: string, val: string) => { m.eq(col, val); return tabla === "eventos" ? { maybeSingle: m.evento } : { order: () => ({ limit: m.filas }) }; } }) }) }) }));
 
 const PERSONA = "0b6f2a54-8c1e-4c55-9d5e-1f0a7b3c2d41";
 const VIVO = "a".repeat(64), MUERTO = "b".repeat(64);
@@ -62,5 +62,27 @@ describe("prueba de humo de los avisos a la app (OL-476)", () => {
     const json = await (await pedir({ usuario_id: PERSONA })).json();
     expect(json.apns.jwt).toBe("apns_llave");
     expect(json.dispositivos.map((d: { codigo: string }) => d.codigo)).toEqual(["apns_llave", "apns_llave"]);
+  });
+  it("OL-480: con evento_id manda el aviso de ese evento con la forma nueva (subtítulo, hilo, ?desde=aviso) y lo devuelve", async () => {
+    const EVENTO = "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f";
+    const inicio = new Date(Date.now() + 3 * 86400000).toISOString();
+    m.evento.mockResolvedValue({ data: { id: EVENTO, slug: "noche-de-danzon", titulo: "Noche de danzón", inicio, fin: null, zona: "America/Mexico_City",
+      sitio_texto: null, sitio_reservado: false, descripcion: "Baile de salón con orquesta", visible: true,
+      lugar: { nombre: "Teatro de la Paz", direccion: "Villerías 2", visible: true, privado: false } }, error: null });
+    const json = await (await pedir({ usuario_id: PERSONA, evento_id: EVENTO })).json();
+    expect(m.eq).toHaveBeenCalledWith("id", EVENTO);
+    const aviso = JSON.parse(m.enviar.mock.calls[0][1] as string);
+    expect(aviso).toEqual(json.aviso);
+    expect(aviso).toMatchObject({ titulo: "Noche de danzón", subtitulo: "Nuevo en Teatro de la Paz", hilo: `evento-${EVENTO}`,
+      url: "https://somosnosotros.org/eventos/noche-de-danzon?desde=aviso&tipo=nuevo" });
+    expect(aviso.cuerpo).toMatch(/ · Baile de salón con orquesta$/);
+  });
+  it("OL-480: un evento oculto, pasado o con lugar privado no se manda", async () => {
+    const EVENTO = "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f";
+    m.evento.mockResolvedValue({ data: { id: EVENTO, titulo: "x", inicio: new Date(Date.now() + 86400000).toISOString(), fin: null, zona: "America/Mexico_City",
+      sitio_texto: null, sitio_reservado: false, descripcion: null, visible: true, lugar: { nombre: "Casa", direccion: null, visible: true, privado: true } }, error: null });
+    expect((await pedir({ usuario_id: PERSONA, evento_id: EVENTO })).status).toBe(404);
+    expect((await pedir({ usuario_id: PERSONA, evento_id: "no-es-uuid" })).status).toBe(400);
+    expect(m.enviar).not.toHaveBeenCalled();
   });
 });

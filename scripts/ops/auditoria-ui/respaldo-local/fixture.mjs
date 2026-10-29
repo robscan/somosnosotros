@@ -1094,6 +1094,9 @@ Object.assign(rpcs, {
   panel_comunidad: () => ({ registradas: 14, hicieron_algo: 9, vuelven_base: 11, vuelven: 5 }),
   panel_aportes: () => ({ gestos_ahora: 18, gestos_antes: 13, voy: 11, me_interesa: 7, personas: 12, primeras_ahora: 2, primeras_antes: 1, han_publicado: 21 }),
   panel_fichas: () => ({ artistas: 19, lugares: 8, vias: { solicitud: 11, alta: 9, correo: 6, otra: 1 }, serie: [12, 13, 14, 15, 16, 18, 19, 21, 22, 24, 26, 27], artistas_por_reclamar: 667, artistas_visibles: 682, artistas_con_foto: 214 }),
+  // OL-480: «Avisos abiertos», las cifras del prototipo firmado (bitácora 510).
+  panel_avisos: () => ({ mandados: 48, mandados_antes: 41, abiertos: 11, abiertos_antes: 7,
+    tipos: { nuevo: { mandados: 28, abiertos: 8 }, cambio: { mandados: 9, abiertos: 2 }, recordatorio: { mandados: 3, abiertos: 1 }, cancelado: { mandados: 8, abiertos: 0 } } }),
   panel_capo: () => ({ invitados: 120, ya_vinculados_al_invitar: 4, elegibles: 116, solicitaron_despues: 7, vinculados_despues: 5, primer_envio: hace(20), ultimo_envio: hace(1), corte: hace(0) }),
 });
 

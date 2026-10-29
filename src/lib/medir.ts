@@ -1,4 +1,5 @@
 import { track } from "@vercel/analytics";
+import { TIPOS_AVISO_ABIERTO } from "@/lib/avisoAbierto";
 import { limpiarUrlEvento } from "@/lib/limpiarUrlAnalitica";
 
 /**
@@ -57,6 +58,11 @@ export const EVENTOS = {
   documento: { que: ["artista", "lugar"], medio: ["hoja", "guardado"] },
   /** Avisos encendidos: por correo o en el teléfono. */
   aviso_activado: { canal: ["correo", "telefono"] },
+  /**
+   * Se abrió un aviso al teléfono (OL-480): de qué tipo era, por la dirección que trae (`?desde=aviso&tipo=…`, `lib/avisoAbierto`). Nunca cuál
+   * evento ni quién: el mismo conteo va a la base por día y tipo, para la fila «Avisos abiertos» de Administración.
+   */
+  aviso_abierto: { tipo: TIPOS_AVISO_ABIERTO },
   /**
    * «Se canceló» (OL-391): quien gestiona un evento que ya pasó lo marcó desde el menú de su ficha, o lo deshizo («Deshacer» del aviso o «No se
    * canceló»). Como todo, nunca para la administración. Sin ids ni títulos.
