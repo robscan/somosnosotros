@@ -125,7 +125,9 @@ de 0,50 deja margen de sobra; antes de cada llamada se reservan 0,02. Si se camb
 
 ## Evidencia (árbol sin `.env`; sin red: Meta, Anthropic, el sitio y el bucket falsos)
 
-- `npm run lint`: 0 errores (los 2 avisos de siempre). `npm run typecheck`: bien. `npm test`: 314 archivos, 5 076 pruebas, todas bien. Nuevas:
+Todo esto, con `origin/main` (`5bd1ec60`, OL-488) ya unido a la rama.
+
+- `npm run lint`: 0 errores (los 2 avisos de siempre). `npm run typecheck`: bien. `npm test`: 315 archivos, 5 085 pruebas, todas bien. Nuevas:
   `src/lib/rutinas/fichas.test.ts` (15) y una en `atender.test.ts`; `aceptar-corrida.test.ts` ajustado a «· ficha 0» en el informe.
 - **La corrida completa** (`fichas.test.ts`, motor real, base en memoria, Business Discovery y Anthropic falsos, JPEG reales): 3 artistas y 2
   lugares incompletos → «Colectivo Marea» (su Instagram): foto cuadrada, portada 3:2 y descripción; «Ana Lucía Rivas» (su sitio): portada,
@@ -137,12 +139,17 @@ de 0,50 deja margen de sobra; antes de cada llamada se reservan 0,02. Si se camb
   borran; las propuestas quedan ligadas; lo que la ficha ya tenía no se toca, y una portada puesta mientras tanto hace que la propuesta no se
   acepte («ya tiene ese dato»). También: la semana siguiente no repite lo que espera revisión ni vuelve a buscar lo «sin fuente»; sin llave de
   la API solo propone Instagram y lo avisa; sin conexión con Instagram solo lee sitios; el tope corta antes de la llamada.
-- `TEST_DATABASE_URL=postgres://127.0.0.1:5432/sn_control npm run test:db`: 125 migraciones, 2 910 comprobaciones, 0 fallaron. Nueva
+- `TEST_DATABASE_URL=postgres://127.0.0.1:5432/sn_control npm run test:db`: 126 migraciones, 2 948 comprobaciones, 0 fallaron. Nueva
   `supabase/tests/pg/rutina-fichas.test.mjs`: los tipos nuevos, el campo solo en `ficha`, una sola `fichas` en curso por ciudad, aceptar sin
   crear ficha, completar solo lo vacío y **la ficha completa entra a `instagram_candidatos`**. El Security Advisor sigue en verde (sin
   funciones nuevas).
 - `npm run inventario`: sin novedades (las medidas de la miniatura salen de tokens).
-- `npm run medir`: ver abajo.
+- `npm run medir`: la primera pasada falló solo en tres presupuestos de nodos, por lo que la pieza añade a propósito: el panel de una ciudad
+  (s35a y su hoja s35b: 74 → 81 y 98 → 105, la tarjeta «Fichas») y la portada de Administración (s45: 217 → 233, la sección «Rutinas»); sin
+  desbordes, toques chicos, desplazamiento a lo ancho ni fallos con el teclado. Anotados con `npm run medir -- --aceptar`
+  (`medidas.aceptadas.json`); la pasada siguiente: 62 pantallas × 4 anchos, **sin novedades**.
+- Una ficha que no se pudo leer por algo del momento (sin conexión con Instagram, sin cupo, sin llave o error de la API) sale en «sin fuente»
+  pero **no** entra a los 30 días: se vuelve a buscar la semana siguiente.
 - **Capturas** 390 × 844 a 2× (Chrome real, app compilada contra el respaldo con `RESPALDO_COMPLETAR=1`,
   `scripts/ops/auditoria-ui/capturar-rutina-fichas.mjs`), en `docs/rediseno/capturas-521/`, todas abiertas y revisadas; ningún error de página
   ni de consola; sin desplazamiento a lo ancho:
