@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarSemana, cuandoDelDia, diaIso, diasDe, enlaceDeLaBio, estadoDelDia, lineaCandidato, lineaDelAviso, lunesDe, lunesDeLaSemana, motivoDe, rangoDeLaSemana, resumenSemana, salePara, type Candidato, type EventoCandidato } from "./semana";
+import { armarSemana, cuandoDelDia, diaIso, diasDe, enlaceDeLaBio, estadoDelDia, lineaCandidato, lineaDelAviso, lineaDeLaQueViene, lunesDe, lunesDeLaSemana, motivoDe, rangoDeLaSemana, resumenSemana, salePara, tocaArmarLaQueViene, type Candidato, type EventoCandidato } from "./semana";
 
 const ZONA = "America/Mexico_City";
 // Miércoles 7 de octubre de 2026, 10:00 en San Luis Potosí.
@@ -120,5 +120,30 @@ describe("lo que dice cada día", () => {
   });
   it("el enlace de la bio lleva la marca de origen de esa semana y esa ficha", () => {
     expect(enlaceDeLaBio("/artistas/valeria", "2026-10-12", "valeria")).toBe("/artistas/valeria?utm_source=instagram&utm_medium=bio&utm_campaign=semana-2026-10-12&utm_content=valeria");
+  });
+});
+
+/** OL-487 (bitácora 519): la que viene se arma sola los miércoles entre las 9:00 y las 9:59 de la hora de la ciudad. */
+describe("cuándo se arma sola la que viene", () => {
+  it("el miércoles de 9:00 a 9:59 en la hora de la ciudad; ni antes, ni después, ni otro día", () => {
+    expect(tocaArmarLaQueViene(new Date("2026-10-07T15:30:00Z"), ZONA)).toBe(true); // mié 9:30 en San Luis
+    expect(tocaArmarLaQueViene(new Date("2026-10-07T15:00:00Z"), ZONA)).toBe(true); // mié 9:00
+    expect(tocaArmarLaQueViene(new Date("2026-10-07T15:59:59Z"), ZONA)).toBe(true); // mié 9:59
+    expect(tocaArmarLaQueViene(new Date("2026-10-07T14:59:00Z"), ZONA)).toBe(false); // mié 8:59
+    expect(tocaArmarLaQueViene(new Date("2026-10-07T16:00:00Z"), ZONA)).toBe(false); // mié 10:00
+    expect(tocaArmarLaQueViene(new Date("2026-10-08T15:30:00Z"), ZONA)).toBe(false); // jue 9:30
+    expect(tocaArmarLaQueViene(new Date("2026-10-06T15:30:00Z"), ZONA)).toBe(false); // mar 9:30
+  });
+  it("en la hora de cada ciudad: el mismo instante es miércoles 9:30 en San Luis y 17:30 en Madrid", () => {
+    expect(tocaArmarLaQueViene(new Date("2026-10-07T15:30:00Z"), "Europe/Madrid")).toBe(false);
+    expect(tocaArmarLaQueViene(new Date("2026-10-07T07:30:00Z"), "Europe/Madrid")).toBe(true);
+  });
+  it("la línea de la portada: armada (con su día), se arma el miércoles, o no se armó", () => {
+    expect(lineaDeLaQueViene("2026-10-07T15:30:12Z", AHORA, ZONA)).toBe("la que viene, armada el mié 7");
+    expect(lineaDeLaQueViene("2026-10-04T23:00:00Z", AHORA, ZONA)).toBe("la que viene, armada el dom 4");
+    expect(lineaDeLaQueViene(null, new Date("2026-10-05T18:00:00Z"), ZONA)).toBe("la que viene se arma el miércoles"); // lun
+    expect(lineaDeLaQueViene(null, new Date("2026-10-07T15:30:00Z"), ZONA)).toBe("la que viene se arma el miércoles"); // mié 9:30
+    expect(lineaDeLaQueViene(null, AHORA, ZONA)).toBe("la que viene no se armó"); // mié 10:00
+    expect(lineaDeLaQueViene(null, new Date("2026-10-09T18:00:00Z"), ZONA)).toBe("la que viene no se armó"); // vie
   });
 });

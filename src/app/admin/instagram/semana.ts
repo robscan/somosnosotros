@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { diaConMes, diaLocal, ZONA_INICIAL } from "@/lib/fechas";
 import { SIN_FOTO } from "@/lib/imagen";
-import { armarSemana, cuandoDelDia, diaIso, diasDe, REGLA, estadoDelDia, lineaDelAviso, lineaDelEstado, lunesDeLaSemana, rangoDeLaSemana, resumenSemana, type Candidato, type EstadoDia, type EventoCandidato, type TipoDia } from "@/lib/instagram/semana";
+import { armarSemana, cuandoDelDia, diaIso, diasDe, REGLA, estadoDelDia, lineaDelAviso, lineaDeLaQueViene, lineaDelEstado, lunesDeLaSemana, rangoDeLaSemana, resumenSemana, tocaArmarLaQueViene, type Candidato, type EstadoDia, type EventoCandidato, type TipoDia } from "@/lib/instagram/semana";
 import { usuarioDeInstagram } from "@/lib/instagram/texto";
 import type { ClienteServidor } from "@/lib/supabase/servidor";
 
@@ -11,6 +11,8 @@ import type { ClienteServidor } from "@/lib/supabase/servidor";
  * Administración › Instagram. Con la sesión de la administración (la base lo comprueba: `instagram_semana` solo la lee ella y sus funciones lo
  * vuelven a decir). Si a la semana le faltan días por delante, se arman aquí con la regla (`armarSemana`) y los candidatos de la base, y se
  * guardan (`instagram_semana_guardar`, que pone cada día en la cola a su hora): el sistema llena y programa; la administración solo corrige.
+ * OL-487 (bitácora 519): los miércoles, el latido de redes arma «la que viene» con esa misma función aunque nadie abra la pestaña
+ * (`armarLasQueVienen`).
  */
 
 export type FilaDia = {
@@ -75,34 +77,59 @@ async function leerDias(supabase: ClienteServidor, ciudad: string, lunes: string
   return error ? null : ((data ?? []) as FilaDia[]);
 }
 
-/** Los candidatos de la base para una semana (artistas o lugares), en el orden de la regla. */
-export async function candidatos(supabase: ClienteServidor, ciudad: string, tipo: "artista" | "lugar", lunes: string): Promise<Candidato[]> {
+/** Los candidatos de la base para una semana (artistas o lugares), en el orden de la regla; null si la base no respondió. */
+async function leerCandidatos(supabase: ClienteServidor, ciudad: string, tipo: "artista" | "lugar", lunes: string): Promise<Candidato[] | null> {
   const { data, error } = await supabase.rpc("instagram_candidatos", { p_ciudad: ciudad, p_tipo: tipo, p_desde: lunes });
-  return error || !Array.isArray(data) ? [] : (data as Candidato[]);
+  return error || !Array.isArray(data) ? null : (data as Candidato[]);
 }
 
-/** Arma y guarda los días que le faltan a una semana (los que ya están no se tocan). Devuelve si intentó guardar alguno. */
-async function llenar(supabase: ClienteServidor, ciudad: string, lunes: string, zona: string, existentes: FilaDia[], ahora: Date): Promise<boolean> {
+/** Los candidatos de la base para una semana (artistas o lugares), en el orden de la regla. */
+export async function candidatos(supabase: ClienteServidor, ciudad: string, tipo: "artista" | "lugar", lunes: string): Promise<Candidato[]> {
+  return (await leerCandidatos(supabase, ciudad, tipo, lunes)) ?? [];
+}
+
+/**
+ * Arma y guarda los días que le faltan a una semana (los que ya están no se tocan). «guardada» si guardó alguno, «nada» si no había qué armar y
+ * «error» si la base no respondió: en ese caso no se guarda nada (una semana armada sin candidatos serían siete descansos).
+ */
+async function llenar(supabase: ClienteServidor, ciudad: string, lunes: string, zona: string, existentes: FilaDia[], ahora: Date): Promise<"guardada" | "nada" | "error"> {
   const [artistas, lugares, sugeridos] = await Promise.all([
-    candidatos(supabase, ciudad, "artista", lunes),
-    candidatos(supabase, ciudad, "lugar", lunes),
+    leerCandidatos(supabase, ciudad, "artista", lunes),
+    leerCandidatos(supabase, ciudad, "lugar", lunes),
     supabase.rpc("instagram_sugerencias", { p_ciudad: ciudad, p_dias: 14 }),
   ]);
-  const eventos = (Array.isArray(sugeridos.data) ? sugeridos.data : []) as EventoCandidato[];
+  if (!artistas || !lugares || sugeridos.error || !Array.isArray(sugeridos.data)) return "error";
+  const eventos = sugeridos.data as EventoCandidato[];
   const usados = new Set(existentes.flatMap((d) => [d.artista_id, d.lugar_id, d.evento_id, ...(d.eventos ?? [])].filter((x): x is string => !!x)));
   const nuevas = armarSemana({ lunes, zona, ahora, artistas, lugares, eventos, existentes: new Set(existentes.map((d) => d.fecha)), usados });
-  if (!nuevas.length) return false;
+  if (!nuevas.length) return "nada";
   const { error } = await supabase.rpc("instagram_semana_guardar", { p_ciudad: ciudad, p_casillas: nuevas });
-  return !error;
+  return error ? "error" : "guardada";
+}
+
+/** Lo que dejó `armarLoQueFalta`: la semana (su lunes, su zona y sus días ya guardados) y si se armó algo. */
+export type Armada = { lunes: string; zona: string; filas: FilaDia[]; armado: "guardada" | "nada" | "error" };
+
+/**
+ * Arma lo que le falte a la semana («esta» o «la que viene») de una ciudad y devuelve sus días. La usan la pestaña (`cargarSemana`, con la sesión
+ * de la administración) y, desde OL-487, el latido de redes los miércoles (`armarLasQueVienen`, a nombre de la administración): una sola regla.
+ * Null si no se pudo leer la semana.
+ */
+export async function armarLoQueFalta(supabase: ClienteServidor, ciudad: string, cual: "esta" | "viene", ahora: Date): Promise<Armada | null> {
+  const zona = await zonaDeCiudad(supabase, ciudad);
+  const lunes = lunesDeLaSemana(cual, ahora, zona);
+  const filas = await leerDias(supabase, ciudad, lunes);
+  if (!filas) return null;
+  if (filas.length >= 7) return { lunes, zona, filas, armado: "nada" };
+  const armado = await llenar(supabase, ciudad, lunes, zona, filas, ahora);
+  return { lunes, zona, filas: armado === "guardada" ? ((await leerDias(supabase, ciudad, lunes, true)) ?? filas) : filas, armado };
 }
 
 /** La semana («esta» o «la que viene») de una ciudad: se arma lo que falte y se dice cada día. Null si no se pudo leer. */
 export async function cargarSemana(supabase: ClienteServidor, ciudad: string, cual: "esta" | "viene", ahora = new Date()): Promise<Semana | null> {
-  const zona = await zonaDeCiudad(supabase, ciudad);
-  const lunes = lunesDeLaSemana(cual, ahora, zona);
-  let filas = await leerDias(supabase, ciudad, lunes);
-  if (!filas) return null;
-  if (filas.length < 7 && (await llenar(supabase, ciudad, lunes, zona, filas, ahora))) filas = (await leerDias(supabase, ciudad, lunes, true)) ?? filas;
+  const armada = await armarLoQueFalta(supabase, ciudad, cual, ahora);
+  if (!armada) return null;
+  const { lunes, zona, filas } = armada;
   const dichos = await decirDias(supabase, filas, ahora, zona);
   // Un día que no se armó (ya había pasado su hora cuando se llenó la semana) se dice igual: la semana siempre tiene sus siete renglones.
   const dias = diasDe(lunes).map((fecha) => dichos.find((d) => d.fecha === fecha) ?? sinArmar(fecha, ahora, zona));
@@ -196,15 +223,81 @@ export async function leerDia(supabase: ClienteServidor, id: string): Promise<Fi
   return data ?? null;
 }
 
-/** Resumen para la portada de Administración: «Semana: 4 de 6 programadas» (null si no hay semana armada o no se pudo leer). */
+/** Cuándo se guardó el primer día de una semana (null si no tiene ninguno; undefined si no se pudo leer). */
+async function armadaEn(supabase: ClienteServidor, ciudad: string, lunes: string): Promise<string | null | undefined> {
+  const dias = diasDe(lunes);
+  const { data, error } = await supabase.from("instagram_semana").select("creado_en").eq("ciudad", ciudad).gte("fecha", dias[0]).lte("fecha", dias[6]).order("creado_en").limit(1);
+  if (error) return undefined;
+  return ((data ?? []) as { creado_en: string }[])[0]?.creado_en ?? null;
+}
+
+/**
+ * Resumen para la portada de Administración: «Semana: 4 de 6 programadas · la que viene, armada el mié 7» (o «· la que viene se arma el
+ * miércoles», OL-487: así la administración sabe que no tiene que entrar). Null si no hay nada que decir o no se pudo leer.
+ */
 export async function resumenDeLaPortada(supabase: ClienteServidor, ciudad: string | null, ahora = new Date()): Promise<string | null> {
   if (!ciudad) return null;
   const zona = await zonaDeCiudad(supabase, ciudad);
-  const filas = await leerDias(supabase, ciudad, lunesDeLaSemana("esta", ahora, zona));
-  if (!filas?.length) return null;
-  const vivos = filas.filter((f) => f.tipo !== "descanso");
-  const listos = vivos.filter((f) => f.estado === "publicado" || (f.estado === "programado" && f.trabajo_id)).length;
-  return `Semana: ${listos} de ${vivos.length} ${vivos.length === 1 ? "programada" : "programadas"}`;
+  const [filas, viene] = await Promise.all([leerDias(supabase, ciudad, lunesDeLaSemana("esta", ahora, zona)), armadaEn(supabase, ciudad, lunesDeLaSemana("viene", ahora, zona))]);
+  const partes: string[] = [];
+  if (filas?.length) {
+    const vivos = filas.filter((f) => f.tipo !== "descanso");
+    const listos = vivos.filter((f) => f.estado === "publicado" || (f.estado === "programado" && f.trabajo_id)).length;
+    partes.push(`${listos} de ${vivos.length} ${vivos.length === 1 ? "programada" : "programadas"}`);
+  }
+  if (viene !== undefined) partes.push(lineaDeLaQueViene(viene, ahora, zona));
+  return partes.length ? `Semana: ${partes.join(" · ")}` : null;
+}
+
+/** Las funciones de la base que el latido pide a nombre de la administración (migración 20261029230000, `instagram_semana_latido`). */
+const A_NOMBRE_DE_LA_ADMINISTRACION = new Set(["instagram_candidatos", "instagram_sugerencias", "instagram_semana_guardar"]);
+
+/**
+ * El cliente con la llave de servicio, visto como la sesión de la administración para armar la semana: lee las tablas tal cual y las tres
+ * funciones que piden ser de la administración (los candidatos, los eventos y guardar) van por `instagram_semana_latido`, que las llama a nombre
+ * de la cuenta que conectó Instagram (o la última que tocó la semana). Así el latido usa la misma `armarLoQueFalta` que la pestaña.
+ */
+export function comoAdministracion(db: SupabaseClient): ClienteServidor {
+  const rpc = async (fn: string, args?: Record<string, unknown>) => {
+    if (!A_NOMBRE_DE_LA_ADMINISTRACION.has(fn)) return db.rpc(fn, args);
+    const { data, error } = await db.rpc("instagram_semana_latido", { p_funcion: fn, p_args: args ?? {} });
+    return { data, error };
+  };
+  return { from: (tabla: string) => db.from(tabla), rpc } as unknown as ClienteServidor;
+}
+
+export type ArmadoDelLatido = { ciudad: string; resultado: "armada" | "ya estaba" | "fuera de hora" | "error" };
+
+/**
+ * OL-487: lo que hace el latido de redes (`/api/redes/correr`) en cada llamada antes de trabajar la cola: un miércoles entre las 9:00 y las 9:59 de
+ * la hora de cada ciudad abierta con eventos la semana que viene (`instagram_semana_por_armar`, que es también lo que despierta al latido), arma «la
+ * que viene» si le faltan días, con la misma función que la pestaña. Idempotente: si ya está (la armó la pestaña o otra vuelta del latido), no hace
+ * nada. Nunca lanza: si una ciudad falla, lo anota (`avisar`: los registros de la ruta, sin secretos ni datos de personas) y sigue con la siguiente;
+ * el latido lo vuelve a intentar al minuto siguiente mientras dure la hora.
+ */
+export async function armarLasQueVienen(db: SupabaseClient, ahora: Date, avisar: (t: string) => void = (t) => console.warn(t)): Promise<ArmadoDelLatido[]> {
+  const { data, error } = await db.rpc("instagram_semana_por_armar", { p_ahora: ahora.toISOString() });
+  if (error || !Array.isArray(data)) {
+    avisar("redes: no se pudo ver qué semanas de Instagram faltan por armar; lo reintenta el latido");
+    return [];
+  }
+  const cliente = comoAdministracion(db);
+  const hechos: ArmadoDelLatido[] = [];
+  for (const { ciudad, zona } of data as { ciudad: string; zona: string }[]) {
+    if (!tocaArmarLaQueViene(ahora, zona)) {
+      hechos.push({ ciudad, resultado: "fuera de hora" });
+      continue;
+    }
+    try {
+      const r = await armarLoQueFalta(cliente, ciudad, "viene", ahora);
+      if (!r || r.armado === "error") throw new Error("sin armar");
+      hechos.push({ ciudad, resultado: r.armado === "guardada" ? "armada" : "ya estaba" });
+    } catch {
+      avisar(`redes: no se pudo armar la semana que viene de Instagram de ${ciudad}; lo reintenta el latido`);
+      hechos.push({ ciudad, resultado: "error" });
+    }
+  }
+  return hechos;
 }
 
 /** «el mié 7 de oct» si la ficha dijo que no a salir en Instagram (solo lo ve la administración: la base no se lo da a nadie más); null si no. */
