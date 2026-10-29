@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Semana de Instagram</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-477 (bitácora 509), armazón de propuestas. Founder (2026-10-29): «Me gustaría que dentro de lo que publiquemos en Instagram sean
+   los artistas destacados de la semana… considerar solo los artistas que tienen su ficha completa… Esto debería replicarse eventualmente para
+   los lugares también… lo que necesito es que se arme calendario de publicaciones, no todos los artistas o lugares el mismo día, sino que se
+   distribuyan en la semana para tener contenido fresco».
+
+   Sobre la pantalla REAL (regla de OL-409): Administración › Instagram, su hoja de vista previa, el «···» de una ficha de artista y Agenda se
+   guardaron con `maqueta-pantalla.mjs` (la app compilada contra el respaldo local con las fichas completas de la semana) y
+   `prototipo/instagram-calendario.mjs` arma este archivo: el teléfono es un `iframe` con el CSS servido tal cual y el cuerpo de cada pantalla
+   armado con piezas que ya existen (con sus clases de producción). Las tarjetas son imágenes reales dibujadas con las piezas de «Crear cartel».
+   Lo de este archivo fuera del marco es solo el armazón del prototipo. */
+:root {
+  --pg-fondo: #e6e4de; --pg-panel: #fbfaf7; --pg-texto: #1a1a1a; --pg-suave: #5e5b54; --pg-borde: #d3d0c8; --pg-acento: #6d34c8; --pg-acento-texto: #ffffff;
+  --pg-bien: #1f6f43; --pg-mal: #b3261e; --pg-reco: #e6f4ea;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ancho-tel: 390px; --alto-tel: 844px;
+}
+* { box-sizing: border-box; }
+html { font: 400 1rem / 1.45 var(--fuente); font-variation-settings: "wdth" 80; color: var(--pg-texto); background: var(--pg-fondo); -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+button { font: inherit; font-variation-settings: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--pg-acento); outline-offset: 2px; }
+.escena { display: grid; gap: 16px; padding: 16px; align-content: start; }
+.columna { display: grid; gap: 8px; justify-items: center; align-content: start; min-width: 0; }
+.selector { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.selector button { min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--pg-panel); color: var(--pg-suave); font-size: 0.875rem; font-weight: 700; }
+.selector button[aria-pressed="true"] { background: var(--pg-acento); color: var(--pg-acento-texto); }
+.selector.sub button { background: transparent; box-shadow: inset 0 0 0 1px var(--pg-borde); }
+.selector.sub button[aria-pressed="true"] { background: var(--pg-texto); color: var(--pg-panel); box-shadow: none; }
+.selector.sub button[data-reco="true"]::after { content: " ★"; color: var(--pg-bien); }
+.selector.tam button { min-height: 44px; min-width: 56px; font-weight: 500; }
+.etiqueta { margin: 0; min-height: 2.6em; color: var(--pg-suave); font-size: 0.875rem; line-height: 1.3; text-align: center; max-width: 430px; }
+.etiqueta b { color: var(--pg-texto); }
+.tel { display: block; width: var(--ancho-tel); max-width: 100%; height: var(--alto-tel); border: 0; border-radius: 28px; background: #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22); }
+.medidor { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; max-width: 560px; font-size: 0.8125rem; color: var(--pg-suave); }
+.medidor b { color: var(--pg-texto); font-size: 1rem; margin-right: 3px; }
+.medidor [data-mal="true"] b { color: var(--pg-mal); }
+.notas { display: grid; gap: 16px; align-content: start; padding: 20px; border-radius: 16px; background: var(--pg-panel); min-width: 0; }
+.notas h1 { margin: 0; font-size: 1.5rem; line-height: 1.1; font-variation-settings: "wdth" 75; }
+.notas h2 { margin: 0 0 6px; font-size: 1.0625rem; font-variation-settings: "wdth" 75; }
+.notas p, .notas ul, .notas ol { margin: 0; font-size: 0.9375rem; }
+.notas ul, .notas ol { padding-left: 1.1em; display: grid; gap: 6px; }
+.notas table { border-collapse: collapse; font-size: 0.875rem; width: 100%; }
+.notas td, .notas th { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--pg-borde); vertical-align: top; }
+.notas pre { margin: 0; padding: 10px; border-radius: 10px; background: var(--pg-fondo); font: inherit; font-size: 0.8125rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.notas .chica { color: var(--pg-suave); font-size: 0.875rem; }
+.notas .reco { justify-self: start; padding: 2px 10px; border-radius: 999px; background: var(--pg-reco); color: var(--pg-bien); font-size: 0.8125rem; font-weight: 700; }
+.plegar { justify-self: start; min-height: 44px; padding: 0 14px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--pg-borde); font-size: 0.875rem; font-weight: 700; }
+.notas[data-plegadas="true"] > :not(.cabeza-notas) { display: none; }
+.cabeza-notas { display: grid; gap: 8px; }
+@media (min-width: 900px) { .escena { grid-template-columns: minmax(0, 1fr) 460px; align-items: start; } .notas { position: sticky; top: 16px; max-height: calc(100dvh - 32px); overflow: auto; } }
+</style>
+</head>
+<body>
+<main class="escena">
+  <section class="columna" aria-label="El teléfono">
+    <div class="selector" role="group" aria-label="Pantalla" id="sel-pantalla"></div>
+    <div class="selector sub" role="group" aria-label="Variante y estado" id="sel-estado"></div>
+    <div class="selector sub tam" role="group" aria-label="Ancho" id="sel-ancho"></div>
+    <p class="etiqueta" id="etiqueta"></p>
+    <iframe class="tel" id="tel" title="La pantalla (maqueta real)"></iframe>
+    <div class="medidor" id="medidor" aria-live="polite"></div>
+  </section>
+  <aside class="notas" id="notas" aria-labelledby="notas-titulo">
+    <div class="cabeza-notas">
+      <h1 id="notas-titulo">La semana de Instagram</h1>
+      <p class="chica">OL-477 · prototipo, espera firma · jue 29 de oct · sobre la pantalla real (respaldo local, reloj fijo del mié 7 de oct de 2026, cuenta de administración; fichas y fotos de demo dibujadas)</p>
+      <button type="button" class="plegar" id="plegar" aria-expanded="true">Plegar las notas</button>
+    </div>
+    <section aria-labelledby="t-estado"><h2 id="t-estado">Lo que ves</h2><p id="reco-estado"></p><div id="texto-estado"></div></section>
+    <section aria-labelledby="t-reco">
+      <h2 id="t-reco">La recomendación</h2>
+      <ul>
+        <li><b>Dónde (A):</b> en Administración › Instagram, dos pestañas: «Semana» (primero) y «Eventos» (la lista de hoy, sin cambios). En B la semana va arriba de la lista de siempre, en una sola pantalla larga.</li>
+        <li><b>Cómo se ve cada día (R):</b> un renglón por día, como las listas: la tarjeta en pequeño (4:5), qué es, el día, la hora y cómo va. En T, una tira de tarjetas que se desliza; se ve más bonita y se lee peor (tres días a la vista).</li>
+        <li><b>Lo hace el sistema:</b> llena los siete días con la regla y programa cada uno en la cola que ya publica (OL-465), con su hora. La administración solo toca un día para «Cambiar», «Quitar» o «Publicar ahora».</li>
+      </ul>
+    </section>
+    <section aria-labelledby="t-regla">
+      <h2 id="t-regla">La regla de la semana</h2>
+      <table>
+        <tr><th>Día</th><th>Qué sale</th><th>Hora</th></tr>
+        <tr><td>Lunes</td><td>Artista (ficha completa)</td><td>7:00 pm</td></tr>
+        <tr><td>Martes</td><td>Evento del día</td><td>9:00 am</td></tr>
+        <tr><td>Miércoles</td><td>Lugar (ficha completa)</td><td>7:00 pm</td></tr>
+        <tr><td>Jueves</td><td>«Esta semana»: carrusel con los 3 eventos del fin</td><td>9:00 am</td></tr>
+        <tr><td>Viernes</td><td>Artista con fecha el fin</td><td>7:00 pm</td></tr>
+        <tr><td>Sábado</td><td>Evento del día</td><td>9:00 am</td></tr>
+        <tr><td>Domingo</td><td>Descanso (o un lugar, si lo pides)</td><td>—</td></tr>
+      </table>
+      <p class="chica">Entra quien tiene la ficha completa: foto, portada, descripción de 120 letras o más y su Instagram. Primero quien tiene fecha en los próximos 30 días, luego los de la ciudad elegida; nadie que haya salido en los últimos 6 meses ni que haya dicho que no. Con 68 artistas y 2 por semana, la vuelta tarda 34 semanas: nadie se repite antes de los 6 meses.</p>
+    </section>
+    <section aria-labelledby="t-preguntas">
+      <h2 id="t-preguntas">Preguntas para ti</h2>
+      <ol>
+        <li>¿Firmas A · R (pestañas y renglones)? ¿O B (la semana arriba de la lista) o T (la tira de tarjetas)?</li>
+        <li>¿El domingo descansa la cuenta, o sale un lugar más?</li>
+        <li>¿Las horas te sirven (artista y lugar a las 7:00 pm; eventos y «Esta semana» a las 9:00 am)?</li>
+        <li>Lugares: de 50 completos solo 21 tienen Instagram. ¿Entran también los que no tienen (sin etiqueta ni crédito, y sin aviso previo), o solo los 21?</li>
+        <li>El enlace del texto no se puede tocar en Instagram. ¿Ponemos en la bio una página «Esta semana en Instagram» (con las fichas de la semana) para contar las visitas que llegan de ahí?</li>
+        <li>¿Te late invitar al artista como coautor de la publicación (sale también en su perfil si acepta), además del aviso por mensaje?</li>
+      </ol>
+    </section>
+    <section aria-labelledby="t-medida">
+      <h2 id="t-medida">Cómo se mide</h2>
+      <p class="chica">Bajo el teléfono, dentro del marco: nodos y profundidad de toda la pantalla (como medir.js: lo que se pinta, un svg cuenta uno); de lo nuevo (<code>data-propuesta</code>: las pestañas, los chips de semana, la semana, la tira, las hojas) sus nodos, su profundidad y los div o span sin clase; textos cortados y desborde horizontal; toques menores de 44 px en lo nuevo (los enlaces dentro de una frase quedan exentos, como en medir). Las cifras por estado y ancho, y el recorrido con toques reales, en la bitácora 509.</p>
+    </section>
+  </aside>
+</main>
+<template id="maqueta-css"><style>/*@CSS*/</style></template>
+<script>
+(() => {
+  /*@DATOS*/
+  const CSS = document.getElementById('maqueta-css').content.querySelector('style').textContent;
+  for (const [id, cuerpo] of Object.entries(CUERPOS)) CUERPOS[id] = cuerpo.replace(/__IMG_(\d+)__/g, (_, n) => IMAGENES[n]);
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (x) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[x]);
+
+  // Cada pantalla con sus estados: «Hoy» es la referencia (la app como está), las letras son variantes y la ★ la recomendada.
+  const PANTALLAS = [
+    { id: 'hoy', nombre: '1 · Hoy', estados: [
+      { id: 'hoy-lista', variante: 'Hoy', nombre: 'La lista', notas: ['Administración › Instagram como está en producción (OL-458 a OL-465): el chip de ciudad, la cuenta de los próximos 7 días y «Para publicar», en orden de señal. Solo eventos, y uno a la vez, cuando alguien se acuerda.'] },
+      { id: 'hoy-hoja', variante: 'Hoy', nombre: 'La hoja', notas: ['La hoja «Publicar en Instagram» de un evento: formato, la imagen, las etiquetas, la ubicación, el texto, «También en Facebook» y «Publicar». La propuesta la reutiliza para cada día de la semana.'] },
+    ] },
+    { id: 'semana', nombre: '2 · La semana', estados: [
+      { id: 'a-esta', variante: 'A·R', reco: true, nombre: 'Esta semana', notas: ['Arriba, las pestañas «Semana · Eventos» (las de Agenda). En la fila de contexto, la ciudad y los chips «Esta semana · La que viene» (filtrar no es navegar: no apilan en Atrás).', 'Un renglón por día con la tarjeta en pequeño: el lunes salió Renata Saldaña («Publicado» en verde, «Ver» a la derecha y «31 visitas · 3 van»); el martes, el evento del día; hoy sale el museo Leonora Carrington a las 7:00 pm; el resto, programado. El viernes 9, Íñigo Montalvo, que toca el sábado.', 'Toca un día para abrir su hoja.'] },
+      { id: 'a-viene', variante: 'A·R', reco: true, nombre: 'La que viene', notas: ['La semana del 12 al 18 ya llena por el sistema. En violeta, lo que falta hacer a mano: avisar a los dos artistas por mensaje directo antes de que salgan.', 'Lunes 12: el Colectivo Nube de Papel (sin fecha próxima). Viernes 16: Valeria Quiroz, que canta ese viernes en el Teatro de la Paz. Miércoles 14: el Museo del Ferrocarril.'] },
+      { id: 'a-eventos', variante: 'A·R', reco: true, nombre: 'Pestaña Eventos', notas: ['La pestaña «Eventos» es la lista de hoy tal cual (no se quita nada): para publicar un evento cualquiera a mano, como siempre.'] },
+      { id: 'a-publicando', variante: 'A·R', reco: true, nombre: 'Publicando', notas: ['Tras «Publicar ahora» (o a su hora), el renglón dice «Publicando…», como en la lista de hoy (OL-465); al terminar llega el aviso al teléfono y pasa a «Publicado».'] },
+      { id: 'a-quitado', variante: 'A·R', reco: true, nombre: 'Quitado', notas: ['Tras «Quitar de la semana»: ese día no sale nada y lo dice. El museo vuelve a la rotación (no cuenta como publicado).'] },
+      { id: 'b-esta', variante: 'B', nombre: 'B · arriba de la lista', notas: ['Sin pestañas: la semana arriba y debajo «Para publicar» de siempre. Una sola pantalla, pero muy larga (7 días más 14 eventos), y la semana empuja la lista que ya conoces.'] },
+      { id: 't-esta', variante: 'T', nombre: 'T · tira de tarjetas', notas: ['La semana como el carril de Inicio: una tarjeta grande por día que se desliza. Se parece más a Instagram, pero se ven tres días y medio y los datos (hora, aviso, cifras) no caben.'] },
+    ] },
+    { id: 'casilla', nombre: '3 · Un día', estados: [
+      { id: 'h-leonora', variante: 'A·R', reco: true, nombre: 'Lugar (hoy)', texto: 'leonora', notas: ['La hoja de un día es la de «Publicar en Instagram» con tres cambios: el título dice el día, la hora y qué toca; una línea dice por qué lo eligió el sistema, con «Cambiar»; y el botón es «Publicar ahora» (si no lo tocas, sale solo a su hora).', 'La tarjeta del lugar: su portada, el nombre, «Museo · San Luis Potosí», su cuenta y «Esta semana: 2 eventos». La etiqueta y la ubicación como hoy. Abajo, «Quitar de la semana».'] },
+      { id: 'h-leonora-916', variante: 'A·R', reco: true, nombre: 'Lugar · historia 9:16', notas: ['La misma tarjeta en historia (9:16): la portada más alta y el texto fuera de lo que tapa Instagram arriba y abajo. Propuesta: la historia sale junto con la publicación, sin pedir nada más.'] },
+      { id: 'h-nube', variante: 'A·R', reco: true, nombre: 'Artista sin fecha', texto: 'nube', notas: ['La tarjeta del artista: la portada arriba, la foto en círculo, «Artes visuales · Ilustración», la ciudad, su cuenta, el nombre grande y el sello SN con somosnosotrxs.org.', 'Arriba de las etiquetas, el aviso: «falta mandarlo» y «Avisar».'] },
+      { id: 'h-cambiar', variante: 'A·R', reco: true, nombre: '«Cambiar»', notas: ['Los que quedan, en el orden de la regla, con por qué: tocar uno lo pone en el día. La nota dice quién no entra y por qué (ya va otro día, salió hace poco).'] },
+      { id: 'h-valeria', variante: 'A·R', reco: true, nombre: 'Artista con fecha', texto: 'valeria', notas: ['Viernes: un artista con fecha el fin de semana. La tarjeta lleva «Próxima fecha: Vie 16 de oct, 7:00 pm · Teatro de la Paz» y el texto la repite con la cuenta del lugar.'] },
+      { id: 'h-susurros', variante: 'A·R', reco: true, nombre: 'Evento del día', notas: ['Martes y sábado: el evento de ese día con más señal (la regla de la lista de hoy), con su cartel y el texto de siempre.'] },
+      { id: 'h-semana', variante: 'A·R', reco: true, nombre: '«Esta semana»', notas: ['Jueves: el carrusel de «Esta semana» (la idea de OL-464): una portada nueva con el fin de semana y sus tres eventos, y detrás los carteles de cada uno.'] },
+      { id: 'h-descanso', variante: 'A·R', reco: true, nombre: 'Descanso', notas: ['El domingo no sale nada. Si quieres, se pone un lugar más con un toque.'] },
+    ] },
+    { id: 'texto', nombre: '4 · El texto', estados: [
+      { id: 't-texto-valeria', variante: 'A·R', reco: true, nombre: 'Artista con fecha', texto: 'valeria', notas: ['El texto armado solo: la frase gancho de su descripción (lo único que Instagram enseña antes de «más»), qué hace y su ciudad, su próxima fecha, «Lee su ficha en somosnosotrxs.org/artistas/…» (no se puede tocar: «enlace en la bio»), su cuenta, «Foto: @…», la invitación a seguir la cuenta y 4 etiquetas. Unas 500 letras de 2 200; se edita como hoy.'] },
+      { id: 't-texto-nube', variante: 'A·R', reco: true, nombre: 'Artista sin fecha', texto: 'nube', notas: ['Sin fecha próxima, sin esa línea. El gancho se corta en una oración (nunca a media) entre 60 y 220 letras.'] },
+      { id: 't-texto-leonora', variante: 'A·R', reco: true, nombre: 'Lugar', texto: 'leonora', notas: ['El lugar: su gancho, «Museo · San Luis Potosí», la dirección, lo que tiene esta semana, la ficha, su cuenta, el crédito y las etiquetas (#EspaciosCulturales y su tipo).'] },
+    ] },
+    { id: 'aviso', nombre: '5 · Aviso previo', estados: [
+      { id: 'v-avisar', variante: 'A·R', reco: true, nombre: 'Avisar', aviso: 'nube', notas: ['La API de Instagram no deja que una cuenta mande el primer mensaje (solo contestar en 24 horas a quien escribió). Por eso el aviso sale de @smsnstrsapp a mano: «Copiar y abrir su Instagram» copia el texto y abre su conversación (ig.me/m/…) en el teléfono o el Chrome; pegar y mandar es tuyo.', 'Al tocarlo queda anotado «avisado» con la fecha.'] },
+      { id: 'v-avisada', variante: 'A·R', reco: true, nombre: 'Avisado', notas: ['El día dice «Avisado hoy · sin respuesta» y, si contesta que no, «Dijo que no».'] },
+      { id: 'v-dijo-no', variante: 'A·R', reco: true, nombre: '«Dijo que no»', notas: ['Pide confirmar en una línea. Al aceptar, su ficha queda marcada «Fuera de Instagram» y el día lo toma el siguiente de la rotación.'] },
+      { id: 'a-cambiado', variante: 'A·R', reco: true, nombre: 'Después', notas: ['El lunes 12 ya es Ximena Urquidi, con su «Falta avisarle».'] },
+      { id: 'v-ficha', variante: 'A·R', reco: true, nombre: 'La marca en la ficha', notas: ['En el «···» de la ficha (solo administración), un renglón más: «Fuera de Instagram · Dijo que no el mié 7 de oct · Volver a poner». La gente no la ve.'] },
+    ] },
+    { id: 'medida', nombre: '6 · Medición', estados: [
+      { id: 'm-publicado', variante: 'A·R', reco: true, nombre: 'Lo que dio', notas: ['Un día publicado: «Ver» en Instagram y Facebook y lo que dio: las visitas a su ficha que llegan desde Instagram y cuántos dieron «Voy» a una fecha suya en los 7 días siguientes. En el renglón, en una línea: «31 visitas · 3 van».'] },
+    ] },
+  ];
+  const ESTADOS = Object.fromEntries(PANTALLAS.flatMap((p) => p.estados.map((e) => [e.id, { ...e, pantalla: p.id }])));
+  const ANCHOS = [320, 390, 430, 1280];
+
+  const INICIAL = { estado: 'a-esta', ancho: 390 };
+  let estado = { ...INICIAL };
+  try { Object.assign(estado, JSON.parse(localStorage.getItem('proto-instagram-calendario') || '{}')); } catch {}
+  if (!ESTADOS[estado.estado] || !ANCHOS.includes(estado.ancho)) estado = { ...INICIAL };
+  const guardar = () => { try { localStorage.setItem('proto-instagram-calendario', JSON.stringify(estado)); } catch {} };
+  let anterior = null;
+
+  const documento = (id) => `<!doctype html>${ETIQUETAS[id]}<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet"><style>${CSS}</style></head><body>${CUERPOS[id]}</body></html>`;
+  const tel = $('tel');
+  let pintado = Promise.resolve();
+  function pintar() {
+    guardar();
+    const e = ESTADOS[estado.estado];
+    tel.style.setProperty('--ancho-tel', estado.ancho + 'px');
+    tel.style.setProperty('--alto-tel', (estado.ancho >= 1024 ? 800 : 844) + 'px');
+    pintado = new Promise((ok) => {
+      tel.addEventListener('load', async () => {
+        const doc = tel.contentDocument;
+        conectar(doc);
+        try { await doc.fonts.ready; } catch {}
+        const r = medir(doc);
+        document.documentElement.dataset.pintado = e.id + '@' + estado.ancho;
+        ok(r);
+      }, { once: true });
+      tel.srcdoc = documento(e.id);
+    });
+    botones('sel-pantalla', PANTALLAS.map((p) => [p.id, p.nombre]), e.pantalla, (v) => ir(PANTALLAS.find((p) => p.id === v).estados.find((x) => x.reco)?.id ?? PANTALLAS.find((p) => p.id === v).estados[0].id));
+    const pantalla = PANTALLAS.find((p) => p.id === e.pantalla);
+    botones('sel-estado', pantalla.estados.map((x) => [x.id, x.nombre, x.reco]), e.id, (v) => ir(v));
+    botones('sel-ancho', ANCHOS.map((a) => [String(a), String(a)]), String(estado.ancho), (v) => { estado.ancho = Number(v); pintar(); });
+    $('etiqueta').innerHTML = `<b>${esc(pantalla.nombre)} · ${esc(e.nombre)}</b> · ${estado.ancho} × ${estado.ancho >= 1024 ? 800 : 844}`;
+    $('reco-estado').innerHTML = e.reco ? '<span class="reco">Recomendada</span>' : '';
+    const extra = e.texto ? `<p class="chica">El texto completo:</p><pre>${esc(TEXTOS[e.texto])}</pre>` : e.aviso ? `<p class="chica">El mensaje:</p><pre>${esc(AVISOS[e.aviso])}</pre>` : '';
+    $('texto-estado').innerHTML = `<ul>${e.notas.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>${extra}`;
+    return pintado;
+  }
+  function botones(id, opciones, actual, alElegir) {
+    const caja = $(id);
+    caja.innerHTML = opciones.map(([v, t, reco]) => `<button type="button" data-v="${v}" aria-pressed="${v === actual}"${reco ? ' data-reco="true" aria-description="recomendada"' : ''}>${esc(t)}</button>`).join('');
+    caja.onclick = (ev) => { const b = ev.target.closest('button[data-v]'); if (b) alElegir(b.dataset.v); };
+  }
+  function ir(id) { if (id !== estado.estado) anterior = estado.estado; estado.estado = id; return pintar(); }
+
+  // Los toques dentro del teléfono: los días, las pestañas, los chips de semana, los enlaces y botones de las hojas, la ✕ y el velo.
+  const DIA_A_HOJA = { lun5: 'm-publicado', mie7: 'h-leonora', lun12: 'h-nube', vie16: 'h-valeria', mar13: 'h-susurros', jue15: 'h-semana', dom18: 'h-descanso', dom11: 'h-descanso' };
+  const HOJA_TEXTO = { 'h-valeria': 't-texto-valeria', 'h-nube': 't-texto-nube', 'h-leonora': 't-texto-leonora' };
+  function conectar(doc) {
+    doc.addEventListener('submit', (ev) => ev.preventDefault(), true);
+    doc.addEventListener('click', (ev) => {
+      const actual = estado.estado;
+      const decir = (t) => { $('etiqueta').textContent = t; };
+      const volver = () => ir(anterior && anterior !== actual ? anterior : (actual.startsWith('h-') || actual.startsWith('m-') ? 'a-esta' : 'a-viene'));
+      if (ev.target.matches('[class*="Hoja-module"][class*="__fondo"]')) { ev.preventDefault(); return volver(); }
+      const el = ev.target.closest('a, button');
+      if (!el) return;
+      ev.preventDefault();
+      const texto = el.textContent.trim();
+      const etiqueta = el.getAttribute('aria-label') ?? '';
+      const accion = el.dataset.accion;
+      if (el.dataset.pestana) return ir(el.dataset.pestana === 'eventos' ? 'a-eventos' : 'a-esta');
+      if (el.dataset.semana) return actual.startsWith('a-') || actual === 'hoy-lista' ? ir(el.dataset.semana === 'esta' ? 'a-esta' : 'a-viene') : decir(`En la app, la semana cambia a «${texto}»; en el prototipo, en la variante A.`);
+      if (el.dataset.casilla) return DIA_A_HOJA[el.dataset.casilla] ? ir(DIA_A_HOJA[el.dataset.casilla]) : decir(`En la app, abre la hoja de «${el.querySelector('b')?.textContent ?? 'ese día'}» (en el prototipo están armados hoy, lun 5, lun 12, mar 13, jue 15, vie 16 y los domingos).`);
+      if (el.dataset.elegir) return ir('a-cambiado');
+      if (el.dataset.formato) return actual.startsWith('h-leonora') ? ir(el.dataset.formato === '9x16' ? 'h-leonora-916' : 'h-leonora') : decir('En la app, la vista cambia de formato (armado en el museo de hoy).');
+      if (accion === 'cambiar') return actual === 'h-nube' ? ir('h-cambiar') : decir('En la app: la hoja «Cambiar» con los que quedan (armada en el lunes 12).');
+      if (accion === 'quitar') return actual === 'h-leonora' ? ir('a-quitado') : decir('En la app: el día queda «Quitado» (armado en el museo de hoy).');
+      if (accion === 'ahora') return actual === 'h-leonora' ? ir('a-publicando') : decir('En la app: va a la cola y la hoja se cierra con «Publicando…» (armado en el museo de hoy).');
+      if (accion === 'avisar') return ir('v-avisar');
+      if (accion === 'copiar') return ir('v-avisada').then(() => decir('Copiado. En la app se abre su conversación de Instagram (ig.me/m/nubedepapel.demo) para pegar y mandar.'));
+      if (accion === 'dijo-no') return ir('v-dijo-no');
+      if (accion === 'sacar') return ir('a-cambiado');
+      if (accion === 'mejor-no') return ir('v-avisada');
+      if (accion === 'texto') return HOJA_TEXTO[actual] ? ir(HOJA_TEXTO[actual]) : decir('En la app, el texto se abre a pantalla completa para editarlo (como hoy).');
+      if (accion === 'listo') return volver();
+      if (accion === 'poner-lugar') return decir('En la app, el domingo toma el siguiente lugar de la rotación.');
+      if (accion === 'volver-a-poner') return decir('En la app, vuelve a la rotación de Instagram.');
+      if (accion === 'ver' || /^Ver en/.test(etiqueta)) return decir('En la app, abre la publicación en Instagram (o Facebook).');
+      if (etiqueta === 'Cerrar') return volver();
+      if (/^Quitar @/.test(etiqueta)) return decir('En la app, quita la etiqueta y la mención (como hoy).');
+      if (el.getAttribute('role') === 'checkbox') { const v = el.getAttribute('aria-checked') === 'true'; el.setAttribute('aria-checked', String(!v)); return; }
+      const href = el.getAttribute('href') ?? '';
+      decir(href && !href.startsWith('#') ? `En la app, esto lleva a ${href}` : `En la app: «${texto || etiqueta}»`);
+    }, true);
+  }
+
+  // Como medir.js: lo que se pinta bajo <body> (sin lo oculto; un svg cuenta uno). De lo nuevo (`data-propuesta`): nodos, profundidad,
+  // div o span sin clase y toques menores de 44 px; de la pantalla: nodos, profundidad, textos cortados y desborde horizontal.
+  function medir(doc) {
+    const win = doc.defaultView;
+    const OMITIDOS = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'TEMPLATE', 'NOSCRIPT']);
+    const visible = (el) => !OMITIDOS.has(el.tagName) && !el.hidden && win.getComputedStyle(el).display !== 'none';
+    let prof = 0, nodos = 0;
+    const recorrer = (el, d) => { for (const h of el.children) { if (!visible(h)) continue; nodos++; prof = Math.max(prof, d + 1); if (h.tagName.toLowerCase() !== 'svg') recorrer(h, d + 1); } };
+    recorrer(doc.body, 0);
+    const bloques = [...doc.querySelectorAll('[data-propuesta]')].filter((b) => b.tagName !== 'STYLE' && !b.parentElement.closest('[data-propuesta]'));
+    let bNodos = 0, bProf = 0, sin = 0;
+    const contar = (el, d) => { bNodos++; bProf = Math.max(bProf, d); if (/^(DIV|SPAN)$/.test(el.tagName) && !el.getAttribute('class') && !el.closest('ul, [role="status"]')) sin++; if (el.tagName.toLowerCase() !== 'svg') for (const h of el.children) if (visible(h)) contar(h, d + 1); };
+    for (const b of bloques) contar(b, 1);
+    // Textos cortados; aparte lo que se corta a propósito: el título de un renglón (dos líneas) y el último dato de su línea, el título de la
+    // barra, el resumen de dos líneas de ui/CampoLargo (OL-147: se abre a pantalla completa) y lo que se desliza dentro de una fila.
+    const todosCortados = [...doc.body.querySelectorAll('*')].filter((el) => { if (!visible(el) || el.children.length || (el.clientWidth <= 1 && el.clientHeight <= 1)) return false; const s = win.getComputedStyle(el); return (s.overflow !== 'visible' || s.textOverflow === 'ellipsis') && (el.scrollWidth > el.clientWidth + 1 || (s.overflowY !== 'visible' && el.scrollHeight > el.clientHeight + 1)); });
+    const aProposito = (el) => el.matches('a[class*="__frente"] > b') || el.matches('[class*="CampoLargo-module"][class*="__resumen"]') || el.matches('[class*="Barra-module"][class*="__titulo"]');
+    const cede = todosCortados.filter(aProposito).length;
+    // Lo que se corta fuera de lo nuevo (la cabecera de la ficha de producción bajo el «···», que esta pieza no toca) se cuenta aparte.
+    const enLaPieza = (el) => !!el.closest('[data-propuesta], [role="dialog"]');
+    const ajenos = todosCortados.filter((el) => !aProposito(el) && !enLaPieza(el));
+    const queCorta = todosCortados.filter((el) => !aProposito(el) && enLaPieza(el)).map((el) => `${el.tagName.toLowerCase()}: ${el.textContent.trim().slice(0, 40)}`);
+    const cortados = queCorta.length;
+    const vw = doc.documentElement.clientWidth;
+    const desborde = doc.documentElement.scrollWidth > vw + 1 ? 1 : 0;
+    // Lo que cae a la derecha dentro de una fila que se desliza (la fila de contexto de ui/Cabecera, el carril) no cuenta: se llega deslizando.
+    const enFila = (el) => { for (let p = el.parentElement; p && p !== doc.body; p = p.parentElement) if (['auto', 'scroll'].includes(win.getComputedStyle(p).overflowX)) return true; return false; };
+    const fuera = [...doc.querySelectorAll('a, button')].filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > vw + 1 && !enFila(el); }).length;
+    // Un chip mide 36 a la vista y 44 al tacto (su `::before`, ui/Chip); un enlace dentro de una frase queda exento (como en medir.js).
+    const alTacto = (el) => { const r = el.getBoundingClientRect(); const extra = el.matches('[class*="Chip-module"][class*="__toque"]') ? Math.max(0, 44 - r.height) : 0; return { w: r.width, h: r.height + extra }; };
+    const enFrase = (el) => el.parentElement?.tagName === 'P' && el.parentElement.textContent.trim() !== el.textContent.trim() && !el.parentElement.matches('[class*="admin-module"][class*="__hecho"]');
+    const chicos = bloques.flatMap((b) => [...b.querySelectorAll('a, button')]).filter((el) => { const t = alTacto(el); return t.w > 0 && !enFrase(el) && (t.w < 44 || t.h < 44); });
+    const toques = chicos.length;
+    const r = { nodos, prof, bloque: bNodos, profBloque: bProf, sinClase: sin, cortados, queCorta, cede, ajenos: ajenos.map((el) => el.textContent.trim().slice(0, 30)), desborde, fuera, toques, chicos: chicos.map((el) => el.textContent.trim().slice(0, 30) || el.getAttribute('aria-label')), bloques: bloques.map((b) => b.dataset.propuesta) };
+    $('medidor').innerHTML = [
+      ['nodos', nodos, false], ['profundidad', prof, prof > 16], ['nodos de lo nuevo', bloques.length ? bNodos : '–', false], ['profundidad de lo nuevo', bloques.length ? bProf : '–', false],
+      ['sin clase', bloques.length ? sin : '–', sin > 0], ['textos cortados', cortados, cortados > 0], ['cortes a propósito', cede, false], ['cortes fuera de lo nuevo', ajenos.length, false], ['desborde', desborde, desborde > 0], ['toques fuera de la pantalla', fuera, fuera > 0], ['toques < 44', bloques.length ? toques : '–', toques > 0],
+    ].map(([n, v, mal]) => `<span data-mal="${mal}"><b>${v}</b>${n}</span>`).join('');
+    return r;
+  }
+
+  $('plegar').addEventListener('click', (ev) => {
+    const notas = $('notas');
+    const plegadas = notas.dataset.plegadas !== 'true';
+    notas.dataset.plegadas = String(plegadas);
+    ev.currentTarget.setAttribute('aria-expanded', String(!plegadas));
+    ev.currentTarget.textContent = plegadas ? 'Abrir las notas' : 'Plegar las notas';
+  });
+  window.prototipo = { ir: (id, ancho) => { if (ancho) estado.ancho = ancho; return ir(id); }, estado: () => ({ ...estado }), medir: () => medir(tel.contentDocument), listo: () => pintado, estados: () => Object.keys(ESTADOS) };
+  pintar();
+})();
+</script>
+</body>
+</html>
