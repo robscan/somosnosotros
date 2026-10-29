@@ -18,6 +18,8 @@ type Props = {
   /** Si se pone, tocar el renglón abre el lugar ahí (la ficha dentro de la hoja de Lugares) en vez de ir a su página; abrirlo con
    *  una tecla (en otra pestaña) sigue su enlace. */
   alAbrir?: () => void;
+  /** «4 veces» (OL-473): en la hoja «Ver los N» de la trayectoria de un artista, cuántas veces se presentó ahí, con el calendario y en gris. */
+  veces?: string;
 };
 
 /**
@@ -25,7 +27,7 @@ type Props = {
  * próximo evento y, debajo, lo que tiene abierto de varios días («Exposición hasta el dom 8 de nov»; OL-400, el founder firmó «las dos
  * líneas»). Uno solo para todas las listas de lugares, como RenglonEvento para los eventos.
  */
-export default function RenglonLugar({ lugar: l, km, boton, botonEnEspera = false, alAbrir }: Props) {
+export default function RenglonLugar({ lugar: l, km, boton, botonEnEspera = false, alAbrir, veces }: Props) {
   function alTocar(e: MouseEvent<HTMLAnchorElement>) {
     if (!alAbrir || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
@@ -46,6 +48,12 @@ export default function RenglonLugar({ lugar: l, km, boton, botonEnEspera = fals
               <b>{textoProximo(vida)}</b>
             </span>
           ),
+      )}
+      {veces && (
+        <span>
+          <IconoCalendario width={15} height={15} />
+          <span>{veces}</span>
+        </span>
       )}
     </Renglon>
   );
