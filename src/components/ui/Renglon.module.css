@@ -91,6 +91,11 @@
 .redonda {
   border-radius: 50%;
 }
+/* Una publicación en pequeño, a 4:5 como en Instagram (la semana de Instagram, OL-479): del alto del renglón y cuatro quintos de ancho. */
+.cartel {
+  width: calc(var(--foto-renglon) * 4 / 5);
+  border: 1px solid var(--borde);
+}
 .frente > b {
   display: -webkit-box;
   overflow: hidden;

@@ -1,0 +1,16 @@
+/* La pestaña «Semana» de Administración › Instagram (OL-479; prototipo firmado `instagram-calendario.html`, bitácora 509). El renglón es el de
+   las listas (`ui/Renglon` con la miniatura 4:5, `cartel`) dentro de `ui/Grupo`; aquí solo el color de dos líneas y el «Ver» de la derecha:
+   1. «Publicado», en el verde de lo ya decidido (--ok), y «Falta avisarle», en el violeta de lo que pide un toque (--primario).
+   2. El «Ver» suelto del renglón mide 44 de ancho (no lo que miden sus letras). */
+.hecho {
+  color: var(--ok);
+}
+.falta {
+  color: var(--primario);
+  font-weight: 600;
+}
+
+.ver {
+  min-width: var(--toque-min);
+  justify-content: center;
+}

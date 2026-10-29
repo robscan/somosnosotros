@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ParaHoja } from "@/app/admin/instagram/datos";
+import type { FichaParaPublicar, SemanaParaPublicar } from "../instagram/ficha";
 import { baseFalsa, type Fila } from "../rutinas/baseFalsa";
 import { reclamarTrabajo } from "./cola";
 import { correrUnTrabajo, PLAZOS_MS, type Herramientas } from "./trabajar";
@@ -65,6 +66,10 @@ function preparar(filas: Fila[], h: Partial<Herramientas> = {}, o: { hoja?: Para
     publicar: vi.fn(async () => ({ ok: true as const, mediaId: "17900000000000465", permalink: "https://www.instagram.com/p/R465/", sinEtiquetas: false })),
     publicarCarrusel: vi.fn(async () => ({ ok: true as const, mediaId: "17900000000000466", permalink: "https://www.instagram.com/p/C466/", sinEtiquetas: false })),
     publicarEnPagina: vi.fn(async () => ({ ok: true as const, postId: "1_465", permalink: "https://www.facebook.com/1/posts/465" })),
+    cargarFicha: vi.fn(async () => null),
+    dibujarFicha: vi.fn(async () => Buffer.from("tarjeta")),
+    cargarSemana: vi.fn(async () => null),
+    imagenesSemana: vi.fn(async () => []),
     avisar: vi.fn(async (_db, usuario, aviso) => void avisos.push({ usuario, cuerpo: aviso.cuerpo })),
     ...h,
   };
@@ -243,5 +248,120 @@ describe("publicar en segundo plano", () => {
     expect((await correrUnTrabajo(dep)).estado).toBe("fallida");
     expect(tablas.redes_trabajos[0]).toMatchObject({ estado: "fallido", error: "otro", fallos: 4 });
     expect(h.publicar).not.toHaveBeenCalled();
+  });
+});
+
+describe("la semana de Instagram (OL-479)", () => {
+  const ARTISTA = "c0000000-0000-4000-8000-000000000479";
+  const CASILLA = "d0000000-0000-4000-8000-000000000479";
+  const ficha = (o: Partial<FichaParaPublicar> = {}): FichaParaPublicar => ({
+    tipo: "artista", id: ARTISTA, slug: "valeria-quiroz", nombre: "Valeria Quiroz", ciudad: "San Luis Potosí", ciudadSlug: "san-luis-potosi", visible: true, grupo: false,
+    ceja: "Música · Canción", cuenta: "valeriaquiroz", portada: "https://x.test/p.jpg", foto: "https://x.test/f.jpg", proxima: null, semana: [],
+    datos: { nombre: "Valeria Quiroz", slug: "valeria-quiroz", descripcion: "Cantautora potosina. Escribe canciones sobre el desierto, la carretera y las abuelas.", disciplina: "musica", detalle: "canción", ciudad: "San Luis Potosí", redes: [{ url: "https://www.instagram.com/valeriaquiroz" }], proxima: null },
+    ubicacion: { id: "108000000000458", nombre: "San Luis Potosí" },
+    ...o,
+  });
+  const deFicha = (o: Partial<Fila> = {}) => trabajo({ id: "tf", evento_id: null, artista_id: ARTISTA, lugar_id: null, pedido: { facebook: true, casilla: CASILLA, tipo: "artista" }, ...o });
+  const conSemana = (filas: Fila[], h: Partial<Herramientas> = {}) => {
+    const p = preparar(filas, { cargarFicha: vi.fn(async () => ficha()), dibujarFicha: vi.fn(async () => Buffer.from("tarjeta")), ...h });
+    p.tablas.instagram_semana = [{ id: CASILLA, trabajo_id: "tf", estado: "programado" }];
+    p.tablas.artistas = [{ id: ARTISTA, nombre: "Valeria Quiroz" }];
+    return p;
+  };
+
+  it("un artista: su tarjeta, su texto, su cuenta etiquetada e invitada como coautora; anotado a su nombre, en Facebook con el enlace a su ficha, y su día queda publicado", async () => {
+    const avisos: { url: string; cuerpo: string }[] = [];
+    const { dep, tablas, h } = conSemana([deFicha()], { avisar: vi.fn(async (_db, _u, a) => void avisos.push({ url: a.url, cuerpo: a.cuerpo })) });
+    expect(await correrUnTrabajo(dep)).toMatchObject({ corrida: "tf", estado: "terminada" });
+    expect((h.dibujarFicha as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[1])).toEqual(["4x5", "9x16"]);
+    expect(h.publicar).toHaveBeenCalledWith(expect.objectContaining({ etiquetas: ["valeriaquiroz"], coautores: ["valeriaquiroz"], historia: false, ubicacion: "108000000000458", texto: expect.stringContaining("Lee su ficha en somosnosotrxs.org/artistas/valeria-quiroz") }));
+    // La publicación y, después, su historia (la tarjeta alta, etiquetada, sin texto ni coautor).
+    expect(tablas.instagram_publicaciones).toEqual([expect.objectContaining({ artista_id: ARTISTA, estado: "publicada", formato: "4x5", coautores: ["valeriaquiroz"] }), expect.objectContaining({ artista_id: ARTISTA, estado: "publicada", formato: "9x16", etiquetas: ["valeriaquiroz"] })]);
+    expect((h.publicar as ReturnType<typeof vi.fn>).mock.calls[1][0]).toMatchObject({ historia: true, texto: null, etiquetas: ["valeriaquiroz"] });
+    expect((tablas.redes_trabajos[0].resultado as { historia: unknown }).historia).toEqual({ ok: true, permalink: "https://www.instagram.com/p/R465/" });
+    expect(tablas.instagram_publicaciones[0].evento_id).toBeUndefined();
+    expect(tablas.facebook_publicaciones).toEqual([expect.objectContaining({ artista_id: ARTISTA, estado: "publicada" })]);
+    const fb = (h.publicarEnPagina as ReturnType<typeof vi.fn>).mock.calls[0][0].texto as string;
+    expect(fb).toContain(`Lee su ficha: https://somosnosotrxs.org/artistas/valeria-quiroz?utm_source=facebook&utm_medium=post&utm_campaign=semana-${CASILLA}`);
+    expect(fb).not.toContain("@");
+    expect(tablas.instagram_semana[0].estado).toBe("publicado");
+    expect(avisos).toEqual([{ url: `/admin/instagram?pestana=semana&dia=${CASILLA}`, cuerpo: "Se publicó en Instagram y Facebook · Valeria Quiroz" }]);
+  });
+
+  it("el texto que dejó la hoja manda; sin la cuenta (quitada) no se etiqueta ni se invita", async () => {
+    const { dep, h } = conSemana([deFicha({ pedido: { facebook: false, casilla: CASILLA, tipo: "artista", texto: "Mi texto", quitadas: ["valeriaquiroz"] } })]);
+    expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+    expect(h.publicar).toHaveBeenCalledWith(expect.objectContaining({ texto: "Mi texto", etiquetas: [], coautores: [] }));
+    expect(h.publicarEnPagina).not.toHaveBeenCalled();
+  });
+
+  it("si Instagram no aceptó al coautor, sale sin él y se dice", async () => {
+    const { dep, tablas } = conSemana([deFicha({ pedido: { facebook: false, casilla: CASILLA, tipo: "artista" } })], { publicar: vi.fn(async () => ({ ok: true as const, mediaId: "1", permalink: null, sinEtiquetas: false, sinCoautor: true })) });
+    expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+    expect(tablas.instagram_publicaciones[0].coautores).toEqual([]);
+    expect((tablas.redes_trabajos[0].resultado as { instagram: { sinCoautor?: boolean } }).instagram.sinCoautor).toBe(true);
+  });
+
+  it("un lugar sin Instagram: sin etiqueta ni coautor, y su historia", async () => {
+    const lugar = ficha({ tipo: "lugar", id: "l1", cuenta: null, foto: null, nombre: "Foro", datos: { nombre: "Foro", slug: "foro", descripcion: "Un foro de la ciudad, con conciertos y talleres.", tipo: "foro", ciudad: "San Luis Potosí", direccion: null, redes: [], semana: [] } });
+    const { dep, h, tablas } = conSemana([deFicha({ artista_id: null, lugar_id: "l1", pedido: { facebook: false, casilla: CASILLA, tipo: "lugar" } })], { cargarFicha: vi.fn(async () => lugar) });
+    expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+    const llamadas = (h.publicar as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
+    expect(llamadas[0]).toMatchObject({ etiquetas: [], coautores: [], historia: false });
+    expect(llamadas[1]).toMatchObject({ etiquetas: [], historia: true, texto: null });
+    expect(tablas.instagram_publicaciones.map((x) => [x.lugar_id, x.formato])).toEqual([["l1", "4x5"], ["l1", "9x16"]]);
+  });
+
+  it("si la historia no sale, la publicación queda y se dice (sin reintentar)", async () => {
+    let n = 0;
+    const publicar = vi.fn(async () => (n++ === 0 ? { ok: true as const, mediaId: "1", permalink: "https://www.instagram.com/p/A/", sinEtiquetas: false } : { ok: false as const, error: "imagen" as const }));
+    const { dep, tablas } = conSemana([deFicha({ pedido: { facebook: false, casilla: CASILLA, tipo: "artista" } })], { publicar });
+    expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+    expect(publicar).toHaveBeenCalledTimes(2);
+    expect(tablas.redes_trabajos[0]).toMatchObject({ estado: "publicado" });
+    expect((tablas.redes_trabajos[0].resultado as { historia: unknown }).historia).toEqual({ ok: false, permalink: null });
+    expect(tablas.instagram_semana[0].estado).toBe("publicado");
+  });
+
+  it("una ficha que ya no se ve no se publica: el día queda «no se pudo»", async () => {
+    const { dep, h, tablas } = conSemana([deFicha()], { cargarFicha: vi.fn(async () => ficha({ visible: false })) });
+    expect((await correrUnTrabajo(dep)).estado).toBe("fallida");
+    expect(h.publicar).not.toHaveBeenCalled();
+    expect(tablas.instagram_semana[0].estado).toBe("fallido");
+  });
+
+  it("un día quitado mientras tanto no se marca publicado", async () => {
+    const { dep, tablas } = conSemana([deFicha()]);
+    tablas.instagram_semana[0].estado = "quitado";
+    expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+    expect(tablas.instagram_semana[0].estado).toBe("quitado");
+  });
+
+  it("el evento del día que ya salió en Instagram por la lista de hoy desde que se programó, no sale otra vez", async () => {
+    const { dep, h, tablas } = conSemana([trabajo({ id: "tf", pedido: { facebook: true, casilla: CASILLA, tipo: "evento" } })]);
+    tablas.instagram_publicaciones.push({ id: "ig1", evento_id: EVENTO, estado: "publicada", formato: "4x5", imagenes: 1, permalink: "https://www.instagram.com/p/YA/", creado_en: new Date(T0.getTime() + 1000).toISOString() });
+    expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+    expect(h.publicar).not.toHaveBeenCalled();
+    expect(tablas.instagram_semana[0].estado).toBe("publicado");
+    // Uno publicado antes de programarlo no cuenta: sale.
+    const otro = conSemana([trabajo({ id: "tf", pedido: { facebook: false, casilla: CASILLA, tipo: "evento" } })]);
+    otro.tablas.instagram_publicaciones.push({ id: "ig0", evento_id: EVENTO, estado: "publicada", formato: "4x5", creado_en: new Date(T0.getTime() - 86_400_000).toISOString() });
+    expect((await correrUnTrabajo(otro.dep)).estado).toBe("terminada");
+    expect(otro.h.publicar).toHaveBeenCalledOnce();
+  });
+
+  it("«Esta semana»: un carrusel con la portada y los carteles, cada cartel con la cuenta de su lugar, a nombre de su primer evento", async () => {
+    const semana: SemanaParaPublicar = { ciudad: "San Luis Potosí", ciudadSlug: "san-luis-potosi", titulo: "Del viernes 16 al domingo 18 de octubre", eventos: [{ id: EVENTO, slug: "x", titulo: "Cultura Mística", inicio: "2026-10-31T01:00:00Z", zona: "America/Mexico_City", imagen: "c.jpg", lugar: "Aurora", lugarRedes: [{ url: "https://www.instagram.com/auroracolab" }] }], ubicacion: null };
+    const { dep, h, tablas } = conSemana([trabajo({ id: "tf", pedido: { facebook: true, casilla: CASILLA, tipo: "semana", eventos: [EVENTO] } })], {
+      cargarSemana: vi.fn(async () => semana),
+      imagenesSemana: vi.fn(async () => [{ bytes: Buffer.from("portada"), etiquetas: [] }, { bytes: Buffer.from("cartel"), etiquetas: ["auroracolab"] }]),
+    });
+    expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+    const enviado = (h.publicarCarrusel as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(enviado.imagenes.map((i: { etiquetas: string[] }) => i.etiquetas)).toEqual([[], ["auroracolab"]]);
+    expect(enviado.texto).toContain("Este fin en San Luis Potosí:");
+    expect(tablas.instagram_publicaciones[0]).toMatchObject({ evento_id: EVENTO, formato: "carrusel", imagenes: 2 });
+    expect((h.publicarEnPagina as ReturnType<typeof vi.fn>).mock.calls[0][0].texto).not.toContain("enlace en la bio");
+    expect(tablas.instagram_semana[0].estado).toBe("publicado");
   });
 });

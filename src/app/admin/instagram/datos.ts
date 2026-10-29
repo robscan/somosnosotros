@@ -104,6 +104,8 @@ export async function cargarSugerencias(supabase: ClienteServidor, ciudad: strin
         .select("id, evento_id, red, formato, estado, pedido, error")
         .in("evento_id", filas.map((f) => f.id))
         .gte("creado_en", new Date(ahora.getTime() - 86_400_000).toISOString())
+        // OL-479: lo que la semana de Instagram programó para más tarde no está «Publicando…» (lo dice la pestaña Semana).
+        .or(`pedido->>casilla.is.null,siguiente_en.lte.${new Date(ahora.getTime() + 60_000).toISOString()},estado.neq.en_cola`)
         .order("creado_en", { ascending: false })
         .limit(500)
     : null;

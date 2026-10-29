@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { armarTexto, INVITACION, type EventoIg } from "../instagram/texto";
-import { DOMINIO_VISIBLE, enlaceConOrigen, INVITACION_FACEBOOK, textoDeFacebook } from "./texto";
+import { DOMINIO_VISIBLE, enlaceConOrigen, enlaceFichaConOrigen, INVITACION_FACEBOOK, textoDeFacebook, textoDeFacebookFicha } from "./texto";
 
 /** OL-461 (bitácora 493): el texto de la página de Facebook a partir del de Instagram, y los enlaces con marca de origen. */
 const ahora = new Date("2026-10-07T16:00:00Z");
@@ -70,5 +70,31 @@ describe("textoDeFacebook", () => {
     const fb = textoDeFacebook(armarTexto(e, ahora), e, ENLACE);
     expect(fb).toContain("📍 Foro · San Luis Potosí");
     expect(fb).toContain("Con Ana");
+  });
+});
+
+describe("el texto de Facebook de un artista o un lugar (OL-479)", () => {
+  const ig = [
+    "Cantautora potosina.",
+    "Música · Canción · San Luis Potosí\nPróxima fecha: viernes 16 de octubre, 7:00 pm, en el Teatro de la Paz @teatrodelapazslp.",
+    "Lee su ficha en somosnosotrxs.org/artistas/valeria (enlace en la bio).\nMás de su trabajo en @valeria\nFoto: @valeria",
+    "Sigue a @smsnstrsapp para conocer a más artistas de tu ciudad.",
+    "#SanLuisPotosi #ArtistasLocales #SomosNosotrxs",
+  ].join("\n\n");
+  const enlace = enlaceFichaConOrigen("artistas", "valeria", "facebook", "post", "semana-2026-10-12");
+  it("el enlace con su marca de origen", () => {
+    expect(enlace).toBe(`https://${DOMINIO_VISIBLE}/artistas/valeria?utm_source=facebook&utm_medium=post&utm_campaign=semana-2026-10-12`);
+  });
+  it("el enlace tocable, la cuenta como dirección, sin menciones sueltas y la invitación a la página", () => {
+    const fb = textoDeFacebookFicha(ig, "valeria", enlace);
+    expect(fb).toContain(`Lee su ficha: ${enlace}`);
+    expect(fb).toContain("Más de su trabajo en instagram.com/valeria\nFoto: instagram.com/valeria");
+    expect(fb).toContain("en el Teatro de la Paz.");
+    expect(fb).toContain("Sigue la página para conocer a más artistas de tu ciudad.");
+    expect(fb).not.toMatch(/@|enlace en la bio/);
+  });
+  it("un texto cambiado a mano sin la ficha: el enlace antes de las etiquetas", () => {
+    const fb = textoDeFacebookFicha("Hola.\n\n#SanLuisPotosi", null, enlace);
+    expect(fb).toBe(`Hola.\n\nFicha: ${enlace}\n\n#SanLuisPotosi`);
   });
 });
