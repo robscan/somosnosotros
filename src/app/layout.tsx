@@ -7,6 +7,7 @@ import BarraApp from "@/components/BarraApp";
 import Navegacion from "@/components/Navegacion";
 import NavSecciones from "@/components/NavSecciones";
 import PerfilEnNav from "@/components/PerfilEnNav";
+import AbrirEnlaceApp from "@/components/AbrirEnlaceApp";
 import AnalyticsGoogle from "@/components/AnalyticsGoogle";
 import AnalyticsVercel from "@/components/AnalyticsVercel";
 import MarcaAdmin from "@/components/MarcaAdmin";
@@ -95,6 +96,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </Armazon>
         <RegistroSW />
+        {/* Dentro de la app de la tienda: «Abrir» del letrero de Apple y los enlaces con la app abierta llevan a su ruta (OL-474). */}
+        <AbrirEnlaceApp />
         <Navegacion />
         {/* El campo escondido que la lupa de la barra enfoca con el toque, para que el teclado del iPhone no se cierre al llegar a Buscar (`BarraApp`). */}
         <input id="cebo-de-teclado" className="cebo-de-teclado" type="text" tabIndex={-1} aria-hidden="true" autoComplete="off" />

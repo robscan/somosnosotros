@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 /**
  * Enlaces universales de iOS (OL-194, pieza 4 de docs/rediseno/47-app-ios.md §9): Apple exige este archivo servido
- * en HTTPS, sin redirecciones, con Content-Type application/json (con o sin extensión .json en la petición: Apple
- * pide ambas formas), en `https://somosnosotros.org/.well-known/apple-app-site-association`. El identificador junta
+ * en HTTPS, sin redirecciones y con Content-Type application/json, en
+ * `https://somosnosotros.org/.well-known/apple-app-site-association`. El identificador junta
  * el Team ID del founder (AT53235M7U, cuenta personal de Apple Developer) con el App ID ya creado en
  * developer.apple.com (`org.somosnosotros.app`); ninguno de los dos es secreto, viajan a la vista en cualquier
  * enlace compartido.
