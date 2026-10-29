@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Avisos: hora y forma</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-478 (bitácora 510): los avisos al teléfono con hora y forma, y «Esta semana en {ciudad}». Founder (2026-10-29): «Quiero que las
+   notificaciones funcionen muy bien. Ese es nuestro gancho para mantener fresca la información y el interés de los usuarios»; aceptó las
+   recomendaciones de docs/investigaciones/avisos-con-la-app-nativa.md (resumen diario, también lo de las rutinas, «Me interesa» solo cambios y
+   cancelación, «Esta semana» los jueves a las 7 pm con permiso propio, guardar la ciudad, título = evento, sin duplicar web y app).
+
+   Armazón de propuestas: selector de pantalla, de estado (con su variante: Hoy · A · B), tamaños 320 · 390 · 430, notas y medidor.
+   Lo que vive en la app (Inicio, Ajustes, Novedades, Administración) es la pantalla REAL (maqueta-pantalla.mjs + prototipo/avisos-hora-y-forma.mjs:
+   el CSS servido y el cuerpo tal cual; la propuesta solo reutiliza piezas con sus clases de producción). La pantalla de bloqueo, el centro de
+   avisos y el permiso del sistema son del iPhone, de Android o de la Mac: se dibujan aquí (prefijo ab-), con la letra del sistema y medidas
+   aproximadas de iOS 26 a 390 pt. Lo de este archivo fuera del marco es solo el armazón. */
+:root {
+  --pg-fondo: #e6e4de; --pg-panel: #fbfaf7; --pg-texto: #1a1a1a; --pg-suave: #5e5b54; --pg-borde: #d3d0c8; --pg-acento: #6d34c8; --pg-acento-texto: #ffffff;
+  --pg-bien: #1f6f43; --pg-mal: #b3261e;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ancho-tel: 390px; --alto-tel: 844px;
+}
+* { box-sizing: border-box; }
+html { font: 400 1rem / 1.45 var(--fuente); font-variation-settings: "wdth" 80; color: var(--pg-texto); background: var(--pg-fondo); -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+button { font: inherit; font-variation-settings: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+.escena { display: grid; gap: 16px; padding: 16px; align-content: start; }
+.columna { display: grid; gap: 8px; justify-items: center; align-content: start; min-width: 0; }
+.selector { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; max-width: 760px; }
+.selector button { min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--pg-panel); color: var(--pg-suave); font-size: 0.875rem; font-weight: 700; }
+.selector button[aria-pressed="true"] { background: var(--pg-acento); color: var(--pg-acento-texto); }
+.selector.sub button { min-height: 32px; background: transparent; box-shadow: inset 0 0 0 1px var(--pg-borde); }
+.selector.sub button[aria-pressed="true"] { background: var(--pg-texto); color: var(--pg-panel); box-shadow: none; }
+.selector.sub button[data-letra]::before { content: attr(data-letra) " · "; opacity: 0.7; }
+.selector.tam button { min-height: 30px; padding: 0 10px; font-weight: 600; }
+.etiqueta { margin: 0; min-height: 2.6em; color: var(--pg-suave); font-size: 0.875rem; line-height: 1.3; text-align: center; max-width: 430px; }
+.etiqueta b { color: var(--pg-texto); }
+.tel { display: block; width: var(--ancho-tel); max-width: 100%; height: var(--alto-tel); border: 0; border-radius: 28px; background: #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22); }
+.notas { display: grid; gap: 16px; align-content: start; padding: 20px; border-radius: 16px; background: var(--pg-panel); }
+.notas h1 { margin: 0; font-size: 1.5rem; line-height: 1.1; font-variation-settings: "wdth" 75; }
+.notas h2 { margin: 0 0 6px; font-size: 1.0625rem; font-variation-settings: "wdth" 75; }
+.notas p, .notas ul, .notas ol, .notas table { margin: 0; font-size: 0.9375rem; }
+.notas ul, .notas ol { padding-left: 1.1em; display: grid; gap: 6px; }
+.notas table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+.notas td, .notas th { padding: 4px 6px; border-top: 1px solid var(--pg-borde); text-align: left; vertical-align: top; }
+.notas .chica { color: var(--pg-suave); font-size: 0.875rem; }
+.notas q { quotes: "«" "»"; }
+.recomendada { display: inline-block; margin-right: 6px; padding: 2px 8px; border-radius: 10px; background: #e3f3e8; color: var(--pg-bien); font-size: 0.75rem; font-weight: 700; }
+.cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cifra { padding: 8px 10px; border-radius: 10px; background: #fff; box-shadow: inset 0 0 0 1px var(--pg-borde); }
+.cifra small { display: block; color: var(--pg-suave); font-size: 0.75rem; line-height: 1.2; }
+.cifra b { font-size: 1.25rem; }
+.cifra b.bien { color: var(--pg-bien); }
+.cifra b.mal { color: var(--pg-mal); }
+.cortes { color: var(--pg-suave); font-size: 0.8125rem; }
+@media (min-width: 860px) { .escena { grid-template-columns: minmax(0, 1fr) 440px; align-items: start; } .notas { position: sticky; top: 16px; max-height: calc(100dvh - 32px); overflow: auto; } }
+</style>
+</head>
+<body>
+<main class="escena">
+  <section class="columna" aria-label="El teléfono">
+    <div class="selector" role="group" aria-label="Pantalla" id="sel-pantalla"></div>
+    <div class="selector sub" role="group" aria-label="Estado y variante" id="sel-estado"></div>
+    <div class="selector sub tam" role="group" aria-label="Tamaño" id="sel-tam"></div>
+    <p class="etiqueta" id="etiqueta"></p>
+    <iframe class="tel" id="tel" title="La pantalla"></iframe>
+  </section>
+  <aside class="notas" aria-labelledby="notas-titulo">
+    <div>
+      <h1 id="notas-titulo">Avisos: hora y forma</h1>
+      <p class="chica">OL-478 · bitácora 510 · jue 29 de oct · el reloj de los ejemplos: jueves 8 de octubre de 2026, San Luis Potosí</p>
+    </div>
+    <section aria-labelledby="t-estado"><h2 id="t-estado">Este estado</h2><div id="texto-estado"></div></section>
+    <section aria-labelledby="t-medida">
+      <h2 id="t-medida">Medida</h2>
+      <div class="cifras" id="cifras"></div>
+      <p class="cortes" id="cortes"></p>
+    </section>
+    <section aria-labelledby="t-pide"><h2 id="t-pide">Para firmar</h2>
+      <ol>
+        <li><b>Resumen: A</b> (el título cuenta, «3 nuevos de lo que sigues») o B (el título es el primer evento).</li>
+        <li><b>Los textos</b> de cada aviso, uno por uno o en bloque (pantalla «Bloqueo»).</li>
+        <li><b>Las horas</b>: silencio de 9 pm a 9 am; de día lo nuevo se junta 15 minutos y sale; uno al día; lo de última hora (empieza en menos de 24 h) no espera.</li>
+        <li><b>La tarjeta de «Esta semana»: B</b> (en el sitio del banner de compartir, esa visita) o A (al final del carril).</li>
+        <li><b>Ajustes</b>: «Lo destacado de la semana» con su ciudad, y «Te llegan en: …».</li>
+      </ol>
+    </section>
+  </aside>
+</main>
+<template id="maqueta-css"><style>/*@CSS*/</style></template>
+<script>
+(() => {
+  /*@DATOS*/
+  const CSS_APP = document.getElementById('maqueta-css').content.querySelector('style').textContent;
+  for (const [id, c] of Object.entries(PANTALLAS_APP)) PANTALLAS_APP[id] = c.replace(/__IMG_(\d+)__/g, (_, n) => IMAGENES[n]);
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (x) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[x]);
+
+  /* ===== Lo del sistema (iOS, Android, macOS), dibujado: prefijo ab- ===== */
+  const SISTEMA = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif';
+  const CSS_OS = `
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font: 400 15px/20px ${SISTEMA}; color: #000; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  .ab-pantalla { position: relative; min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; padding: 0 10px 18px; background: linear-gradient(165deg, #6d5a8c 0%, #b0789a 42%, #e7b38a 78%, #f3d6a4 100%); }
+  .ab-pantalla.ab-noche { background: linear-gradient(170deg, #141a33 0%, #2a2d5a 50%, #5a3f6e 100%); }
+  .ab-estado { display: flex; justify-content: space-between; padding: 14px 18px 0; color: #fff; font: 600 15px/20px ${SISTEMA}; }
+  .ab-cabeza { display: grid; justify-items: center; padding-top: 10px; color: rgba(255, 255, 255, 0.92); text-shadow: 0 1px 8px rgba(0, 0, 0, 0.12); }
+  .ab-cabeza p { margin: 0; }
+  .ab-fecha { font: 600 19px/24px ${SISTEMA}; }
+  .ab-hora { font: 700 92px/1 ${SISTEMA}; letter-spacing: -2px; }
+  .ab-lista { display: grid; align-content: end; gap: 8px; margin: 0; padding: 0 0 12px; list-style: none; }
+  .ab-grupo { margin: 6px 4px 0; color: rgba(255, 255, 255, 0.9); font: 600 13px/18px ${SISTEMA}; }
+  .ab-aviso { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; grid-template-areas: "icono titulo cuando" "icono sub sub" "icono cuerpo cuerpo"; column-gap: 10px; align-items: start; padding: 12px 14px; border-radius: 22px; background: rgba(250, 248, 246, 0.72); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset; cursor: pointer; }
+  .ab-aviso:focus-visible { outline: 3px solid #0a84ff; outline-offset: 2px; }
+  .ab-icono { grid-area: icono; width: 38px; height: 38px; border-radius: 9px; align-self: center; }
+  .ab-titulo { grid-area: titulo; margin: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ab-cuando { grid-area: cuando; margin-left: 8px; color: rgba(60, 60, 67, 0.62); font-size: 13px; }
+  .ab-sub { grid-area: sub; margin: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ab-cuerpo { grid-area: cuerpo; margin: 0; white-space: pre-line; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: var(--max, 2); overflow: hidden; }
+  .ab-aviso:not(:has(.ab-sub)) { grid-template-areas: "icono titulo cuando" "icono cuerpo cuerpo"; }
+  /* La pila: los avisos de debajo asoman como bordes (sombras sin desenfoque, cada una más angosta). */
+  .ab-pila { margin-bottom: 14px; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 8px 0 -4px rgba(250, 248, 246, 0.52), 0 15px 0 -9px rgba(250, 248, 246, 0.34); }
+  .ab-pila[data-mas="1"] { margin-bottom: 8px; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 8px 0 -4px rgba(250, 248, 246, 0.52); }
+  .ab-pie { display: flex; justify-content: space-between; padding: 0 26px; }
+  .ab-pie span { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: rgba(30, 30, 30, 0.28); color: #fff; font-size: 20px; }
+  .ab-barra { justify-self: center; width: 134px; height: 5px; margin-top: 12px; border-radius: 3px; background: rgba(0, 0, 0, 0.55); }
+  /* Android 15 con Chrome: el cajón de avisos, el aviso cerrado (una línea de cuerpo) y la imagen grande a la derecha. */
+  .ab-android { min-height: 100%; padding: 0 12px 18px; background: #e9e4ef; font-family: Roboto, "Google Sans", system-ui, sans-serif; }
+  .ab-android .ab-estado { color: #1d1b20; padding: 12px 10px 0; font-family: Roboto, system-ui, sans-serif; font-weight: 500; }
+  .ab-and-reloj { margin: 26px 10px 18px; color: #1d1b20; font: 400 44px/1 Roboto, system-ui, sans-serif; }
+  .ab-android .ab-lista { align-content: start; gap: 2px; }
+  .ab-and { display: grid; grid-template-columns: minmax(0, 1fr) 48px; grid-template-areas: "cab grande" "titulo grande" "cuerpo grande"; column-gap: 12px; padding: 14px 16px; border-radius: 4px; background: #fbf8fd; cursor: pointer; }
+  .ab-and:first-child { border-radius: 24px 24px 4px 4px; } .ab-and:last-child { border-radius: 4px 4px 24px 24px; } .ab-and:only-child { border-radius: 24px; }
+  .ab-and-cab { grid-area: cab; display: flex; align-items: center; gap: 6px; margin: 0 0 4px; color: #49454f; font-size: 12px; line-height: 16px; white-space: nowrap; overflow: hidden; }
+  .ab-and-cab img { width: 16px; height: 16px; border-radius: 50%; background: #6d34c8; padding: 2px; }
+  .ab-and .ab-titulo { font-weight: 500; color: #1d1b20; }
+  .ab-and .ab-cuerpo { color: #49454f; font-size: 14px; }
+  .ab-and-grande { grid-area: grande; width: 48px; height: 48px; border-radius: 8px; align-self: center; }
+  /* macOS: el aviso arriba a la derecha (a este ancho, de lado a lado). */
+  .ab-mac { min-height: 100%; padding: 8px 10px; background: linear-gradient(160deg, #3f6fa1, #7aa0c4 60%, #d6dfe8); }
+  .ab-mac-barra { display: flex; justify-content: flex-end; gap: 14px; padding: 2px 6px 10px; color: #fff; font: 500 13px/18px ${SISTEMA}; }
+  .ab-mac .ab-aviso { border-radius: 16px; background: rgba(246, 246, 246, 0.82); }
+  .ab-mac .ab-sitio { grid-area: sub; margin: 0; color: rgba(60, 60, 67, 0.7); font-size: 13px; line-height: 17px; }
+  .ab-mac .ab-aviso:has(.ab-sitio) { grid-template-areas: "icono titulo cuando" "icono sub sub" "icono cuerpo cuerpo"; }
+  /* El diagrama de un día (no es una pantalla). */
+  .ab-dia { min-height: 100%; padding: 22px 18px 28px; background: #fbfaf7; font: 400 15px/1.35 ${SISTEMA}; color: #1a1a1a; }
+  .ab-dia h1 { margin: 0 0 4px; font-size: 20px; line-height: 1.2; }
+  .ab-dia > p { margin: 0 0 14px; color: #5e5b54; font-size: 13px; }
+  .ab-dia ol { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+  .ab-dia li { display: grid; grid-template-columns: 62px 14px minmax(0, 1fr); column-gap: 8px; padding: 8px 0; border-top: 1px solid #e3e0d8; }
+  .ab-dia li > b { font-variant-numeric: tabular-nums; }
+  .ab-dia li > i { width: 12px; height: 12px; margin-top: 4px; border-radius: 50%; background: #6d34c8; }
+  .ab-dia li.ab-silencio { background: #eceaf3; }
+  .ab-dia li.ab-silencio > i { background: #8a8794; }
+  .ab-dia li.ab-espera > i { background: transparent; box-shadow: inset 0 0 0 2px #8a8794; }
+  .ab-dia li > span small { display: block; color: #5e5b54; font-size: 13px; }
+  `;
+
+  /** El cuerpo como lo arma el servidor: en la web (sin subtítulo) la razón va primero; la descripción, si la hay, al final y recortada con «…»
+   *  para que todo quepa en 72 caracteres (dos líneas a 375, el iPhone más angosto con iOS 26). */
+  const PRESUPUESTO = 72;
+  function recortar(texto, n = PRESUPUESTO) {
+    if (texto.length <= n) return texto;
+    const corte = texto.slice(0, n - 1);
+    return corte.slice(0, Math.max(corte.lastIndexOf(' '), n - 12)).replace(/[\s·:,]+$/, '') + '…';
+  }
+  function cuerpoDe(a, forma) {
+    const base = forma === 'ios' || !a.sub ? a.cuerpo : `${a.sub} · ${a.cuerpo}`;
+    return a.desc ? recortar(`${base} · ${a.desc}`) : base;
+  }
+  /** Un aviso: `forma` ios (con subtítulo) · web (la web instalada en el iPhone: sin subtítulo) · android · mac. */
+  function aviso(a, forma) {
+    if (forma !== 'ios') a = web(a);
+    else a = { ...a, cuerpo: cuerpoDe(a, 'ios') };
+    const abre = (a.abre ? ` data-abre="${esc(a.abre)}"` : '') + (a.url ? ` data-url="${esc(a.url)}"` : '');
+    const max = a.max ?? 2;
+    const pila = a.pila ? ` ab-pila" data-mas="${a.pila}` : '';
+    const nombre = esc([a.titulo, a.sub, a.cuerpo].filter(Boolean).join('. '));
+    if (forma === 'android') {
+      return `<li class="ab-and" role="button" tabindex="0" aria-label="${nombre}"${abre} data-aviso="${esc(a.id ?? '')}"><p class="ab-and-cab"><img src="${ICONO_ANDROID}" alt="">Somos Nosotrxs · ${esc(a.hora ?? 'ahora')}</p><p class="ab-titulo" data-max="1">${esc(a.titulo)}</p><p class="ab-cuerpo" data-max="1" style="--max:1">${esc(a.cuerpo)}</p><img class="ab-and-grande" src="${ICONO_APP}" alt=""></li>`;
+    }
+    const sub = forma === 'ios' && a.sub ? `<p class="ab-sub" data-max="1">${esc(a.sub)}</p>` : forma === 'mac' ? `<p class="ab-sitio">somosnosotros.org</p>` : '';
+    return `<li class="ab-aviso${pila}" role="button" tabindex="0" aria-label="${nombre}"${abre} data-aviso="${esc(a.id ?? '')}"><img class="ab-icono" src="${ICONO_APP}" alt=""><p class="ab-titulo" data-max="1">${esc(a.titulo)}</p><span class="ab-cuando">${esc(a.hora ?? 'ahora')}</span>${sub}<p class="ab-cuerpo" data-max="${max}" style="--max:${max}">${esc(a.cuerpo)}</p></li>`;
+  }
+  function bloqueo({ hora = '9:00', fecha = 'jueves 8 de octubre', avisos = [], forma = 'ios', noche = false, grupos = null }) {
+    if (forma === 'android') {
+      return `<div class="ab-android"><p class="ab-estado"><span>${esc(hora)}</span><span>5G ▮▮▮ 82 %</span></p><p class="ab-and-reloj">${esc(hora)}</p><ol class="ab-lista">${avisos.map((a) => aviso(a, 'android')).join('')}</ol></div>`;
+    }
+    if (forma === 'mac') {
+      return `<div class="ab-mac"><p class="ab-mac-barra"><span>Safari</span><span>${esc(fecha)}  ${esc(hora)}</span></p><ol class="ab-lista">${avisos.map((a) => aviso(a, 'mac')).join('')}</ol></div>`;
+    }
+    const lista = grupos
+      ? grupos.map((g) => (g.titulo ? `<li class="ab-grupo" aria-hidden="true">${esc(g.titulo)}</li>` : '') + g.avisos.map((a) => aviso(a, forma)).join('')).join('')
+      : avisos.map((a) => aviso(a, forma)).join('');
+    return `<div class="ab-pantalla${noche ? ' ab-noche' : ''}"><div><p class="ab-estado"><span></span><span>5G ▮▮▮ 82 %</span></p><header class="ab-cabeza"><p class="ab-fecha">${esc(fecha)}</p><p class="ab-hora">${esc(hora)}</p></header></div><ol class="ab-lista">${lista}</ol><footer><div class="ab-pie"><span aria-hidden="true">◐</span><span aria-hidden="true">◉</span></div><div class="ab-barra"></div></footer></div>`;
+  }
+  function dia(filas) {
+    return `<div class="ab-dia"><h1>Un día de avisos de Ana</h1><p>Diagrama, no es una pantalla. Hora de San Luis Potosí. Ana sigue el Teatro de la Paz y a Luna Hermoso, dijo «Voy» a la Noche de danzón y pidió lo destacado de la semana.</p><ol>${filas.map(([h, clase, que, detalle]) => `<li class="${clase}"><b>${esc(h)}</b><i aria-hidden="true"></i><span>${que}${detalle ? `<small>${detalle}</small>` : ''}</span></li>`).join('')}</ol></div>`;
+  }
+
+  /* ===== Los textos de cada aviso (la propuesta) ===== */
+  const T = {
+    resumen: { id: 'resumen', titulo: '3 nuevos de lo que sigues', cuerpo: 'Noche de danzón · Teatro de la Paz · vie 9 · 8 pm, y 2 más', abre: '#b-novedades', url: '/novedades?desde=aviso&tipo=resumen' },
+    resumenB: { id: 'resumen', titulo: 'Noche de danzón', sub: 'Y 2 más de lo que sigues', cuerpo: 'Teatro de la Paz · vie 9 · 8 pm. También: Feleal y Ecos de papel', abre: '#b-novedades', url: '/novedades?desde=aviso&tipo=resumen' },
+    lugar: { id: 'nuevo', titulo: 'Noche de danzón', sub: 'Nuevo en Teatro de la Paz', cuerpo: 'vie 9 · 8 pm', desc: 'Baile de salón con orquesta en vivo: danzón, mambo y chachachá',  url: '/eventos/noche-de-danzon?desde=aviso&tipo=nuevo' },
+    artista: { id: 'nuevo', titulo: 'Noche de danzón', sub: 'De Luna Hermoso, a quien sigues', cuerpo: 'vie 9 · 8 pm · Teatro de la Paz', url: '/eventos/noche-de-danzon?desde=aviso&tipo=nuevo' },
+    recordatorio: { id: 'recordatorio', titulo: 'Noche de danzón', sub: 'Hoy a las 8 pm', cuerpo: 'Teatro de la Paz · Villerías 2, Centro', url: '/eventos/noche-de-danzon?desde=aviso&tipo=recordatorio' },
+    cambio: { id: 'cambio', titulo: 'Noche de danzón', sub: 'Cambió la fecha', cuerpo: 'Ahora es el sáb 10 · 8 pm · Teatro de la Paz', url: '/eventos/noche-de-danzon?desde=aviso&tipo=cambio' },
+    cambioLugar: { id: 'cambio', titulo: 'Noche de danzón', sub: 'Cambió el lugar', cuerpo: 'Ahora es en Foro Lunaria · vie 9 · 8 pm', url: '/eventos/noche-de-danzon?desde=aviso&tipo=cambio' },
+    cancelado: { id: 'cancelado', titulo: 'Noche de danzón', sub: 'Se canceló', cuerpo: 'Era el vie 9 · 8 pm en Teatro de la Paz.', url: '/eventos/noche-de-danzon?desde=aviso&tipo=cancelado' },
+    semana: { id: 'destacados', titulo: 'Esta semana en San Luis Potosí', sub: 'Noche de danzón · vie 9 · 8 pm', cuerpo: 'Feleal: un viaje en acordeón · mié 14\nEcos de papel · hasta el dom 18', abre: '#d-hoy', url: '/?desde=aviso&tipo=destacados#destacados' },
+    ultimaHora: { id: 'nuevo', titulo: 'Jam de jazz abierta', sub: 'Nuevo en Foro Lunaria, para hoy', cuerpo: 'Hoy · 10 pm', desc: 'Entrada libre, trae tu instrumento', url: '/eventos/jam-de-jazz-abierta?desde=aviso&tipo=nuevo' },
+    largoUno: { id: 'nuevo', titulo: 'Festival Internacional de Danza Contemporánea Lila López: función de clausura', sub: 'Nuevo en Centro de las Artes de San Luis Potosí Centenario', cuerpo: 'sáb 10 · 7 pm · Centro de las Artes de San Luis Potosí Centenario', url: '/eventos/…?desde=aviso&tipo=nuevo' },
+    largoResumen: { id: 'resumen', titulo: '4 nuevos de lo que sigues', cuerpo: 'Festival Internacional de Danza Con… · sáb 10 · 7 pm, y 3 más', abre: '#b-novedades', url: '/novedades?desde=aviso&tipo=resumen' },
+  };
+  /** La forma web (sin subtítulo): la razón al principio del cuerpo. La de «Esta semana» lleva los tres en el cuerpo. */
+  const web = (a) => a.web ? a : a.id === 'destacados' ? { ...a, web: true, sub: null, cuerpo: `${a.sub}\n${a.cuerpo}`, max: 3 } : { ...a, web: true, sub: null, desc: null, cuerpo: cuerpoDe(a, 'web') };
+  const conHora = (a, hora, extra = {}) => ({ ...a, hora, ...extra });
+  const HOY_T = {
+    nuevo: { id: 'hoy-nuevo', titulo: HOY.nuevo.titulo, cuerpo: HOY.nuevo.cuerpo, url: HOY.nuevo.url },
+    cambio: { id: 'hoy-cambio', titulo: HOY.cambio.titulo, cuerpo: HOY.cambio.cuerpo, url: HOY.cambio.url },
+    recordatorio: { id: 'hoy-recordatorio', titulo: HOY.recordatorio.titulo, cuerpo: HOY.recordatorio.cuerpo, url: HOY.recordatorio.url },
+    largo: { id: 'hoy-largo', titulo: HOY.largo.titulo, cuerpo: HOY.largo.cuerpo, url: HOY.largo.url },
+  };
+
+  const lista = (xs) => `<ul>${xs.map((x) => `<li>${x}</li>`).join('')}</ul>`;
+  const textos = (a, w = true) => `<table><tr><th></th><th>App (iOS)</th>${w ? '<th>Web y Android</th>' : ''}</tr>` +
+    `<tr><td>Título</td><td>${esc(a.titulo)}</td>${w ? `<td>${esc(web(a).titulo)}</td>` : ''}</tr>` +
+    (a.sub ? `<tr><td>Subtítulo</td><td>${esc(a.sub)}</td>${w ? '<td>—</td>' : ''}</tr>` : '') +
+    `<tr><td>Cuerpo</td><td>${esc(cuerpoDe(a, 'ios')).replace(/\n/g, '<br>')}</td>${w ? `<td>${esc(web(a).cuerpo).replace(/\n/g, '<br>')}</td>` : ''}</tr>` +
+    `<tr><td>Abre</td><td colspan="2"><code>${esc(a.url)}</code></td></tr></table>`;
+
+  /* ===== Las pantallas y sus estados ===== */
+  const P = [
+    { id: 'bloqueo', nombre: 'Bloqueo (app)', estados: [
+      { id: 'b-hoy', nombre: 'Como sale hoy', v: 'hoy', os: () => bloqueo({ hora: '9:00', avisos: [conHora(HOY_T.nuevo, 'ahora'), conHora(HOY_T.cambio, '8:12'), conHora(HOY_T.recordatorio, 'ayer 8:00 pm')], forma: 'web' }),
+        notas: `<p>Los tres textos salen de <code>contenidoPush</code> (src/lib/avisos.ts) tal cual. Hoy ningún aviso lleva subtítulo ni hilo (<code>thread-id</code>).</p>${lista([
+          `«${esc(HOY.nuevo.titulo)}»: el título es el lugar aunque Ana siga al artista y no al lugar, y el nombre del evento, que es lo que atrae, queda abajo.`,
+          `El recordatorio sale cuando faltan 24 horas: a las 8 pm del día anterior para un evento de las 8 pm. Dice «Mañana».`,
+          `«Ahora es Mañana»: la M mayúscula a media frase (<code>formatearCuando</code> empieza con mayúscula). Se corrige con la forma corta de la propuesta (<q>vie 9 · 8 pm</q>).`,
+          `Cada evento nuevo es un aviso. Una carga de 40 eventos de una agenda serían 40 avisos; por eso hoy las rutinas no avisan.`])}` },
+      { id: 'b-resumen', nombre: 'a · Resumen diario', v: 'A', recomendada: true, os: () => bloqueo({ avisos: [conHora(T.resumen, 'ahora')] }),
+        notas: `<p>Un aviso al día con lo nuevo de lo que sigues: lugares y artistas, también lo que cargan las rutinas. Sale a las 9 am con lo que llegó de noche, o de día al publicarse (se junta 15 minutos). Toca: abre Novedades (<i>prueba a tocarlo</i>).</p>${textos(T.resumen)}<p class="chica">El encargo decía «3 eventos nuevos de lo que sigues» (33 caracteres): con «ahora» en la misma línea caben unos 30 a 390 y el sistema lo corta en «sigu…» (medido aquí). «3 nuevos de lo que sigues» (25) cabe a 375, el iPhone más angosto con iOS 26.</p><h2>Por qué A</h2>${lista(['El título dice lo que es: una lista. Tocar abre Novedades, no un evento: B prometería un evento y abriría una lista.', 'El número no se pierde aunque el cuerpo se corte (con un nombre largo, «y 2 más» es lo primero que se corta; ver «Nombres largos»).', 'Novedades ya pinta cada evento con su razón encima (pantalla «Al tocar el resumen»): no hace falta otra lista.'])}` },
+      { id: 'b-resumen-b', nombre: 'a · Resumen, evento primero', v: 'B', os: () => bloqueo({ avisos: [conHora(T.resumenB, 'ahora')] }),
+        notas: `<p>La misma regla con el primer evento de título y la cuenta en el subtítulo: sigue a la letra «título = evento».</p>${textos(T.resumenB)}<p>En contra: al tocar se espera el evento y abre la lista; en la web, sin subtítulo, «y 2 más» queda a media frase.</p>` },
+      { id: 'b-uno-lugar', nombre: 'b · Un solo evento (lugar)', v: 'A', recomendada: true, os: () => bloqueo({ avisos: [conHora(T.lugar, 'ahora')] }),
+        notas: `<p>Si en el día solo hay uno, el aviso es el del evento: título = el evento, la razón debajo y en el cuerpo la fecha primero (nunca se corta) y la primera frase de la descripción, si la hay.</p>${textos(T.lugar)}<p class="chica">Si sigue al lugar y al artista, manda el artista (es más personal). Nunca «fulano publicó».</p>` },
+      { id: 'b-uno-artista', nombre: 'b · Un solo evento (artista)', v: 'A', os: () => bloqueo({ avisos: [conHora(T.artista, 'ahora')] }),
+        notas: `<p>Ana sigue a Luna Hermoso y no al teatro: la razón dice la verdad. Sin descripción, el cuerpo es fecha y lugar.</p>${textos(T.artista)}` },
+      { id: 'b-recordatorio', nombre: 'c · Recordatorio 9 am', v: 'A', recomendada: true, os: () => bloqueo({ hora: '9:00', fecha: 'viernes 9 de octubre', avisos: [conHora(T.recordatorio, 'ahora')] }),
+        notas: `<p>A las 9:00 del día del evento, a quien dijo «Voy». Si empieza antes de las 11 am, la víspera a las 7 pm (ya aprobado en el plan VII).</p>${textos(T.recordatorio)}<p class="chica">«Me interesa» no recibe recordatorio (lo aceptado: solo cambios y cancelación). El cuerpo lleva la calle si es pública; con dirección reservada, solo el lugar.</p>` },
+      { id: 'b-cambio', nombre: 'd · Cambio', v: 'A', recomendada: true, os: () => bloqueo({ hora: '12:40', avisos: [conHora(T.cambio, 'ahora'), conHora(T.cambioLugar, 'ayer')] }),
+        notas: `<p>Sale en el momento (es lo que urge), a «Voy» y a «Me interesa» con el mismo texto. En silencio espera a las 9, salvo que el evento empiece antes de las 9 am.</p>${textos(T.cambio)}<p>Con el lugar: «Cambió el lugar» · «${esc(T.cambioLugar.cuerpo)}». Con los dos: «Cambió la fecha y el lugar».</p>` },
+      { id: 'b-cancelado', nombre: 'd · Cancelación', v: 'A', recomendada: true, os: () => bloqueo({ hora: '12:40', avisos: [conHora(T.cancelado, 'ahora')] }),
+        notas: `<p>A «Voy» y a «Me interesa». Cancelar antes de que pase es la fase 4 del plan (no existe todavía): el texto queda listo para ella. El recordatorio de ese evento ya no sale.</p>${textos(T.cancelado)}` },
+      { id: 'b-semana', nombre: 'e · Esta semana', v: 'A', recomendada: true, os: () => bloqueo({ hora: '7:00', fecha: 'jueves 8 de octubre', noche: true, avisos: [conHora(T.semana, 'ahora')] }),
+        notas: `<p>Los jueves a las 7 pm de la ciudad, solo a quien lo pidió, con los 3 primeros destacados de los próximos 7 días. Si no hay 3 que pasen la regla, esa semana no sale. Toca: abre Inicio en Destacados (<i>prueba a tocarlo</i>).</p>${textos(T.semana)}<p class="chica">Regla para entrar: elegido por la administración, o 2 señales o más (Voy o Me interesa). A quien ya le llegó un evento por lo que sigue no se le repite: entra el cuarto destacado.</p>` },
+      { id: 'b-largos-hoy', nombre: 'Nombres largos, hoy', v: 'hoy', os: () => bloqueo({ avisos: [conHora(HOY_T.largo, 'ahora')], forma: 'web' }),
+        notas: `<p>Hoy, con un lugar y un evento largos: el título se corta en el lugar y el nombre del evento queda en el cuerpo, que se corta en la fecha.</p>` },
+      { id: 'b-largos', nombre: 'Nombres largos', v: 'A', recomendada: true, os: () => bloqueo({ avisos: [conHora(T.largoUno, 'ahora'), conHora(T.largoResumen, '9:00')] }),
+        notas: `<p>El sistema corta lo que no cabe con «…». La propuesta pone primero lo que importa: el evento en el título y, en el cuerpo, la fecha antes que el lugar.</p>${lista(['El servidor no recorta el título (cada teléfono corta a su ancho).', 'En el resumen, el servidor sí recorta el nombre del primer evento a 34 caracteres con «…», para que la fecha y «y 3 más» no se pierdan (recortar todo el cuerpo a 80 no basta: el sistema parte por palabras y a 390 se perdía «y 3 más»; medido aquí).', 'El subtítulo largo se corta en el lugar, no en la razón: «Nuevo en …».'])}` },
+      { id: 'b-centro-hoy', nombre: 'f · Centro de avisos, hoy', v: 'hoy', os: () => bloqueo({ hora: '9:41', fecha: 'viernes 9 de octubre', forma: 'web', grupos: [{ titulo: 'Notificaciones', avisos: [conHora(HOY_T.recordatorio, '9:41', { pila: 2 })] }] }),
+        notas: `<p>Sin <code>thread-id</code>, iOS junta todos los avisos de la app en una sola pila: el recordatorio tapa el cambio y lo nuevo.</p>` },
+      { id: 'b-centro', nombre: 'f · Centro de avisos, agrupado', v: 'A', recomendada: true, os: () => bloqueo({ hora: '9:41', fecha: 'viernes 9 de octubre', grupos: [{ titulo: 'Notificaciones', avisos: [conHora(T.recordatorio, '9:00', { pila: 1 }), conHora(T.resumen, '9:00', { pila: 2 }), conHora(T.semana, 'ayer')] }] }),
+        notas: `<p>Un hilo (<code>thread-id</code>) por cosa: lo de un mismo evento junto (cambio, recordatorio, cancelación), lo nuevo junto (los resúmenes de cada día) y «Esta semana» aparte.</p><table><tr><th>Aviso</th><th>thread-id</th></tr><tr><td>Resumen y un solo evento nuevo</td><td><code>lo-nuevo</code></td></tr><tr><td>Recordatorio, cambio, cancelación</td><td><code>evento-{id}</code></td></tr><tr><td>Esta semana</td><td><code>destacados-{ciudad}</code></td></tr></table><p class="chica">En la web, <code>tag</code> hace algo parecido solo con el mismo aviso (lo reemplaza); el agrupado es cosa de iOS y Android.</p>` },
+      { id: 'b-novedades', nombre: 'Al tocar el resumen', v: 'A', app: 'novedades', enfocar: 'main h1',
+        notas: `<p>La pantalla real de Novedades, sin cambios: cada evento con su razón en gris encima del nombre («Nuevo en …», «Nueva fecha de …»). Es la lista que abre el resumen, con <code>?desde=aviso&amp;tipo=resumen</code>.</p><p class="chica">Lo que trae «Van a lo mismo · Marcos» es de la app, nunca de un aviso al teléfono.</p>` },
+    ] },
+    { id: 'otros', nombre: 'Web y Android', estados: [
+      { id: 'o-web', nombre: 'Web instalada en el iPhone', v: 'A', recomendada: true, os: () => bloqueo({ forma: 'web', avisos: [conHora(web(T.lugar), 'ahora'), conHora(web(T.resumen), '9:00')] }),
+        notas: `<p>La web en el inicio del iPhone (Safari) no tiene subtítulo: la razón va al principio del cuerpo. Mismo título.</p>${lista(['Quien tiene la app y la web en el mismo iPhone recibe solo el de la app (pantalla «Ajustes», último estado).', 'Imagen: en la web del iPhone no se confirma; queda para la fase 7 con la extensión de la app.'])}` },
+      { id: 'o-android', nombre: 'Android (Chrome)', v: 'A', recomendada: true, os: () => bloqueo({ forma: 'android', hora: '9:00', avisos: [conHora(web(T.resumen), '9:00'), conHora(web(T.lugar), 'ahora'), conHora(web(T.semana), 'ayer')] }),
+        notas: `<p>Cerrado, Android enseña una línea de cuerpo: el título lleva lo que importa y el resto se ve al abrirlo (en el resumen, la fecha del primer evento queda para el abierto). La cabecera dice el nombre de la web instalada.</p><p class="chica">Dibujo aproximado de Android 15; confirmar en el teléfono de pruebas cuando llegue.</p>` },
+      { id: 'o-mac', nombre: 'Safari en la Mac', v: 'A', os: () => bloqueo({ forma: 'mac', hora: '9:00', fecha: 'jue 8 oct', avisos: [conHora(web(T.resumen), 'ahora')] }),
+        notas: `<p>La Mac sigue recibiendo aunque la persona tenga la app en el iPhone. Mismo texto que la web.</p>` },
+    ] },
+    { id: 'horas', nombre: 'Horas', estados: [
+      { id: 'h-dia', nombre: 'Un día (diagrama)', v: 'A', recomendada: true, os: () => dia([
+        ['0:00–9:00', 'ab-silencio', 'Silencio', 'Nada sale. Lo que se publica se guarda para las 9.'],
+        ['2:10', 'ab-silencio ab-espera', 'La rutina de agendas carga 12 eventos; 3 son del Teatro de la Paz', 'Esperan a las 9:00 (no se manda nada).'],
+        ['9:00', '', 'Resumen: «3 nuevos de lo que sigues»', 'Lo que llegó de noche, en un aviso.'],
+        ['9:00', '', 'Recordatorio: «Noche de danzón · Hoy a las 8 pm»', 'El del día de un «Voy».'],
+        ['13:20', 'ab-espera', 'Luna Hermoso publica una fecha nueva', 'Ya salió el aviso de lo nuevo de hoy: va al resumen de mañana.'],
+        ['20:30', '', 'El Foro Lunaria publica una jam para hoy a las 10 pm', 'Empieza en menos de 24 h: no espera. Sale a las 20:45 (15 min para juntar).'],
+        ['21:00–24:00', 'ab-silencio', 'Silencio', ''],
+        ['21:40', 'ab-silencio ab-espera', 'Cambia la fecha de un evento de mañana al que va', 'Espera a las 9:00.'],
+        ['22:15', 'ab-silencio', 'Se cancela un evento de esta noche al que va', 'Empieza antes de que acabe el silencio: sale al momento.'],
+        ['jue 19:00', '', 'Esta semana en San Luis Potosí', 'Solo los jueves, solo si lo pidió y solo si hay 3.'],
+      ]), notas: `<h2>Las reglas</h2><ol><li><b>Silencio de 9 pm a 9 am</b> en la hora de la ciudad del evento. Para el resumen, la de la ciudad de la persona (la de lo destacado, si la eligió) o la del primer evento.</li><li><b>Lo nuevo, una vez al día</b>: a las 9 am con lo de la noche; de día, al publicarse, juntando 15 minutos (una agenda de 40 eventos es un aviso). Lo que llega después del aviso del día va al de mañana.</li><li><b>Última hora</b>: si empieza en menos de 24 horas no espera al resumen; sale como aviso propio (de día). Si se publica en silencio y empieza antes de las 9 am, no se manda: queda en Novedades.</li><li><b>Cambio y cancelación</b>: al momento de día; en silencio esperan a las 9, salvo que el evento empiece antes de esa hora.</li><li><b>Recordatorio</b>: 9:00 del día; la víspera a las 7 pm si empieza antes de las 11 am.</li><li><b>Esta semana</b>: jueves 7 pm, uno por semana.</li><li><b>Vida del aviso</b>: hasta que deja de servir (el inicio del evento o la medianoche), no 1 hora: un teléfono apagado de noche lo recibe al prenderlo.</li></ol><p class="chica">Otra zona: un evento en Cancún (una hora más) sale a las 9 de Cancún. Hoy todas las ciudades del catálogo están en la hora del centro.</p>` },
+      { id: 'h-830', nombre: '8:30 pm, para esta noche', v: 'A', recomendada: true, os: () => bloqueo({ hora: '8:45', fecha: 'jueves 8 de octubre', noche: true, avisos: [conHora(T.ultimaHora, 'ahora')] }),
+        notas: `<p>Se publicó a las 8:30 pm una jam para hoy a las 10 pm. Empieza en menos de 24 horas: sale al momento (8:45, tras juntar 15 minutos), aunque Ana ya recibió su aviso de lo nuevo de hoy. Si se hubiera publicado a las 9:15 pm (ya en silencio), no se manda.</p>${textos(T.ultimaHora)}` },
+      { id: 'h-9am', nombre: '9:00 am, lo que esperó', v: 'A', recomendada: true, os: () => bloqueo({ hora: '9:00', fecha: 'viernes 9 de octubre', avisos: [conHora(T.recordatorio, 'ahora'), conHora(T.cambio, 'ahora'), conHora(T.resumen, 'ahora')] }),
+        notas: `<p>Lo que esperó la noche sale a las 9: el recordatorio, el cambio de anoche (de un evento de mañana) y el resumen. Tres avisos de golpe es el peor caso; con el hilo de cada evento, el recordatorio y el cambio quedan juntos en el centro de avisos.</p><p class="chica">Si se prefiere, el resumen puede salir 10 minutos después para no llegar todo a la vez. Pregunta para el founder.</p>` },
+    ] },
+    { id: 'destacados', nombre: 'Permiso «Esta semana»', estados: [
+      { id: 'd-hoy', nombre: 'Inicio hoy', v: 'hoy', app: 'inicio-hoy', enfocar: 'section[aria-label="Comparte la app"]',
+        notas: `<p>Inicio real sin sesión (Destacados). Tras el carril estelar, el banner de compartir, para todo el mundo desde el primer día (OL-407). Quien no sigue a nadie ve Inicio así, con o sin cuenta.</p>` },
+      { id: 'd-b', nombre: 'Tarjeta en el sitio del banner', v: 'B', recomendada: true, app: 'inicio-b', enfocar: '[data-propuesta]',
+        notas: `<p>En la <b>segunda visita</b> (otro día; lo cuenta el teléfono como el banner) o después de abrir 2 destacados, la tarjeta de <code>ActivarAvisos</code> sale <b>en lugar del banner de compartir</b> esa visita: una sola cosa a la vez. Nunca al abrir la app la primera vez.</p>${lista(['«Activar»: si el teléfono aún no dio permiso, primero el del sistema (iOS lo pide una sola vez); con permiso ya dado, se enciende sin más.', 'La ✕ es «Ahora no»: no vuelve en 30 días.', 'La ciudad que se guarda es la de Inicio en ese momento (San Luis Potosí); se cambia en Ajustes.', 'Sin cuenta: «Activar» pasa por Entrar y vuelve (como el alta).'])}<p><b>Por qué B</b>: se ve sin deslizar y no suma nada a la pantalla (ocupa el sitio del banner). Reutiliza la tarjeta que ya invita a activar los avisos, con su mismo botón «Activar» (más corto que «Avisarme»: a 320 la frase ya va en tres renglones).</p>` },
+      { id: 'd-a', nombre: 'Tarjeta al final del carril', v: 'A', app: 'inicio-a', enfocar: '[data-propuesta]', carrilAlFinal: true,
+        notas: `<p>La misma tarjeta como última tarjeta del carril Destacados: solo la ve quien recorrió los destacados (una señal fuerte de interés) y no quita el banner.</p><p>En contra: con 12 destacados casi nadie llega al final; a 280 de ancho la frase y el botón van uno bajo otro.</p>` },
+      { id: 'd-permiso', nombre: 'El permiso del sistema', v: 'B', recomendada: true, app: 'inicio-b-permiso', enfocar: '[data-propuesta]',
+        notas: `<p>Tras «Activar», iOS pinta su propia ventana (dibujada aquí; el texto es del sistema). Solo sale una vez por teléfono: si dice «No permitir», ya solo se enciende en Ajustes del iPhone, y Ajustes de la app lo dice («Bloqueados: …»).</p><p class="chica">Por eso la tarjeta va antes: la ventana del sistema solo sale tras un «sí» en la nuestra (igual que tras «Voy» y «Seguir»).</p>` },
+      { id: 'd-ya', nombre: 'Ya tiene avisos', v: 'B', recomendada: true, app: 'inicio-b-ya', enfocar: '[data-propuesta]',
+        notas: `<p>Quien ya tiene los avisos encendidos por seguir a alguien ve la misma tarjeta con «¿También lo destacado de la semana?» y «Sí, también»: se enciende sin ventana del sistema. A esa persona no se le repite ningún evento que ya le llegó por lo que sigue.</p>` },
+      { id: 'd-listo', nombre: 'Listo', v: 'B', recomendada: true, app: 'inicio-b-listo', enfocar: '[data-propuesta]',
+        notas: `<p>El «Listo» de <code>ActivarAvisos</code> (palomita), que se va solo. El banner de compartir vuelve la siguiente visita.</p>` },
+    ] },
+    { id: 'ajustes', nombre: 'Ajustes › Avisos', estados: [
+      { id: 'a-hoy', nombre: 'Hoy', v: 'hoy', app: 'ajustes-hoy', enfocar: 'h2:nth-of-type(2) + ul',
+        notas: `<p>Ajustes real con el renglón del teléfono como en el iPhone con la app (la maqueta se guarda en un Chrome de escritorio: el marcado es el mismo de <code>AvisosPerfil</code>).</p>` },
+      { id: 'a-si', nombre: 'Encendido', v: 'A', recomendada: true, app: 'ajustes-si', enfocar: 'h2:nth-of-type(2) + ul',
+        notas: `<p>Dos renglones nuevos con piezas que ya existen:</p>${lista(['<b>Lo destacado de la semana</b> con su palanca y una línea: «Los jueves a las 7 pm, 3 planes».', '<b>Ciudad</b> (como el renglón «Perfil»: el valor y el chevron), solo con la palanca encendida. Abre la hoja de ciudades (<i>prueba a tocarlo</i>).', '<b>Te llegan en: iPhone (app) · Mac (Safari)</b>: una línea, sin aparatos repetidos, con la nota de Ajustes.'])}<p class="chica">«Por correo» y «En el teléfono» no cambian (no quitar lo que existe). Apagar «En el teléfono» apaga también lo destacado en este teléfono.</p>` },
+      { id: 'a-no', nombre: 'Apagado', v: 'A', app: 'ajustes-no', enfocar: 'h2:nth-of-type(2) + ul',
+        notas: `<p>Apagado, la línea dice qué se pierde y la ciudad no se muestra (se conserva la última elegida para cuando vuelva a encenderse).</p>` },
+      { id: 'a-hoja', nombre: 'Elegir la ciudad', v: 'A', recomendada: true, app: 'ajustes-hoja',
+        notas: `<p>La hoja de ciudades de la app (la de Artistas) con su título y una nota. Elegir cierra la hoja y guarda (<i>prueba Querétaro</i>). Son las ciudades del catálogo.</p>` },
+      { id: 'a-queretaro', nombre: 'Otra ciudad', v: 'A', app: 'ajustes-queretaro', enfocar: 'h2:nth-of-type(2) + ul',
+        notas: `<p>Guardada Querétaro: el jueves llega «Esta semana en Querétaro». Cambiar la ciudad de Inicio no la cambia (no seguimos dónde está la persona).</p>` },
+      { id: 'a-bloqueado', nombre: 'Sin permiso del teléfono', v: 'A', app: 'ajustes-bloqueado', enfocar: 'h2:nth-of-type(2) + ul',
+        notas: `<p>Si el iPhone tiene los avisos bloqueados, lo destacado no se puede encender aquí: la línea dice qué hacer primero.</p>` },
+      { id: 'a-web', nombre: 'La web del mismo iPhone', v: 'A', recomendada: true, app: 'ajustes-web', enfocar: 'h2:nth-of-type(2) + ul',
+        notas: `<p><b>Sin duplicados</b>: si la persona tiene la app en su iPhone, el aviso va solo a la app; la web de ese iPhone deja de recibirlo y lo dice: «En este iPhone te llegan por la app». Safari de la Mac sigue recibiendo.</p>${lista(['Se sabe qué aparato es cada suscripción web porque se guarda al darla de alta (iPhone, iPad, Mac, Android, computadora); las de antes se completan la próxima vez que se abre esa web y, mientras, se siguen mandando.', 'Si la app se borra, Apple dice que el token murió (OL-476) y la web vuelve a recibir sola.'])}` },
+    ] },
+    { id: 'admin', nombre: 'Administración', estados: [
+      { id: 'm-hoy', nombre: 'Hoy', v: 'hoy', app: 'admin-hoy', enfocar: 'h2',
+        notas: `<p>La portada real: «Últimos 7 días» con sus seis indicadores.</p>` },
+      { id: 'm-si', nombre: 'Avisos abiertos', v: 'A', recomendada: true, app: 'admin-si', enfocar: '[data-propuesta]',
+        notas: `<p>Un indicador más, con el mismo marcado: «Avisos abiertos · 11 · de 48 que salieron, sin saber quién». Tócalo para el desglose.</p><h2>Cómo se mide sin identificar a nadie</h2>${lista(['Cada aviso abre su dirección con <code>?desde=aviso&amp;tipo=resumen|nuevo|recordatorio|cambio|cancelado|destacados</code>.', 'Al abrir, la app cuenta un «aviso abierto» de ese tipo y ese día (un número, sin cuenta ni teléfono) y quita los dos datos de la dirección (no queda en el historial ni en la medición de páginas).', 'Lo enviado sale de las entregas, sumado por semana. Nunca por persona.', 'Va también a Vercel Analytics como <code>aviso_abierto</code> con <code>tipo</code> (lista cerrada).'])}` },
+      { id: 'm-desglose', nombre: 'Desglose por tipo', v: 'A', recomendada: true, app: 'admin-desglose', enfocar: '[data-propuesta]',
+        notas: `<p>El desglose de siempre con los tipos. Con 21 teléfonos las cifras no dicen mucho todavía: sirven para comparar cuando haya cientos.</p>` },
+    ] },
+  ];
+  const TRANSICIONES = {
+    'd-b': { 'Activar': 'd-permiso', 'Ahora no': 'd-hoy' },
+    'd-a': { 'Activar': 'd-permiso', 'Ahora no': 'd-hoy' },
+    'd-permiso': { 'Permitir': 'd-listo', 'No permitir': 'a-bloqueado' },
+    'd-ya': { 'Sí, también': 'd-listo', 'Ahora no': 'd-hoy' },
+    'a-si': { 'Lo destacado de la semana': 'a-no', 'Ciudad': 'a-hoja' },
+    'a-web': { 'Lo destacado de la semana': 'a-no', 'Ciudad': 'a-hoja' },
+    'a-no': { 'Lo destacado de la semana': 'a-si' },
+    'a-queretaro': { 'Lo destacado de la semana': 'a-no', 'Ciudad': 'a-hoja' },
+    'a-hoja': { 'Cerrar': 'a-si', 'San Luis Potosí': 'a-si', 'Querétaro': 'a-queretaro', 'Ciudad de México': 'a-si', 'Oaxaca': 'a-si' },
+    'm-si': { 'Avisos abiertos': 'm-desglose' },
+    'm-desglose': { 'Avisos abiertos': 'm-si' },
+  };
+
+  const TODOS = P.flatMap((p) => p.estados.map((e) => ({ ...e, pantalla: p })));
+  const porId = Object.fromEntries(TODOS.map((e) => [e.id, e]));
+  const INICIAL = { estado: 'b-resumen', ancho: 390 };
+  let actual = { ...INICIAL };
+  try { Object.assign(actual, JSON.parse(localStorage.getItem('proto-avisos-hora-y-forma') || '{}')); } catch {}
+  if (!porId[actual.estado]) actual = { ...INICIAL };
+  const guardar = () => { try { localStorage.setItem('proto-avisos-hora-y-forma', JSON.stringify(actual)); } catch {} };
+  let mensaje = '';
+
+  const docApp = (cuerpo) => `<!doctype html>${HTML_TAG}<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet"><style>${CSS_APP}</style></head><body>${cuerpo}</body></html>`;
+  const docOS = (cuerpo) => `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${CSS_OS}</style></head><body>${cuerpo}</body></html>`;
+
+  const tel = $('tel');
+  let pintado = Promise.resolve();
+  function pintar() {
+    guardar();
+    const e = porId[actual.estado];
+    document.documentElement.style.setProperty('--ancho-tel', actual.ancho + 'px');
+    pintado = new Promise((ok) => {
+      tel.addEventListener('load', async () => {
+        const doc = tel.contentDocument;
+        conectar(doc, e);
+        try { await doc.fonts.ready; } catch {}
+        if (e.carrilAlFinal) { const ul = doc.querySelector('[data-propuesta]')?.closest('ul'); if (ul) ul.scrollLeft = ul.scrollWidth; }
+        if (e.enfocar) doc.querySelector(e.enfocar)?.scrollIntoView({ block: e.enfocar === 'main h1' || e.enfocar === 'h2' ? 'start' : 'center' });
+        const r = medir(doc, e);
+        document.documentElement.dataset.pintado = e.id + '@' + actual.ancho;
+        ok(r);
+      }, { once: true });
+      tel.srcdoc = e.app ? docApp(PANTALLAS_APP[e.app]) : docOS(e.os());
+    });
+    botones('sel-pantalla', P.map((p) => [p.estados[0].id, p.nombre]), e.pantalla.estados[0].id, (v) => ir(v), (v) => porId[v].pantalla === e.pantalla);
+    botones('sel-estado', e.pantalla.estados.map((x) => [x.id, x.nombre, x.v === 'hoy' ? 'Hoy' : x.v]), e.id, (v) => ir(v));
+    botones('sel-tam', [320, 390, 430].map((w) => [String(w), String(w)]), String(actual.ancho), (v) => { actual.ancho = Number(v); return pintar(); });
+    $('etiqueta').innerHTML = mensaje ? esc(mensaje) : `<b>${esc(e.pantalla.nombre)} · ${esc(e.nombre)}</b> · ${e.v === 'hoy' ? 'como está hoy' : 'variante ' + e.v}${e.recomendada ? ' (recomendada)' : ''} · ${actual.ancho} × 844 · ${e.app ? 'pantalla real' : 'dibujo del sistema'}`;
+    mensaje = '';
+    $('texto-estado').innerHTML = (e.recomendada ? '<span class="recomendada">Recomendada</span>' : '') + (e.notas || '');
+    return pintado;
+  }
+  function botones(id, opciones, elegido, alElegir, esElegido) {
+    const caja = $(id);
+    caja.innerHTML = opciones.map(([v, t, letra]) => `<button type="button" data-v="${esc(v)}"${letra ? ` data-letra="${esc(letra)}"` : ''} aria-pressed="${esElegido ? esElegido(v) : v === elegido}">${esc(t)}</button>`).join('');
+    caja.onclick = (ev) => { const b = ev.target.closest('button[data-v]'); if (b) alElegir(b.dataset.v); };
+  }
+  function ir(id) { actual.estado = id; return pintar(); }
+
+  // Los toques dentro del teléfono: lo que lleva a otro estado de este prototipo (TRANSICIONES o `data-abre` de un aviso) y, lo demás, a dónde iría.
+  function conectar(doc, e) {
+    doc.addEventListener('submit', (ev) => ev.preventDefault(), true);
+    doc.addEventListener('click', (ev) => {
+      const el = ev.target.closest('a, button, [role=button], [data-abre]');
+      if (!el) return;
+      ev.preventDefault();
+      const abre = el.getAttribute('data-abre');
+      if (abre?.startsWith('#')) return ir(abre.slice(1));
+      // El nombre de lo tocado: su <b> (los renglones), su aria-label o su texto; vale el que coincida entero y, si no, el que empiece igual.
+      const nombres = [el.querySelector?.('b')?.textContent, el.getAttribute('aria-label'), el.textContent].filter(Boolean).map((x) => x.trim());
+      const claves = Object.keys(TRANSICIONES[e.id] ?? {});
+      const clave = claves.find((k) => nombres.includes(k)) ?? claves.find((k) => nombres.some((n) => n.startsWith(k)));
+      const destino = clave && TRANSICIONES[e.id][clave];
+      if (destino) return ir(destino);
+      const url = el.getAttribute('data-url') || el.getAttribute('href');
+      if (url) { $('etiqueta').textContent = `En la app, esto abre ${url}`; }
+    }, true);
+  }
+
+  // La medida. En la app, como medir.js: lo que se pinta bajo <body> (un svg cuenta uno), y de lo nuevo (data-propuesta) sus nodos, los div o span
+  // sin clase, los toques de menos de 44 px y lo que se corta o se sale. En el dibujo del sistema: qué se corta de cada aviso y cuánto cabe.
+  function medir(doc, e) {
+    const win = doc.defaultView;
+    const OMITIDOS = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'TEMPLATE', 'NOSCRIPT']);
+    const visible = (el) => !OMITIDOS.has(el.tagName) && win.getComputedStyle(el).display !== 'none';
+    let prof = 0;
+    const recorrer = (el, d) => { for (const h of el.children) { if (!visible(h)) continue; prof = Math.max(prof, d + 1); if (h.tagName.toLowerCase() !== 'svg') recorrer(h, d + 1); } };
+    recorrer(doc.body, 0);
+    const desborde = doc.documentElement.scrollWidth > doc.documentElement.clientWidth + 1 ? 1 : 0;
+    const r = { estado: e.id, ancho: actual.ancho, prof, desborde };
+    if (e.app) {
+      const bloques = [...doc.querySelectorAll('[data-propuesta]')];
+      let nodos = 0, sinClase = 0, toques = 0, cortados = 0, fuera = 0;
+      const chicos = [], corta = [];
+      for (const b of bloques) {
+        const contar = (el) => { nodos++; if (/^(DIV|SPAN)$/.test(el.tagName) && !el.getAttribute('class') && !el.closest('[role=dialog], .av-ios-velo') && !el.parentElement.matches('button[class*="Renglon-module"]')) sinClase++; if (el.tagName.toLowerCase() !== 'svg') for (const h of el.children) if (visible(h)) contar(h); };
+        contar(b);
+        const rb = b.getBoundingClientRect();
+        if (rb.right > doc.documentElement.clientWidth + 1 && !b.closest('ul')?.matches('[class*="carril"]')) fuera++;
+        for (const t of b.querySelectorAll('button, a, [role=switch]')) { const q = t.getBoundingClientRect(); if (q.width > 0 && (q.width < 44 || q.height < 44)) { toques++; chicos.push(`${(t.getAttribute('aria-label') || t.textContent).trim().slice(0, 30)} ${Math.round(q.width)}×${Math.round(q.height)}`); } }
+        for (const t of b.querySelectorAll('*')) { if (t.children.length) continue; const s = win.getComputedStyle(t); if ((s.overflow !== 'visible' || s.textOverflow === 'ellipsis') && t.scrollWidth > t.clientWidth + 1) { cortados++; corta.push(t.textContent.trim().slice(0, 40)); } }
+      }
+      for (const t of doc.querySelectorAll('.av-ios-alerta button')) { const q = t.getBoundingClientRect(); if (q.height < 44) { toques++; chicos.push(t.textContent + ' ' + Math.round(q.height)); } }
+      Object.assign(r, { nodos, sinClase, toques, cortados, fuera, chicos, corta, bloques: bloques.length });
+      cifras([['Nodos de lo nuevo', bloques.length ? nodos : '–', null], ['Profundidad', prof, prof <= 16], ['Sin clase', bloques.length ? sinClase : '–', sinClase === 0], ['Toques < 44', toques, toques === 0], ['Cortados', cortados, cortados === 0], ['Desborde', desborde + fuera, desborde + fuera === 0]]);
+      $('cortes').textContent = [chicos.length ? 'Chicos: ' + chicos.join(' · ') : '', corta.length ? 'Se corta: ' + corta.join(' · ') : ''].filter(Boolean).join(' — ') || 'Medido dentro del marco, solo lo nuevo (data-propuesta); la profundidad es la de toda la pantalla.';
+    } else {
+      const avisos = [...doc.querySelectorAll('[data-aviso]')];
+      const cortes = [];
+      let titulos = 0, cuerpos = 0;
+      for (const a of avisos) {
+        const t = a.querySelector('.ab-titulo'), s = a.querySelector('.ab-sub'), c = a.querySelector('.ab-cuerpo');
+        if (t && t.scrollWidth > t.clientWidth + 1) { titulos++; cortes.push(`título «${t.textContent.slice(0, 24)}…»`); }
+        if (s && s.scrollWidth > s.clientWidth + 1) { titulos++; cortes.push(`subtítulo «${s.textContent.slice(0, 24)}…»`); }
+        if (c && c.scrollHeight > c.clientHeight + 1) { cuerpos++; cortes.push(`cuerpo de ${Math.round(c.scrollHeight / parseFloat(win.getComputedStyle(c).lineHeight))} líneas (se ven ${c.dataset.max})`); }
+      }
+      // Cuánto cabe a este ancho, con la letra del sistema: un texto en castellano corriente.
+      const t0 = doc.querySelector('.ab-titulo'), c0 = doc.querySelector('.ab-cuerpo');
+      const cabe = (el, lineas) => {
+        if (!el) return null;
+        const ctx = doc.createElement('canvas').getContext('2d');
+        const s = win.getComputedStyle(el);
+        ctx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+        const muestra = 'Noche de danzón con la Orquesta Típica en el Teatro de la Paz, vie 9 · 8 pm · Baile de salón con orquesta en vivo: danzón, mambo y chachachá para todo el público';
+        const ancho = el.clientWidth * lineas * 0.97;
+        let n = 0; while (n < muestra.length && ctx.measureText(muestra.slice(0, n + 1)).width <= ancho) n++;
+        return n;
+      };
+      const cabeT = cabe(t0, 1), cabeC = cabe(c0, 2);
+      Object.assign(r, { avisos: avisos.length, titulos, cuerpos, cortes, cabeTitulo: cabeT, cabeCuerpo: cabeC });
+      cifras([['Avisos', avisos.length || '–', null], ['Títulos cortados', avisos.length ? titulos : '–', e.v === 'hoy' || e.id.includes('largos') ? null : titulos === 0], ['Cuerpos de más', avisos.length ? cuerpos : '–', e.v === 'hoy' || e.id.includes('largos') ? null : cuerpos === 0], ['Caben en el título', cabeT ?? '–', null], ['Caben en 2 líneas', cabeC ?? '–', null], ['Desborde', desborde, desborde === 0]]);
+      $('cortes').textContent = (cortes.length ? 'Se corta: ' + cortes.join(' · ') + '. ' : '') + 'Caracteres de un texto corriente que caben a este ancho con la letra del sistema (SF Pro en la Mac); medidas de iOS aproximadas: confirmarlas con una captura del iPhone del founder cuando OL-476 deje llegar el primer aviso.';
+    }
+    return r;
+  }
+  function cifras(lista) {
+    $('cifras').innerHTML = lista.map(([n, v, bien]) => `<div class="cifra"><small>${esc(n)}</small><b class="${bien === null ? '' : bien ? 'bien' : 'mal'}">${esc(v)}</b></div>`).join('');
+  }
+
+  window.prototipo = {
+    ir: (id, ancho) => { actual.estado = id; if (ancho) actual.ancho = ancho; return pintar(); },
+    estados: () => TODOS.map((e) => ({ id: e.id, v: e.v, app: !!e.app, pantalla: e.pantalla.id })),
+    estado: () => ({ ...actual }),
+    medir: () => medir(tel.contentDocument, porId[actual.estado]),
+    listo: () => pintado,
+  };
+  pintar();
+})();
+</script>
+</body>
+</html>

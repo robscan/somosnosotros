@@ -7,6 +7,7 @@ import { esUuid } from "@/lib/formulario";
 import { leerPagina, paginaDeEnlace } from "@/lib/instagram/api";
 import { sePuedePublicar } from "@/lib/instagram/elegir";
 import { bajarCartel, convieneRecortar } from "@/lib/instagram/imagen";
+import { tokenInstagram } from "@/lib/instagram/token";
 import { revisarTexto } from "@/lib/instagram/texto";
 import { FRASES, FRASES_FACEBOOK, type ClaveError } from "@/lib/instagram/frases";
 import { leerEstadoTrabajo, leerReciente, type EstadoTrabajo, type Reciente } from "@/lib/redes/reglas";
@@ -211,7 +212,7 @@ export async function guardarUbicacionInstagram(tipo: "ciudad" | "lugar", clave:
   if (!s || (tipo !== "ciudad" && tipo !== "lugar") || typeof clave !== "string" || !clave || clave.length > 80) return { ok: false, mensaje: "Solo la administración guarda la ubicación." };
   const pagina = typeof enlace === "string" ? paginaDeEnlace(enlace) : null;
   if (!pagina) return { ok: false, mensaje: "Eso no parece el enlace de una página de Facebook." };
-  const leida = await leerPagina(pagina);
+  const leida = await leerPagina(pagina, { token: (await tokenInstagram()) ?? undefined });
   if (!leida) return { ok: false, mensaje: "No pudimos leer esa página o no tiene ubicación. Prueba con la página oficial de la ciudad o del lugar." };
   const { error } = await s.supabase.from("instagram_ubicaciones").upsert({ tipo, clave, pagina_id: leida.id, nombre: leida.nombre, enlace: enlace.trim().slice(0, 300) });
   if (error) return { ok: false, mensaje: "No se pudo guardar. Intenta de nuevo." };

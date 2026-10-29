@@ -29,7 +29,8 @@ export type Opciones = { traer?: typeof fetch; token?: string; usuario?: string;
 
 export type RespuestaGraph = { id?: string; status_code?: string; permalink?: string; error?: { code?: number; error_subcode?: number; type?: string } };
 
-/** Las credenciales de la cuenta (de las opciones en las pruebas; si no, del entorno). */
+/** Las credenciales de la cuenta: el token de las opciones (en la app, el de Vault que guardó «Conectar Instagram», `lib/instagram/token`, OL-471;
+ *  en las pruebas, uno inventado) o, si no llega, `INSTAGRAM_TOKEN`; la cuenta, de las opciones o del entorno. */
 function credenciales(o: Opciones): { token: string; usuario: string } | null {
   const token = o.token ?? process.env.INSTAGRAM_TOKEN;
   const usuario = o.usuario ?? process.env.INSTAGRAM_USER_ID;

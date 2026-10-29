@@ -8,7 +8,9 @@ import type { ResultadoEnvio } from "./correo";
 import type { EntornoApns } from "./dispositivosApns";
 
 export function pushActivo(): boolean { return !!(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY); }
-export type AvisoPush = { titulo: string; cuerpo: string; url: string; tag?: string };
+/** El cuerpo de un aviso (JSON en `avisos_entregas.cuerpo`). `subtitulo` e `hilo` solo los usa la app del iPhone (`payloadApns`); la web no
+ *  tiene subtítulo (la razón ya va en el cuerpo, `cuerpoPush` en avisos.ts) y usa `tag`. */
+export type AvisoPush = { titulo: string; cuerpo: string; url: string; tag?: string; subtitulo?: string; hilo?: string; aviso?: string };
 
 /** Una entrega por endpoint. El worker, no esta funcion, limita la concurrencia global. */
 export async function enviarPushEndpoint(suscripcion: unknown, cuerpo: string, ttl: number, deadline?: AbortSignal): Promise<ResultadoEnvio> {
@@ -18,7 +20,7 @@ export async function enviarPushEndpoint(suscripcion: unknown, cuerpo: string, t
   if (!pushActivo()) return { estado: "reintentar", codigo: "push_config" };
   try {
     const peticion = webpush.generateRequestDetails(s, cuerpo, {
-      TTL: Math.max(0, Math.min(3600, Math.floor(ttl))),
+      TTL: Math.max(0, Math.min(TTL_MAXIMO, Math.floor(ttl))),
       vapidDetails: { subject: process.env.VAPID_SUBJECT || "mailto:hola@somosnosotros.org",
         publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!, privateKey: process.env.VAPID_PRIVATE_KEY! },
     });
@@ -227,14 +229,27 @@ function peticionApns(host: string, headers: http2.OutgoingHttpHeaders, payload:
   });
 }
 
-/** Mismo cuerpo que ya arma `contenidoPush`/`contenidoPushAdmin` (avisos.ts): titulo/cuerpo/url/tag. */
-function payloadApns(cuerpo: string): { payload: string; collapseId: string | null } {
-  let c: { titulo?: string; cuerpo?: string; url?: string; tag?: string };
+/**
+ * Mismo cuerpo que arman `cuerpoPush`/`contenidoPushAdmin` (avisos.ts): titulo/subtitulo/cuerpo/url/tag/hilo. OL-480: el subtítulo (la razón,
+ * la segunda línea en negritas) y `thread-id` (el hilo: iOS junta en una pila los avisos de un mismo evento) van solo si vienen; un cuerpo
+ * guardado antes (sin ellos) sale igual que siempre.
+ */
+export function payloadApns(cuerpo: string): { payload: string; collapseId: string | null } {
+  let c: Partial<AvisoPush>;
   try { c = JSON.parse(cuerpo); } catch { c = {}; }
-  const payload = JSON.stringify({ aps: { alert: { title: c.titulo ?? "", body: c.cuerpo ?? "" }, sound: "default" }, url: c.url ?? "" });
+  const alert: Record<string, string> = { title: c.titulo ?? "" };
+  if (c.subtitulo) alert.subtitle = c.subtitulo;
+  alert.body = c.cuerpo ?? "";
+  const aps: Record<string, unknown> = { alert, sound: "default" };
+  if (c.hilo) aps["thread-id"] = c.hilo.slice(0, 64);
+  const payload = JSON.stringify({ aps, url: c.url ?? "" });
   // apns-collapse-id: hasta 64 bytes (documentado por Apple); agrupa reintentos del mismo job como en Web Push (tag).
   return { payload, collapseId: c.tag ? c.tag.slice(0, 64) : null };
 }
+
+/** La vida de un aviso: hasta su hora límite (el trabajador la calcula con `vence`), con un tope de un día. Antes era 1 hora y un teléfono
+ *  apagado de noche ya no lo recibía al prenderlo (bitácora 510, regla 7). */
+export const TTL_MAXIMO = 24 * 3600;
 
 /** ¿La respuesta dice que esa dirección ya no existe? (web 404/410; APNs 410 o 400 BadDeviceToken). Misma regla que `avisos_terminar` en SQL. */
 export function esDireccionMuerta(codigo: string): boolean {
@@ -257,7 +272,7 @@ export async function enviarPushApns(suscripcion: SuscripcionApns, cuerpo: strin
     return { estado: j.codigo === "apns_config" ? "reintentar" : "fallida", codigo: j.codigo };
   }
   const { payload, collapseId } = payloadApns(cuerpo);
-  const ttlAcotado = Math.max(0, Math.min(3600, Math.floor(ttl)));
+  const ttlAcotado = Math.max(0, Math.min(TTL_MAXIMO, Math.floor(ttl)));
   const headers: http2.OutgoingHttpHeaders = {
     ":method": "POST",
     ":path": `/3/device/${suscripcion.token}`,
