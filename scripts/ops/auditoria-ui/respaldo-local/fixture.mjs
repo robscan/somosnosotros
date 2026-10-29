@@ -644,6 +644,69 @@ if (CON_HISTORIAL) {
   proximo(12, "Charla con Renata Saldaña", [2]);
 }
 
+// OL-477 (bitácora 509): la semana de Instagram con artistas y lugares destacados (prototipo). Sobre el historial grande (`RESPALDO_HISTORIAL=1`), con
+// `RESPALDO_INSTAGRAM_SEMANA=1` seis artistas y dos lugares quedan con la ficha completa (foto, portada, descripción de 120 o más y su Instagram):
+// Valeria Quiroz (música, con fecha el vie 16), Íñigo Montalvo (música, con fecha el sáb 10), Renata Saldaña (pintura), el Colectivo Nube de Papel
+// (ilustración, sin nada por venir) y, para «Cambiar», Ximena Urquidi y Teodoro Alcántara; el museo Leonora Carrington (dos eventos esta semana)
+// y el Museo del Ferrocarril; y tres eventos más con su cartel dibujado: el martes 6 (ya pasó: el «evento del día» publicado), el taller del
+// sábado 10 en el museo y la noche de Íñigo. Las portadas nuevas las dibuja `fotos-instagram.mjs` en la misma carpeta (`RESPALDO_CARRUSEL_DIR`).
+// Todo inventado; `npm run medir` no lo pone.
+export const CON_IG_SEMANA = CON_HISTORIAL && process.env.RESPALDO_INSTAGRAM_SEMANA === "1";
+if (CON_IG_SEMANA) {
+  const fotoI = (n) => `${process.env.RESPALDO_URL ?? "http://127.0.0.1:8889"}/storage/v1/object/public/fotos/demo-carrusel/${n}.jpg`;
+  const igDe = (usuario) => [{ url: `https://www.instagram.com/${usuario}` }];
+  const completar = (slug, cambios) => {
+    const a = artistas.find((x) => x.slug === slug);
+    if (!a) throw new Error("sin artista " + slug);
+    Object.assign(a, cambios);
+    return a;
+  };
+  completar("valeria-quiroz-demo", {
+    descripcion: "Cantautora potosina. Escribe canciones sobre el desierto, la carretera y las abuelas, con guitarra y una loop station. Toca en museos, galerías y foros de la ciudad desde 2024 y prepara su primer disco.",
+    redes: igDe("valeriaquiroz.demo"),
+  });
+  const inigo = completar("inigo-montalvo-demo", {
+    descripcion: "Guitarrista de San Luis Potosí. Toca música latinoamericana para guitarra sola, de Agustín Barrios a Chabuca Granda, y acompaña a cantautoras de la ciudad. Da clases en el barrio de San Miguelito.",
+    redes: igDe("inigomontalvo.demo"),
+    portada: fotoI("ig-inigo-portada"),
+  });
+  completar("renata-saldana-demo", {
+    descripcion: "Pintora potosina. Trabaja el paisaje del altiplano en óleo y acuarela grande, con los colores del atardecer y de la tierra roja. Ha expuesto en el museo Leonora Carrington y en galerías del Centro.",
+    redes: igDe("renatasaldana.demo"),
+    portada: fotoI("ig-renata-portada"),
+  });
+  completar("colectivo-nube-de-papel-demo", {
+    descripcion: "Colectivo de ilustración y fanzine de San Luis Potosí. Hacen libros de artista, carteles y talleres de dibujo para gente de todas las edades, y una feria de gráfica cada primavera en el Centro.",
+    redes: igDe("nubedepapel.demo"),
+    portada: fotoI("ig-nube-portada"),
+  });
+  // Dos más, sin nada por venir, para la hoja «Cambiar» (con portadas de las que ya dibuja el historial).
+  completar("ximena-urquidi-demo", {
+    descripcion: "Poeta potosina. Escribe sobre el barrio, las fiestas y la gente que lo habita; lee en voz alta en librerías y cafés y coordina un taller de escritura para jóvenes los sábados.",
+    redes: igDe("ximenaurquidi.demo"),
+    portada: fotoI("hist-lugar-5"),
+  });
+  completar("teodoro-alcantara-demo", {
+    descripcion: "Artista de performance y teatro de calle. Sus piezas suceden en plazas, mercados y paradas de camión, y siempre invitan a quien pasa a entrar en la obra un rato.",
+    redes: igDe("teodoroalcantara.demo"),
+    portada: fotoI("hist-lugar-7"),
+  });
+  const museo = lugares.find((l) => l.id === L_LEONORA);
+  museo.descripcion = "Museo dedicado a la obra surrealista de Leonora Carrington, con salas de exposición temporal, talleres para familias, visitas guiadas de noche y un foro para conciertos y charlas.";
+  const ferro = lugares.find((l) => l.id === L.ferro);
+  ferro.descripcion = "Antigua estación de ferrocarril convertida en museo, con locomotoras de vapor, salas de exposición sobre la historia del tren en San Luis y un foro al aire libre para conciertos.";
+  let m = 0;
+  const idI = () => `bbbb0477-0000-4000-8000-${String(++m).padStart(12, "0")}`;
+  const ecos = artistas.find((x) => x.slug === "los-ecos-del-tangamanga-demo");
+  const martes = idI();
+  eventos.push(evento({ id: martes, slug: "los-ecos-del-tangamanga-en-aether-demo", titulo: "Los Ecos del Tangamanga en Aether", dias: -1, hora: "20:00", lugar_id: L.aether, precio: "$100", creadoHace: 9, imagen: fotoI("hist-cartel-2"), descripcion: "Son huasteco con violín, jarana y huapanguera." }));
+  eventos_artistas.push({ evento_id: martes, artista_id: ecos.id, orden: 1 });
+  eventos.push(evento({ id: idI(), slug: "taller-de-mascaras-para-familias-demo", titulo: "Taller de máscaras para familias", dias: 3, hora: "11:00", lugar_id: L_LEONORA, creadoHace: 6, imagen: fotoI("hist-cartel-4"), autor: ANA }));
+  const guitarra = idI();
+  eventos.push(evento({ id: guitarra, slug: "inigo-montalvo-guitarra-sola-demo", titulo: "Íñigo Montalvo: guitarra sola", dias: 3, hora: "20:00", lugar_id: L.aether, precio: "$120", creadoHace: 7, imagen: fotoI("hist-cartel-5") }));
+  eventos_artistas.push({ evento_id: guitarra, artista_id: inigo.id, orden: 1 });
+}
+
 /** `eventos_parecidos` en corto (la regla completa y sus pruebas viven en la base, OL-384): solo con `RESPALDO_CARTEL_EXISTENTE=1`. */
 function parecidosEnMemoria({ p_titulo, p_inicio, p_zona, p_lugar_id, p_sitio_texto, p_excluir }, t) {
   if (!CON_CARTEL_EXISTENTE || !p_inicio) return [];
