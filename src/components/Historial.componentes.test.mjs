@@ -174,24 +174,43 @@ test("sin sesión: ni «Tu año» ni «Informe»; la sección empieza por «Han 
   assert.match(await p.locator("details > :nth-child(2)").innerText(), /^Han pasado por aquí/);
 });
 
-test("F1: el carril de avatares se desliza con el dedo y la página no se corre de lado", TOPE, async (t) => {
+test("F1: el carril de avatares se desliza y la página no se corre de lado", TOPE, async (t) => {
   const p = await pagina(t);
   await abrir(p);
   const carril = p.getByRole("list", { name: "Han pasado por aquí" });
   await carril.evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - 300));
-  const antes = await carril.evaluate((el) => ({ n: el.children.length, sw: el.scrollWidth, cw: el.clientWidth, sl: el.scrollLeft, texto: el.children[0].innerText }));
+  const pagina0 = await p.evaluate(() => ({ scrollX: window.scrollX, ancho: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth }));
+  // 1. La fila se puede desplazar de lado: tiene más que su caja, su desbordamiento se desplaza y el toque deja el eje x.
+  const antes = await carril.evaluate((el) => { const cs = getComputedStyle(el); return { n: el.children.length, sw: el.scrollWidth, cw: el.clientWidth, sl: el.scrollLeft, overflowX: cs.overflowX, touchAction: cs.touchAction, texto: el.children[0].innerText }; });
   assert.equal(antes.n, 9);
-  assert.ok(antes.sw > antes.cw, "tiene qué desplazar");
+  assert.ok(antes.sw > antes.cw, `tiene qué desplazar (${antes.sw} > ${antes.cw})`);
+  assert.ok(["auto", "scroll"].includes(antes.overflowX), `se desplaza de lado (overflow-x: ${antes.overflowX})`);
+  assert.ok(/^(auto|manipulation)$|pan-x/.test(antes.touchAction), `el toque deja el eje x (touch-action: ${antes.touchAction})`);
+  assert.equal(antes.sl, 0);
   assert.match(antes.texto, /veces/);
-  const caja = await carril.boundingBox();
-  await deslizar(p, caja.x + caja.width - 60, caja.y + 50);
-  const despues = await carril.evaluate((el) => ({ sl: el.scrollLeft, panoramica: window.visualViewport.offsetLeft, scrollX: window.scrollX, ancho: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth }));
-  assert.ok(despues.sl > 100, `el dedo lo movió (${despues.sl})`);
-  assert.equal(despues.scrollX, 0);
+  assert.ok(pagina0.ancho <= pagina0.vw, "el documento no se sale de la pantalla");
+  // 2. Desplazada la fila, se mueve ella y no la página.
+  await carril.evaluate((el) => el.scrollBy({ left: 260, behavior: "instant" }));
+  await p.waitForTimeout(150);
+  const despues = await carril.evaluate((el) => ({ sl: el.scrollLeft, scrollX: window.scrollX, ancho: document.documentElement.scrollWidth, panoramica: window.visualViewport.offsetLeft }));
+  assert.ok(despues.sl > 0, `la fila se movió (${despues.sl})`);
+  assert.equal(despues.scrollX, pagina0.scrollX, "la página no se corrió de lado");
+  assert.equal(despues.ancho, pagina0.ancho, "el ancho del documento no cambió");
   assert.equal(despues.panoramica, 0);
-  assert.ok(despues.ancho <= despues.vw, "el documento no se sale de la pantalla");
-  // Deslizar no abre la ficha del avatar donde se soltó el dedo.
-  assert.equal(await p.evaluate(() => location.pathname), "/");
+  // 3. Además, con el dedo de verdad (un gesto táctil de Chrome), fuera de la CI. En el Chromium sin pantalla de Linux el gesto sintetizado no
+  //    desplaza (como la inercia de HojaLugares, OL-265); si aquí tampoco mueve, se anota sin fallar.
+  if (!process.env.CI) {
+    await carril.evaluate((el) => el.scrollTo({ left: 0, behavior: "instant" }));
+    const caja = await carril.boundingBox();
+    await deslizar(p, caja.x + caja.width - 60, caja.y + 50);
+    const dedo = await carril.evaluate((el) => ({ sl: el.scrollLeft, scrollX: window.scrollX, ancho: document.documentElement.scrollWidth }));
+    if (dedo.sl > 0) {
+      assert.equal(dedo.scrollX, pagina0.scrollX, "con el dedo, la página no se corrió de lado");
+      assert.equal(dedo.ancho, pagina0.ancho);
+    } else t.diagnostic(`el gesto táctil sintetizado no desplazó la fila en este Chrome (scrollLeft ${dedo.sl})`);
+    // Deslizar no abre la ficha del avatar donde se soltó el dedo.
+    assert.equal(await p.evaluate(() => location.pathname), "/");
+  }
 });
 
 test("«Ver los 9» abre la hoja con los nueve, sus veces y su «Seguir»; Seguir se guarda y la ✕ vuelve a la sección", TOPE, async (t) => {
