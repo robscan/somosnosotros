@@ -10,6 +10,8 @@ type Props = {
   foto: string | null;
   /** Redonda es gente (un artista); cuadrada es un lugar o un evento. */
   redonda?: boolean;
+  /** Una publicación en pequeño (4:5, como el cartel en Instagram): la semana de Instagram de Administración (OL-479). */
+  cartel?: boolean;
   /** En una lista larga (artistas) las fotos se piden al llegar a ellas. */
   perezosa?: boolean;
   titulo: string;
@@ -36,11 +38,11 @@ type Props = {
  * con icono a la derecha, y el botón de acción (OL-104, bitácora 139) a la derecha del todo. Las otras tres pieles del
  * renglón (dato, ajuste y resuelto) son las clases de `Renglon.module.css`.
  */
-export default function Renglon({ href, foto, redonda = false, perezosa = false, titulo, accion, accionEnEspera = false, onClick, children }: Props) {
+export default function Renglon({ href, foto, redonda = false, cartel = false, perezosa = false, titulo, accion, accionEnEspera = false, onClick, children }: Props) {
   return (
     <li className={styles.lista}>
       <Link href={href} className={styles.frente} onClick={onClick}>
-        <Imagen src={foto ?? SIN_FOTO} alt="" width={56} height={56} sizes="56px" className={redonda ? `${styles.foto} ${styles.redonda}` : styles.foto} loading={perezosa ? "lazy" : "eager"} />
+        <Imagen src={foto ?? SIN_FOTO} alt="" width={cartel ? 45 : 56} height={56} sizes={cartel ? "45px" : "56px"} className={cartel ? `${styles.foto} ${styles.cartel}` : redonda ? `${styles.foto} ${styles.redonda}` : styles.foto} loading={perezosa ? "lazy" : "eager"} />
         <b>{titulo}</b>
         <small>{children}</small>
       </Link>

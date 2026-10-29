@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import HojaInstagram from "@/components/instagram/HojaInstagram";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Cabecera from "@/components/ui/Cabecera";
@@ -30,7 +30,7 @@ const PALABRAS = { una: "evento", varias: "eventos", nota: "Cuenta los eventos d
  * cola, y la lista se refresca sola cada 20 s mientras lo haya y al volver a la app. Si ese evento ya se publicó en Facebook hace menos de 15
  * minutos, el botón pregunta antes de repetir.
  */
-export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null }) {
+export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio, pestanas }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null; pestanas?: ReactNode }) {
   const router = useRouter();
   const [hojaCiudad, setHojaCiudad] = useState(false);
   const [evento, setEvento] = useState<string | null>(abrir);
@@ -113,7 +113,10 @@ export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, cont
             {ciudad.nombre}
           </Chip>
         }
-      />
+      >
+        {/* OL-479: las pestañas «Semana · Eventos», si la pantalla las trae. */}
+        {pestanas}
+      </Cabecera>
       {hojaCiudad && (
         <HojaCiudades
           palabras={PALABRAS}
@@ -122,7 +125,7 @@ export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, cont
           onElegir={(slug) => {
             setHojaCiudad(false);
             recordarCiudad(slug);
-            if (slug !== ciudad.slug) router.replace(`/admin/instagram${slug ? `?ciudad=${slug}` : "?ciudad=todas"}`, { scroll: false });
+            if (slug !== ciudad.slug) router.replace(`/admin/instagram${slug ? `?ciudad=${slug}` : "?ciudad=todas"}${pestanas ? "&pestana=eventos" : ""}`, { scroll: false });
           }}
           onCerrar={() => setHojaCiudad(false)}
         />

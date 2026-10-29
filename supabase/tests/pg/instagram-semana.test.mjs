@@ -127,8 +127,9 @@ export async function run({ as, check, expectError, query }) {
     check(escribe === "42501", "ni la administración la escribe directo (solo por sus funciones)", escribe);
 
     // --- 5. El texto, Cambiar, Quitar y Publicar ahora.
-    check((await rpc(ADMIN, "select public.instagram_semana_texto($1, 'Mi texto') as r", [lun.id]))[0].r === true, "el texto editado queda en su trabajo en espera");
-    check((await trabajo(lun.trabajo_id)).pedido.texto === "Mi texto", "con el texto en el pedido");
+    check((await rpc(ADMIN, "select public.instagram_semana_texto($1, 'Mi texto', '{semanauno}', false) as r", [lun.id]))[0].r === true, "lo cambiado en la hoja queda en su trabajo en espera");
+    const conTexto = (await trabajo(lun.trabajo_id)).pedido;
+    check(conTexto.texto === "Mi texto" && JSON.stringify(conTexto.quitadas) === '["semanauno"]' && conTexto.facebook === false && conTexto.casilla === lun.id, "con el texto, la cuenta quitada y sin Facebook en el pedido", conTexto);
     await as("authenticated", OTRA, () => expectError(() => query("select public.instagram_semana_texto($1, 'x')", [lun.id]), "42501", "una cuenta cualquiera no cambia el texto"));
     const cambiado = (await rpc(ADMIN, "select public.instagram_semana_cambiar($1, 'artista', $2, 'Cambiado a mano') as r", [lun.id, GESTIONADA]))[0].r;
     const lun2 = await casilla(await fecha(0));

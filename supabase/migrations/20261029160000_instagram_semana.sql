@@ -357,8 +357,9 @@ end $$;
 revoke all on function public.instagram_semana_ahora(uuid, jsonb) from public, anon;
 grant execute on function public.instagram_semana_ahora(uuid, jsonb) to authenticated, service_role;
 
--- El texto editado en la hoja de un día que sale solo a su hora: queda en su trabajo en espera (null: el que arma el sistema).
-create function public.instagram_semana_texto(p_casilla uuid, p_texto text) returns boolean
+-- Lo que se cambió en la hoja de un día que sale solo a su hora (el texto, las cuentas que no se etiquetan, «También en Facebook»): queda en su
+-- trabajo en espera. Texto null: el que arma el sistema.
+create function public.instagram_semana_texto(p_casilla uuid, p_texto text, p_quitadas text[] default '{}', p_facebook boolean default true) returns boolean
 language plpgsql volatile security definer set search_path = '' as $$
 declare
   v_n integer;
@@ -366,18 +367,19 @@ begin
   if not public.es_admin() then
     raise exception 'Solo la administración cambia la semana de Instagram.' using errcode = '42501';
   end if;
-  if char_length(p_texto) > 5000 then
-    raise exception 'Texto demasiado largo.' using errcode = '22023';
+  if char_length(p_texto) > 5000 or cardinality(p_quitadas) > 60 then
+    raise exception 'Pedido demasiado largo.' using errcode = '22023';
   end if;
   update public.redes_trabajos t
-  set pedido = t.pedido || jsonb_build_object('texto', nullif(btrim(p_texto), '')), actualizado_en = now()
+  set pedido = t.pedido || jsonb_build_object('texto', nullif(btrim(p_texto), ''), 'quitadas', to_jsonb(coalesce(p_quitadas, '{}'::text[])), 'facebook', coalesce(p_facebook, true)),
+      actualizado_en = now()
   from public.instagram_semana s
   where s.id = p_casilla and t.id = s.trabajo_id and t.estado = 'en_cola';
   get diagnostics v_n = row_count;
   return v_n > 0;
 end $$;
-revoke all on function public.instagram_semana_texto(uuid, text) from public, anon;
-grant execute on function public.instagram_semana_texto(uuid, text) to authenticated, service_role;
+revoke all on function public.instagram_semana_texto(uuid, text, text[], boolean) from public, anon;
+grant execute on function public.instagram_semana_texto(uuid, text, text[], boolean) to authenticated, service_role;
 
 -- «Copiar y abrir su Instagram»: queda anotado cuándo se avisó (se manda a mano: la API no deja escribir primero).
 create function public.instagram_semana_avisado(p_casilla uuid) returns timestamptz

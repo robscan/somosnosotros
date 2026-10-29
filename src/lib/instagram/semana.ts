@@ -83,7 +83,7 @@ export type Candidato = {
 };
 
 /** Un evento que puede salir (una fila de `instagram_sugerencias`, lo que la base deja publicar). */
-export type EventoCandidato = { id: string; titulo: string; inicio: string; zona: string; clase: string; imagen: string | null; lugar_nombre: string | null; sitio_texto: string | null; lugar_redes: unknown; van: number; interesa: number; destacado: boolean; publicado_en: string | null };
+export type EventoCandidato = { id: string; slug?: string | null; titulo: string; inicio: string; zona: string; clase: string; imagen: string | null; lugar_nombre: string | null; sitio_texto: string | null; lugar_redes: unknown; van: number; interesa: number; destacado: boolean; publicado_en: string | null };
 
 /** Un día armado, como lo guarda `instagram_semana_guardar`. */
 export type CasillaNueva = { fecha: string; tipo: TipoDia; hora: string | null; artista_id?: string; lugar_id?: string; evento_id?: string; eventos?: string[]; motivo: string | null };

@@ -1,0 +1,21 @@
+/* La hoja de un día de la semana de Instagram (OL-479; prototipo firmado `instagram-calendario.html`, bitácora 509). Lo demás son piezas de la
+   app y de la hoja de hoy (`HojaInstagram.module.css`: la vista previa, las líneas, la ubicación); aquí solo dos cosas nuevas:
+   1. El mensaje del aviso previo, completo y tal cual se manda (con sus saltos de línea), en una caja que no se sale de lado.
+   2. El «Ver» y el «Avisar» sueltos, a la derecha de una línea de lo hecho: miden 44 de ancho, no lo que miden sus letras. */
+.texto {
+  margin: 0 0 var(--espacio-3);
+  padding: var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-contenido);
+  font: inherit;
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ver {
+  min-width: var(--toque-min);
+  justify-content: center;
+}
