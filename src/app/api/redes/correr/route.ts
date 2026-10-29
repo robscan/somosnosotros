@@ -1,4 +1,5 @@
 import { after } from "next/server";
+import { armarLasQueVienen } from "@/app/admin/instagram/semana";
 import { herramientasReales } from "@/lib/redes/herramientas";
 import { correrUnTrabajo, PLAZOS_MS } from "@/lib/redes/trabajar";
 import { atenderCorrer } from "@/lib/rutinas/atender";
@@ -18,11 +19,18 @@ const MARGEN_MS = 3_000;
  */
 export async function GET(request: Request) {
   const inicio = Date.now();
+  // OL-487 (bitácora 519): una vez por llamada, antes de la cola, la semana de Instagram que toque armar (los miércoles de 9:00 a 9:59 en la
+  // hora de cada ciudad; el latido llama también por eso). Nunca tumba la cola: lo que falle queda en los registros y la cola sigue.
+  let semanaRevisada = false;
   return atenderCorrer(request, {
     secreto: process.env.CRON_SECRET,
     correr: async () => {
       const db = clienteAdmin();
       if (!db) throw new Error("sin base");
+      if (!semanaRevisada) {
+        semanaRevisada = true;
+        await armarLasQueVienen(db, new Date()).catch(() => console.warn("redes: no se pudo revisar la semana de Instagram; lo reintenta el latido"));
+      }
       return correrUnTrabajo({ db, ahora: () => new Date(), hasta: inicio + LIMITE_MS - MARGEN_MS, h: herramientasReales() });
     },
     despues: (tarea) => after(tarea),

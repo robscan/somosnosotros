@@ -1607,7 +1607,7 @@ function candidatosEnMemoria({ p_ciudad, p_tipo, p_desde }, t) {
 }
 Object.assign(rpcs, {
   instagram_candidatos: (args, t, { sub } = {}) => (sub === ADMIN ? candidatosEnMemoria(args, t) : []),
-  instagram_semana_guardar: ({ p_ciudad, p_casillas }, t, { sub } = {}) => {
+  instagram_semana_guardar: ({ p_ciudad, p_casillas }, t, { sub, armadaPor } = {}) => {
     if (sub !== ADMIN) return errorSql("42501", "Solo la administración arma la semana de Instagram.");
     let n = 0;
     for (const f of p_casillas ?? []) {
@@ -1617,12 +1617,39 @@ Object.assign(rpcs, {
         id: crypto.randomUUID(), ciudad: p_ciudad, fecha: f.fecha, tipo: f.tipo, artista_id: f.artista_id ?? null, lugar_id: f.lugar_id ?? null, evento_id: f.evento_id ?? null, eventos: f.eventos ?? null,
         hora, programado_para: hora ? new Date(`${f.fecha}T${hora}${ZONA_OFFSET}`).toISOString() : null, estado: f.tipo === "descanso" ? "descanso" : "programado", elegido_por: "sistema",
         motivo: f.motivo ?? null, reemplaza: null, trabajo_id: null, aviso_en: null, dijo_no_en: null, actualizado_por: sub, creado_en: new Date().toISOString(), actualizado_en: new Date().toISOString(),
+        armada_por: armadaPor ?? "pestana",
       };
       t.instagram_semana.push(c);
       n++;
       if (c.tipo !== "descanso" && Date.parse(c.programado_para) > Date.now()) encolarDia(t, c, false, null, sub);
     }
     return n;
+  },
+  // OL-487 (bitácora 519, migración 20261029230000): las ciudades a las que el latido les arma la que viene (miércoles de 9:00 a 9:59 en su hora,
+  // abiertas, con eventos esa semana y días por armar) y lo que pide el latido a nombre de la administración (las mismas funciones, «armada por el
+  // latido»). Las reglas y los permisos reales, en PostgreSQL (`supabase/tests/pg/semana-miercoles.test.mjs`).
+  instagram_semana_por_armar: ({ p_ahora = new Date().toISOString() } = {}, t) => {
+    const ahora = new Date(p_ahora);
+    return (t.ciudades ?? [])
+      .filter((c) => c.estado === "abierta")
+      .map((c) => {
+        const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: c.zona ?? ZONA, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23", weekday: "short" }).formatToParts(ahora).map((x) => [x.type, x.value]));
+        const hoy = `${p.year}-${p.month}-${p.day}`;
+        return { c, hoy, enHora: p.weekday === "Wed" && p.hour === "09" };
+      })
+      .filter(({ enHora }) => enHora)
+      .map(({ c, hoy }) => ({ ciudad: c.slug, zona: c.zona ?? ZONA, lunes: sumarDiaIso(lunesIso(hoy), 7) }))
+      .filter(({ ciudad, lunes }) => t.instagram_semana.filter((s) => s.ciudad === ciudad && s.fecha >= lunes && s.fecha <= sumarDiaIso(lunes, 6)).length < 7)
+      .filter(({ ciudad, lunes }) => {
+        const desde = Date.parse(`${lunes}T00:00:00${ZONA_OFFSET}`);
+        return t.eventos.some((e) => e.visible !== false && !e.borrador && !e.cancelado && !e.retirado_por_admin && slugCiudad(e.ciudad) === ciudad && Date.parse(e.inicio) < desde + 7 * 86400e3 && Date.parse(e.fin ?? e.inicio) + 3 * 3600e3 > desde);
+      })
+      .sort((a, b) => a.ciudad.localeCompare(b.ciudad));
+  },
+  // (Que solo la llame la llave de servicio lo prueba PostgreSQL: aquí las funciones no ven con qué llave se llamó.)
+  instagram_semana_latido: ({ p_funcion, p_args = {} }, t) => {
+    if (!["instagram_candidatos", "instagram_sugerencias", "instagram_semana_guardar"].includes(p_funcion)) return errorSql("42501", "El latido no pide esa función.");
+    return rpcs[p_funcion](p_args, t, { sub: ADMIN, armadaPor: "latido" });
   },
   instagram_semana_cambiar: ({ p_casilla, p_tipo, p_ficha, p_motivo, p_reemplaza = null }, t, { sub } = {}) => {
     const c = casillaDe(t, p_casilla);

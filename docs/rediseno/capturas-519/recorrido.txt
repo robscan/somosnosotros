@@ -1,0 +1,15 @@
+ok · antes del latido, la que viene no tiene ningún día
+ok · 01-portada-se-arma: el renglón de Instagram sin textos cortados ni desplazamiento a lo ancho
+ok · la portada dice «la que viene se arma el miércoles»
+ok · el latido llama al trabajador con el secreto (200)
+ok · la que viene: siete días, armados por el latido
+ok · cada día que publica espera en la cola a su hora
+ok · 02-portada-armada: el renglón de Instagram sin textos cortados ni desplazamiento a lo ancho
+ok · la portada dice «la que viene, armada el mié 7»
+ok · otra vuelta del latido: la misma semana, nada nuevo
+ok · la pestaña enseña los siete días (8 renglones)
+ok · abrir la pestaña no vuelve a armar la que viene
+
+todo bien
+sin errores de página ni de consola
+sin avisos «redes:» en los registros de la ruta
