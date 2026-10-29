@@ -341,6 +341,31 @@ li.propuesta {
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+/* OL-489: lo que propone «Completar fichas», en el sitio de la forma de un evento (una ficha no lleva): la imagen ya recortada (3:2 la
+   portada, cuadrada la foto) o la descripción. */
+.propuesta > .propuesto {
+  grid-area: forma;
+  margin-top: var(--espacio-2);
+}
+img.propuesto {
+  width: 100%;
+  /* Del ancho de una tarjeta de cartel y media: la portada se ve entera sin ocupar la tarjeta. */
+  max-width: calc(var(--tarjeta-grande) * 3 / 2);
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: var(--radio);
+  background: var(--fondo-miniatura);
+}
+img.cuadrada {
+  max-width: var(--avatar-carril);
+  aspect-ratio: 1;
+}
+p.propuesto {
+  overflow-wrap: anywhere;
+  font-size: var(--letra-md);
+  line-height: 1.35;
+}
 /* Un acto bajo su festival: hermano en la lista, con la sangría de la columna de los iconos y su aire. */
 li.acto {
   margin-left: var(--espacio-6);

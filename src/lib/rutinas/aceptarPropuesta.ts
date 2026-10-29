@@ -6,6 +6,8 @@ import { hrefLugar, validarLugar } from "../lugares";
 import { entradaDeArtista, entradaDeLugar, nombreDe, notaDeFestival, type TipoPropuesta } from "../propuestas";
 import { zonaDePunto } from "../zona";
 import { ponerCartel, type Almacen } from "./aceptarCartel";
+import { ponerEnFicha } from "./aceptarFicha";
+import { almacenFichasDeSupabase, type AlmacenFichas } from "./fichasImagen";
 import type { Mapbox } from "./mapbox";
 import { ciudadDeCorrida, insertarEvento, ligarFicha, lugaresDeCiudad, prepararEvento, type Preparado } from "./publicarEvento";
 
@@ -34,12 +36,22 @@ export type DepAceptar = {
   marcar: (propuesta: string, ficha: Record<string, unknown>) => Promise<Respuesta>;
   mapbox: Mapbox | null;
   almacen: (admin: SupabaseClient) => Almacen;
+  /** OL-489: dónde esperan las imágenes de «Completar fichas» (por omisión, el bucket `fotos` con la llave de servicio). */
+  almacenFichas?: (admin: SupabaseClient) => AlmacenFichas;
   ahora: () => Date;
   revalidar?: { todo: () => void; ruta: (ruta: string) => void };
   /** Con qué se baja la imagen del cartel (por omisión, `fetch`; las pruebas pasan una falsa). */
   pedir?: typeof fetch;
   /** Solo comprobar si se podría aceptar (el guion con --simular): todo lo de antes de marcar, nada escrito. */
   soloComprobar?: boolean;
+};
+
+/** OL-489: lo que dice la línea de lo hecho al aceptar un campo de una ficha. */
+export const NOTA_CAMPO: Record<string, string> = {
+  foto: "se puso su foto",
+  portada: "se puso su portada",
+  descripcion: "se puso su descripción",
+  instagram: "se añadió su Instagram",
 };
 
 /** La línea de lo hecho cuando la imagen de la propuesta (la de la cartelera, OL-448) no se pudo poner como cartel: el evento ya está publicado. */
@@ -69,6 +81,7 @@ export async function aceptarLeida(dep: DepAceptar, p: PropuestaLeida, ciudad: s
   const ruta = (r: string) => dep.revalidar?.ruta(r);
   let ficha: Record<string, unknown> = {};
   let evento: Preparado | null = null;
+  if (p.tipo === "ficha") return aceptarCampo(dep, p);
   if (p.tipo === "evento") {
     if (!admin) return { ok: false, error: "No se puede publicar ahora. Intenta más tarde." };
     const enCiudad = await ciudadDeCorrida(admin, p.corrida_id);
@@ -131,4 +144,25 @@ export async function aceptarLeida(dep: DepAceptar, p: PropuestaLeida, ciudad: s
   }
   if (!r.ficha_id) return { ok: true, href: null };
   return { ok: true, href: p.tipo === "lugar" ? hrefLugar({ id: r.ficha_id, slug: r.slug }) : hrefArtista({ id: r.ficha_id, slug: r.slug }) };
+}
+
+/**
+ * Aceptar un campo de «Completar fichas» (OL-489): primero se pone en la ficha (`ponerEnFicha`, solo si la ficha lo tiene vacío); si no se puede,
+ * no se acepta y vuelve la razón. Luego se marca con quien acepta (`marcar`, como las demás) y se liga a su ficha (`ficha_id`): «Ver ficha»
+ * lleva a ella.
+ */
+async function aceptarCampo(dep: DepAceptar, p: PropuestaLeida): Promise<ResultadoAceptar> {
+  const { admin, yo } = dep;
+  if (!admin) return { ok: false, error: "No se puede completar la ficha ahora. Intenta más tarde." };
+  if (dep.soloComprobar) return { ok: true, href: null };
+  const puesto = await ponerEnFicha({ db: admin, almacen: (dep.almacenFichas ?? almacenFichasDeSupabase)(admin), yo }, p.datos);
+  if (!puesto.ok) return puesto;
+  const href = puesto.tipo === "artista" ? hrefArtista({ id: puesto.id, slug: puesto.slug }) : hrefLugar({ id: puesto.id, slug: puesto.slug });
+  const { error } = await dep.marcar(p.id, {});
+  if (error) return { ok: false, error: "El dato ya quedó en la ficha, pero la propuesta no se pudo marcar: recárgala y recházala como duplicado." };
+  await admin.from("propuestas").update({ ficha_id: puesto.id }).eq("id", p.id).eq("estado", "aceptada").is("ficha_id", null);
+  dep.revalidar?.todo();
+  dep.revalidar?.ruta(href);
+  dep.revalidar?.ruta(puesto.tipo === "artista" ? "/artistas" : "/lugares");
+  return { ok: true, href, nota: NOTA_CAMPO[puesto.campo] };
 }

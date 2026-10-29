@@ -125,10 +125,11 @@ export async function aceptarPropuesta(id: string): Promise<ResultadoAceptar> {
   if (p.tipo === "cartel") return aceptarCartel(supabase, yo, p);
   // Lo mismo que el guion de la Mac que acepta una corrida (OL-453): `aceptarLeida`, con la sesión para marcarla y la llave de servicio para publicar.
   const token = p.tipo === "evento" ? configPublica().mapboxToken : null;
+  // Un evento se publica y una ficha (OL-489) se completa con la llave de servicio; lo demás, con la sesión.
   return aceptarLeida(
     {
       yo,
-      admin: p.tipo === "evento" ? clienteAdmin() : null,
+      admin: p.tipo === "evento" || p.tipo === "ficha" ? clienteAdmin() : null,
       consultas: supabase,
       marcar: async (propuesta, ficha) => await supabase.rpc("aceptar_propuesta", { p_propuesta: propuesta, p_ficha: ficha }),
       mapbox: token ? { token } : null,

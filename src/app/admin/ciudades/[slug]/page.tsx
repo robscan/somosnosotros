@@ -9,6 +9,8 @@ import {
   baseCarteles,
   baseEventos,
   BOTON_CARTELES,
+  BOTON_FICHAS,
+  baseFichas,
   busquedaDe,
   baseLugares,
   BOTONES,
@@ -92,6 +94,8 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
   const [[cifras], datos] = await Promise.all([conCifras([ciudad], extras ?? new Map()), cargarDatosCiudad({ slug, nombre: ciudad.nombre, alias: extra.alias, zona: ciudad.zona }, suyas, ahora)]);
   const b = busquedasDe(panel.corridas, slug);
   const carteles = busquedaDe(panel.corridas, slug, BOTON_CARTELES.tipo);
+  const fichas = busquedaDe(panel.corridas, slug, BOTON_FICHAS.tipo);
+  const tarjetaFichas = baseFichas(fichas);
   const n = porRevisarDe(panel.corridas, slug);
   const siguiente = siguientePaso(b, n);
   const c = credito(panel.credito, ahora);
@@ -190,6 +194,20 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
           corre={carteles?.estado === "corriendo"}
           credito={fraseCredito}
           vezPasada={vezPasada(carteles)}
+        />
+        {/* «Completar fichas» (OL-489): las fichas con fecha a las que les faltaba algo en la última corrida; también corre sola cada semana. */}
+        <TarjetaBusqueda
+          slug={slug}
+          ciudad={ciudad.nombre}
+          tipo={BOTON_FICHAS.tipo}
+          valor={cifra(tarjetaFichas.valor)}
+          base={tarjetaFichas.base}
+          linea={fichas ? lineaBusqueda(fichas, panel.corridas, ahora) : null}
+          principal={false}
+          pendiente={fichas?.estado === "pendiente" ? fichas.id : null}
+          corre={fichas?.estado === "corriendo"}
+          credito={fraseCredito}
+          vezPasada={vezPasada(fichas)}
         />
       </ul>
     </main>
