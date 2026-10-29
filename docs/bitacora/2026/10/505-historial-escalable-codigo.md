@@ -24,7 +24,7 @@ Piezas ampliadas sin cambiar lo que ya hacían: `TarjetaAvatar` (`nota`), `Rengl
 2. **Sin RPC ni tandas desde el servidor** (el plan, §9.2, la dejaba «se decide al medir»). La sección ya pinta como mucho 12 avatares y 20 renglones por tanda, tenga 80 o 200 eventos (el objetivo de la medición de 501: 390 nodos en vez de 1 138); los años y las cuentas salen de lo que la ficha ya lee. El tope de 200 sigue: un lugar con más de 200 eventos pasados diría «200+ eventos» y sus años más viejos no saldrían en los chips. Hoy hay 171 eventos pasados en toda la base (12 de oct.); cuando un lugar se acerque, una función `historial_por_anio` que solo añade (cuentas por año y tandas por `anio` y `desde`) lo resuelve sin tocar esta pantalla.
 3. **El plegado ahora se recuerda abierto** al volver (OL-390 decía «no se recuerda»): sin eso no se puede reponer «el año y el lugar de la lista» que pide el encargo. Una visita nueva a la misma URL en la misma pestaña también lo abre (como las demás memorias de pantalla).
 4. **Los nombres largos del carril** se cortan en palabra entera con «…» («Centro Cultural Universitario…»), lo que hace `TarjetaAvatar` en Inicio (`useTextoEnPalabra`); el prototipo era HTML quieto y los cortaba sin puntos. Mismo alto.
-5. **El chip cuenta los renglones del año**, los cancelados también (se quedan en su mes, tachados); la cabecera los aparta, como en OL-391.
+5. **El chip cuenta lo que sí ocurrió ese año**: los cancelados no suman, igual que en la cabecera («2 fechas · 1 cancelado», OL-390/391), y siguen listados en su mes, tachados (corrección del gestor, 2026-10-29; antes contaba también los cancelados). Un año con solo cancelados sale con 0.
 
 ## Pruebas
 

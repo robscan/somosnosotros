@@ -52,14 +52,19 @@ describe("los renglones pasados, hechos en el servidor (OL-473)", () => {
 describe("L1: un chip por año y ese año de 20 en 20 (OL-473)", () => {
   const filas = filasPasadas([...delAnio(2026, 48), ...delAnio(2025, 26), ...delAnio(2024, 10)]);
 
-  it("los años del más reciente al más viejo, con cuántos renglones tiene cada uno (los cancelados también: se quedan tachados)", () => {
-    const conCancelado = filasPasadas([...delAnio(2025, 2), evento("x", "2025-06-01T20:00:00Z", { cancelado: true })]);
+  it("los años del más reciente al más viejo, con cuántos eventos ocurrieron (los cancelados no suman, como en la cabecera, pero siguen en la lista)", () => {
+    const conCancelado = filasPasadas([...delAnio(2025, 2), evento("x", "2025-06-01T20:00:00Z", { cancelado: true }), evento("y", "2023-06-01T20:00:00Z", { cancelado: true })]);
     expect(aniosDeFilas(filas)).toEqual([
       { anio: "2026", n: 48 },
       { anio: "2025", n: 26 },
       { anio: "2024", n: 10 },
     ]);
-    expect(aniosDeFilas(conCancelado)).toEqual([{ anio: "2025", n: 3 }]);
+    expect(aniosDeFilas(conCancelado)).toEqual([
+      { anio: "2025", n: 2 },
+      { anio: "2023", n: 0 },
+    ]);
+    // El cancelado sigue en su mes: la tanda de 2025 trae los tres renglones.
+    expect(tandaDelAnio(conCancelado, "2025", TANDA_HISTORIAL).vistos).toBe(3);
     expect(aniosDeFilas([])).toEqual([]);
   });
 

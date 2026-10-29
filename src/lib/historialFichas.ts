@@ -268,13 +268,14 @@ export function filasPasadas(eventos: readonly EventoPasado[], artistaId: string
     });
 }
 
-/** Un chip de año: «2026 · 48». Cuenta los renglones de ese año, los cancelados también (se quedan en su mes, tachados). */
+/** Un chip de año: «2026 · 48». Cuenta lo que sí ocurrió ese año, como la cabecera (OL-391, C1): los cancelados siguen en su mes, tachados,
+ *  pero no suman. Un año con solo cancelados sale con 0 (sus renglones siguen ahí). */
 export type AnioHistorial = { anio: string; n: number };
 
-/** Los años de lo pasado, del más reciente al más viejo, con cuántos renglones tiene cada uno. */
-export function aniosDeFilas(filas: readonly Pick<FilaPasada, "anio">[]): AnioHistorial[] {
+/** Los años de lo pasado, del más reciente al más viejo, con cuántos eventos ocurrieron en cada uno. */
+export function aniosDeFilas(filas: readonly Pick<FilaPasada, "anio" | "cancelado">[]): AnioHistorial[] {
   const cuentas = new Map<string, number>();
-  for (const f of filas) cuentas.set(f.anio, (cuentas.get(f.anio) ?? 0) + 1);
+  for (const f of filas) cuentas.set(f.anio, (cuentas.get(f.anio) ?? 0) + (f.cancelado ? 0 : 1));
   return [...cuentas].map(([anio, n]) => ({ anio, n })).sort((a, b) => b.anio.localeCompare(a.anio));
 }
 
