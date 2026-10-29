@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { drenarAvisos, drenarAvisosAdmin, procesarEntrega, procesarEntregaAdmin, type Claim, type ClaimAdmin,
+import { codigoDeExcepcion, drenarAvisos, drenarAvisosAdmin, mensajeSeguro, procesarEntrega, procesarEntregaAdmin, type Claim, type ClaimAdmin,
   type DependenciasAvisos, type Entrega, type EntregaAdmin } from "./avisosWorker";
 
 const NOW = Date.parse("2030-10-01T12:00:00Z");
@@ -233,5 +233,67 @@ describe("drenarAvisosAdmin: expande, toma y entrega sin los cuatro slots del mo
     const b = bancoAdmin([]);
     await drenarAvisosAdmin({ ms: 5000 }, b.d);
     expect(b.rpc).not.toHaveBeenCalledWith("avisos_admin_tomar", expect.anything(), expect.anything());
+  });
+});
+
+// ---------- OL-476 (bitácora 508): el motivo real en `codigo`, en vez de `worker_dependencia` ----------
+describe("OL-476: lo que se guarda en codigo cuando algo lanza", () => {
+  const codigoTerminado = (rpc: ReturnType<typeof vi.fn>, nombre = "avisos_terminar") =>
+    (rpc.mock.calls.filter((c) => c[0] === nombre).at(-1)?.[1] as { p_codigo: string; p_resultado: string } | undefined);
+
+  it("una excepción del envío queda como excepcion_<clase>, se reintenta y se registra sin el cuerpo ni la dirección", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const b = banco([entrega("p", "push")]);
+    b.d.push = vi.fn(async () => { throw new TypeError(`Cannot read "Cultura" de https://fcm.googleapis.com/fcm/send/p para persona@example.invalid`); });
+    expect(await procesarEntrega(claim("p"), b.d)).toBe(false);
+    expect(codigoTerminado(b.rpc)).toEqual(expect.objectContaining({ p_resultado: "reintentar", p_codigo: "excepcion_typeerror" }));
+    const texto = error.mock.calls.flat().join(" ");
+    expect(texto).toContain("excepcion_typeerror");
+    expect(texto).toContain("TypeError");
+    for (const privado of ["Cultura", "fcm.googleapis.com", "persona@example.invalid"]) expect(texto).not.toContain(privado);
+    expect(b.rpc.mock.calls.some((c) => (c[1] as { p_codigo?: string } | undefined)?.p_codigo === "worker_dependencia")).toBe(false);
+    error.mockRestore();
+  });
+  it("un error propio con código (la base, Auth, el plazo) se guarda tal cual", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const b = banco(); b.correoDe.mockRejectedValue(new Error("avisos_auth"));
+    await procesarEntrega(claim(), b.d);
+    expect(codigoTerminado(b.rpc)?.p_codigo).toBe("avisos_auth");
+    const c = banco(); const original = c.d.rpc;
+    c.d.rpc = async (n, a, ms) => { if (n === "avisos_preparar") throw new Error("avisos_base_preparar_57014"); return original(n, a, ms); };
+    await procesarEntrega(claim(), c.d);
+    expect(codigoTerminado(c.rpc)?.p_codigo).toBe("avisos_base_preparar_57014");
+    error.mockRestore();
+  });
+  it("el código del proveedor se normaliza a lo que acepta la base (^[a-z0-9_]{1,60}$)", async () => {
+    const b = banco([entrega("p", "push")]);
+    b.d.push = vi.fn(async () => ({ estado: "fallida" as const, codigo: "apns_403_InvalidProviderToken" }));
+    await procesarEntrega(claim("p"), b.d);
+    expect(codigoTerminado(b.rpc)?.p_codigo).toBe("apns_403_invalidprovidertoken");
+  });
+  it("apns_llave pasa tal cual y como 'fallida': no se reintenta ocho veces", async () => {
+    const b = banco([entrega("p", "push")]);
+    b.d.push = vi.fn(async () => ({ estado: "fallida" as const, codigo: "apns_llave" }));
+    await procesarEntrega(claim("p"), b.d);
+    expect(codigoTerminado(b.rpc)).toEqual(expect.objectContaining({ p_resultado: "fallida", p_codigo: "apns_llave" }));
+    expect(b.estados.get("p")).toBe("fallida");
+  });
+  it("lo mismo en el aviso a la administración", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const b = bancoAdmin();
+    b.d.push = vi.fn(async () => { throw new RangeError("fuera de rango"); });
+    expect(await procesarEntregaAdmin(claimAdmin(), b.d)).toBe(false);
+    expect(codigoTerminado(b.rpc, "avisos_admin_terminar")?.p_codigo).toBe("excepcion_rangeerror");
+    error.mockRestore();
+  });
+  it("codigoDeExcepcion y mensajeSeguro, sueltos", () => {
+    expect(codigoDeExcepcion(new Error("avisos_timeout"))).toBe("avisos_timeout");
+    expect(codigoDeExcepcion(new Error("Algo raro pasó"))).toBe("excepcion_error");
+    expect(codigoDeExcepcion("texto")).toBe("excepcion_string");
+    expect(codigoDeExcepcion(Object.assign(new Error("x y"), { name: "AbortError" }))).toBe("excepcion_aborterror");
+    const m = mensajeSeguro(new SyntaxError(`Unexpected token 'a', "{"to":["persona@example.invalid"]}" is not valid JSON; token ${"ab".repeat(32)}`));
+    expect(m).toMatch(/^SyntaxError: /);
+    expect(m).not.toContain("persona@example.invalid");
+    expect(m).not.toContain("ab".repeat(32));
   });
 });
