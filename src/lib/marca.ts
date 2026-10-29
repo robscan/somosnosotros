@@ -48,3 +48,9 @@ export function remitenteCorreo(variable?: string | null): string {
   const direccion = texto.match(/<([^<>\s]+@[^<>\s]+)>\s*$/)?.[1] ?? texto.match(/^[^<>\s]+@[^<>\s]+$/)?.[0];
   return `${MARCA} <${direccion ?? DIRECCION_AVISOS}>`;
 }
+
+/**
+ * La app de Meta «Somos Nosotrxs Publicador» (OL-471, bitácora 503): su identificador va en el diálogo de inicio de sesión de «Conectar
+ * Instagram» (`client_id`). No es secreto (lo ve cualquiera en la dirección del diálogo); el secreto de la app es `META_APP_SECRET`, solo en Vercel.
+ */
+export const META_APP_ID = "1459504089615420";

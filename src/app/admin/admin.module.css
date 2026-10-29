@@ -511,6 +511,20 @@ a.ficha::after,
   opacity: 0.55;
   cursor: default;
 }
+/* Una píldora que es un enlace (OL-471: «Conectar Instagram» lleva al inicio de sesión de Meta): como la del botón. */
+a.pildora {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+/* El bloque «Conexión» de Administración › Instagram (OL-471): la línea de la vuelta de Meta con el aire de la columna, y lo que falta en rojo. */
+.conexionAviso {
+  margin: var(--espacio-3) var(--gutter) 0;
+}
+li > small.conexionFalta {
+  color: var(--error);
+}
 .quitar {
   color: var(--error);
 }
