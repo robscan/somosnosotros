@@ -1509,11 +1509,10 @@ const MEDIDAS_SEMANA = new Map();
 const ZONA_OFFSET = "-06:00";
 const sumarDiaIso = (dia, n) => { const [a, m, d] = dia.split("-").map(Number); return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10); };
 const lunesIso = (dia) => { const [a, m, d] = dia.split("-").map(Number); const n = (new Date(Date.UTC(a, m - 1, d)).getUTCDay() + 6) % 7; return sumarDiaIso(dia, -n); };
-const diaLocalDe = (iso) => new Intl.DateTimeFormat("en-CA", { timeZone: ZONA }).format(new Date(iso));
 const conInstagram = (redes) => /instagram\.com\/[A-Za-z0-9._]/i.test(JSON.stringify(redes ?? []));
 const hashEstable = (s) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
 const pedidoDia = (c, extra = {}) => {
-  const { casilla: _c, tipo: _t, eventos: _e, ...resto } = extra ?? {};
+  const resto = Object.fromEntries(Object.entries(extra ?? {}).filter(([k]) => !["casilla", "tipo", "eventos"].includes(k)));
   return { facebook: true, casilla: c.id, tipo: c.tipo, ...(c.tipo === "semana" ? { eventos: c.eventos } : {}), ...resto };
 };
 function encolarDia(t, c, ahora, extra, sub) {
