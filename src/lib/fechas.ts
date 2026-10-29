@@ -403,3 +403,51 @@ export function eventoPaso(inicio: string, fin: string | null, ahora: Date = new
 export function filtroSinPasar(ahora: Date = new Date()): string {
   return `termina.gte."${ahora.toISOString()}"`;
 }
+
+// ---------- OL-480 (bitácora 512): la fecha corta de los avisos al teléfono ----------
+
+/** «8 pm», «8:30 pm», «1 pm»: la hora de un aviso, sin «:00» (cada carácter cuenta en la pantalla de bloqueo). */
+export function horaDeAviso(iso: string, zona: string = ZONA_INICIAL): string {
+  return horaCorta(iso, zona).replace(":00 ", " ");
+}
+
+/** Días de calendario entre dos días YYYY-MM-DD («2026-10-08» → «2026-10-09» = 1). */
+function diasEntre(desde: string, hasta: string): number {
+  const ms = (dia: string) => Date.UTC(Number(dia.slice(0, 4)), Number(dia.slice(5, 7)) - 1, Number(dia.slice(8, 10)));
+  return Math.round((ms(hasta) - ms(desde)) / 86400000);
+}
+
+/** «vie 9» dentro de las dos semanas que siguen; más lejos, «vie 13 de nov» (y el año si no es el de hoy): sin mes, «vie 9» se repite cada mes. */
+function diaDeAviso(iso: string, ahora: Date, zona: string): string {
+  const dias = diasEntre(diaLocal(ahora, zona), diaLocal(new Date(iso), zona));
+  if (dias >= 0 && dias < 14) {
+    return new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), weekday: "short", day: "numeric" }).format(new Date(iso)).replace(/[.,]/g, "");
+  }
+  return diaCortoDe(new Date(iso), ahora, zona);
+}
+
+/**
+ * El cuándo de un aviso al teléfono (OL-478, firmado el 2026-10-29): «vie 9 · 8 pm», la fecha corta, sin «Hoy» ni «Mañana». Con `relativo`
+ * (el recordatorio y lo de última hora: empieza en menos de 24 horas), «hoy a las 8 pm» o «mañana a las 8 pm», **en minúscula**, porque casi
+ * siempre va a media frase («Nueva fecha: mañana a las 8 pm»); quien la pone al principio la escribe con mayúscula (`conMayuscula`). Así se
+ * acaba el «Ahora es Mañana» de antes. Lo que dura varios días dice sus días: «del vie 9 al dom 18» o, ya empezado, «hasta el dom 18».
+ */
+export function cuandoCorto(inicio: string, fin: string | null | undefined, ahora: Date = new Date(), zona: string = ZONA_INICIAL, relativo = false): string {
+  if (fin && esDeVariosDias(inicio, fin, zona)) {
+    const hasta = diaDeAviso(fin, ahora, zona);
+    return new Date(inicio).getTime() <= ahora.getTime() ? `hasta el ${hasta}` : `del ${diaDeAviso(inicio, ahora, zona)} al ${hasta}`;
+  }
+  const hora = horaDeAviso(inicio, zona);
+  if (relativo) {
+    const dias = diasEntre(diaLocal(ahora, zona), diaLocal(new Date(inicio), zona));
+    const articulo = articuloDeHora(reloj24(inicio, zona));
+    if (dias === 0) return `hoy a ${articulo} ${hora}`;
+    if (dias === 1) return `mañana a ${articulo} ${hora}`;
+  }
+  return `${diaDeAviso(inicio, ahora, zona)} · ${hora}`;
+}
+
+/** La primera letra en mayúscula («hoy a las 8 pm» → «Hoy a las 8 pm»), para cuando la fecha abre la frase. */
+export function conMayuscula(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}

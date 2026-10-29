@@ -90,14 +90,17 @@
 .telefono > svg {
   color: var(--texto-suave);
 }
-.telefono a {
+/* «Activar» (OL-480: activa ahí mismo; antes era un enlace a Ajustes). */
+.telefono button {
   min-height: var(--toque-min);
   display: inline-flex;
   align-items: center;
   padding: 0 var(--espacio-4);
   border: 1px solid var(--borde);
   border-radius: var(--radio-pildora);
+  background: var(--fondo);
   color: var(--primario);
+  font: inherit;
   font-weight: 700;
-  text-decoration: none;
+  cursor: pointer;
 }

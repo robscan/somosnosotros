@@ -35,9 +35,11 @@ export default function Indicadores({ lista, nota, desglose = "desglose" }: { li
               <li className={styles.desglose} id={desglose}>
                 <p>{elegido.que}</p>
                 <ul>{(elegido.partes.length ? elegido.partes : [elegido.vacio ?? "Aún nada esta semana"]).map((p) => <li key={p}>{p}</li>)}</ul>
-                <Link href={elegido.enlace.href} className={styles.enlace}>
-                  {elegido.enlace.texto} ›
-                </Link>
+                {elegido.enlace && (
+                  <Link href={elegido.enlace.href} className={styles.enlace}>
+                    {elegido.enlace.texto} ›
+                  </Link>
+                )}
               </li>
             )}
           </Fragment>

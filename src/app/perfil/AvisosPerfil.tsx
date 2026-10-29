@@ -14,7 +14,7 @@ import renglon from "@/components/ui/Renglon.module.css";
 import ajustes from "@/app/ajustes/ajustes.module.css";
 import { borrarSuscripcionPush, guardarSuscripcionPush } from "./acciones";
 
-type Props = { correo: boolean; correoTexto: string; llavePush: string };
+type Props = { correo: boolean; llavePush: string };
 
 /**
  * El subtítulo dice el estado de ESTE teléfono (decisión 5 de docs/rediseno/17), no la marca de la cuenta.
@@ -44,11 +44,12 @@ function subtitulo(estado: EstadoPush | null, p: Plataforma | null, llavePush: s
 }
 
 /**
- * Las dos filas de Avisos en Ajustes, cada una con su interruptor, que guardan al tocar (decisión 7 de docs/rediseno/13).
+ * Las dos filas de Avisos en Ajustes, cada una con su interruptor, que guardan al tocar (decisión 7 de docs/rediseno/13): el boletín por correo
+ * (OL-480: los avisos de eventos ya solo van al teléfono; `avisos_correo` lo leerá el boletín) y el teléfono.
  * El teléfono dice su verdad: encendido solo si este teléfono está dado de alta; en Safari del iPhone abre la hoja de
  * instalar; bloqueado o sin avisos, el interruptor no se toca y el subtítulo dice por qué (docs/rediseno/17, decisiones 5 y 8).
  */
-export default function AvisosPerfil({ correo: correoInicial, correoTexto, llavePush }: Props) {
+export default function AvisosPerfil({ correo: correoInicial, llavePush }: Props) {
   const router = useRouter();
   const plataforma = usePlataforma();
   const [estado, setEstado] = useEstadoPush(llavePush);
@@ -114,9 +115,10 @@ export default function AvisosPerfil({ correo: correoInicial, correoTexto, llave
     <>
       <li className={renglon.ajuste}>
         <IconoCorreo width={20} height={20} />
-        <b>Por correo</b>
-        <small>{correoTexto} · cada correo trae su baja</small>
-        <Palanca encendida={correo} aria-label="Avisos por correo" onClick={cambiarCorreo} disabled={trabajando} />
+        {/* OL-480 (founder, 2026-10-29): por correo ya no sale ningún aviso de eventos; solo llegará el boletín, cuando exista (OL-138). */}
+        <b>Boletín por correo</b>
+        <small>Por correo solo llegará el boletín, cuando exista</small>
+        <Palanca encendida={correo} aria-label="Boletín por correo" onClick={cambiarCorreo} disabled={trabajando} />
       </li>
       <li className={renglon.ajuste}>
         {plataforma?.computadora ? <IconoComputadora width={20} height={20} /> : <IconoTelefono width={20} height={20} />}

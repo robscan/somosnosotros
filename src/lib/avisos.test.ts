@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contenidoPush, contenidoPushAdmin, lotes, pendientesDeAviso, superoTopeAvisos, TOPE_AVISOS_POR_AUTOR_DIA, ventanaRecordatorio, type Canales, type EventoParaAviso } from "./avisos";
+import { contenidoPush, contenidoPushAdmin, cuerpoPush, LARGO_CUERPO, LARGO_TITULO, lotes, recortar, pendientesDeAviso, superoTopeAvisos, TOPE_AVISOS_POR_AUTOR_DIA, ventanaRecordatorio, type Canales, type EventoParaAviso } from "./avisos";
 
 // "ahora" fijo para que los textos con fecha no dependan del día en que corre la prueba.
 const AHORA = new Date("2026-09-19T16:00:00Z"); // sábado 19 sep 2026, 10:00 hora de la ciudad
@@ -71,36 +71,95 @@ describe("pendientesDeAviso", () => {
   });
 });
 
-describe("contenidoPush", () => {
-  it("nuevo evento: título con el lugar, cuerpo con título y cuándo, enlace a la ficha", () => {
-    const c = contenidoPush("nuevo_evento", evento(), "ambos", AHORA);
-    expect(c.titulo).toBe("Nuevo en Casa 1100");
-    expect(c.cuerpo).toBe("Noche de jazz · sáb 26 de sep · 7:00 pm");
-    expect(c.url).toBe("https://somosnosotros.org/eventos/evt-1");
+describe("contenidoPush (OL-480: la forma firmada en OL-478)", () => {
+  it("evento nuevo por el lugar: título = el evento, «Nuevo en …» debajo, la fecha corta primero y la descripción", () => {
+    const c = contenidoPush("nuevo_evento", evento(), "ambos", AHORA, { motivo: "lugar", descripcion: "Trío con invitados" });
+    expect(c).toEqual({ titulo: "Noche de jazz", subtitulo: "Nuevo en Casa 1100", cuerpo: "sáb 26 · 7 pm · Trío con invitados",
+      url: "https://somosnosotros.org/eventos/evt-1?desde=aviso&tipo=nuevo", hilo: "evento-evt-1" });
   });
-  it("cambio: dice qué cambió (fecha, lugar o ambos) y cómo queda ahora", () => {
-    expect(contenidoPush("cambio", evento(), "cuando", AHORA).titulo).toBe("Cambió la fecha: Noche de jazz");
-    expect(contenidoPush("cambio", evento(), "donde", AHORA).titulo).toBe("Cambió el lugar: Noche de jazz");
-    const c = contenidoPush("cambio", evento(), "ambos", AHORA);
-    expect(c.titulo).toBe("Cambió la fecha y el lugar: Noche de jazz");
-    expect(c.cuerpo).toBe("Ahora es sáb 26 de sep · 7:00 pm · Casa 1100");
+  it("evento nuevo por el artista: el artista va antes que el lugar y nunca dice quién publicó", () => {
+    const c = contenidoPush("nuevo_evento", evento(), "ambos", AHORA, { motivo: "artista:Luna Hermoso" });
+    expect([c.subtitulo, c.cuerpo]).toEqual(["De Luna Hermoso, a quien sigues", "sáb 26 · 7 pm · Casa 1100"]);
+    expect(JSON.stringify(c)).not.toMatch(/publicó/);
   });
-  it("recordatorio: 'Hoy' o 'Mañana' en la zona del evento, con el título", () => {
-    const hoy = contenidoPush("recordatorio", evento({ inicio: "2026-09-20T01:00:00Z" }), "ambos", AHORA);
-    expect(hoy.titulo).toBe("Hoy: Noche de jazz");
-    expect(hoy.cuerpo).toBe("Hoy · 7:00 pm · Casa 1100");
-    // Mañana a las 8:00, dentro de las 24 horas del recordatorio de las 9:00: antes decía "Hoy".
-    expect(contenidoPush("recordatorio", evento({ inicio: "2026-09-20T14:00:00Z" }), "ambos", AHORA).titulo).toBe("Mañana: Noche de jazz");
+  it("sin motivo guardado (entregas de antes): como si fuera por el lugar, con el sitio escrito a mano o reservado", () => {
+    expect(contenidoPush("nuevo_evento", evento({ lugar: null, sitio_texto: "Plaza de armas" }), "ambos", AHORA).subtitulo).toBe("Nuevo en Plaza de armas");
+    const reservado = contenidoPush("nuevo_evento", evento({ lugar: null, sitio_texto: "Plaza", sitio_reservado: true }), "ambos", AHORA);
+    expect(reservado.subtitulo).toBe("Nuevo en Plaza · sitio reservado");
+    expect(reservado.cuerpo).toBe("sáb 26 · 7 pm");
+  });
+  it("lo de última hora (empieza en menos de 24 horas) dice «Hoy a las…», con mayúscula al abrir el cuerpo", () => {
+    expect(contenidoPush("nuevo_evento", evento({ inicio: "2026-09-20T03:00:00Z" }), "ambos", AHORA, { motivo: "lugar" }).cuerpo).toBe("Hoy a las 9 pm");
+  });
+  it("recordatorio: «Hoy a las 7 pm» o «Mañana a las 8 am» de subtítulo, en la zona del evento; el lugar y su dirección en el cuerpo", () => {
+    const hoy = contenidoPush("recordatorio", evento({ inicio: "2026-09-20T01:00:00Z" }), "ambos", AHORA, { direccion: "Villerías 2, Centro" });
+    expect([hoy.titulo, hoy.subtitulo, hoy.cuerpo]).toEqual(["Noche de jazz", "Hoy a las 7 pm", "Casa 1100 · Villerías 2, Centro"]);
+    expect(hoy.url).toBe("https://somosnosotros.org/eventos/evt-1?desde=aviso&tipo=recordatorio");
+    expect(contenidoPush("recordatorio", evento({ inicio: "2026-09-20T14:00:00Z" }), "ambos", AHORA).subtitulo).toBe("Mañana a las 8 am");
+    expect(contenidoPush("recordatorio", evento({ inicio: "2026-09-19T19:00:00Z" }), "ambos", AHORA).subtitulo).toBe("Hoy a la 1 pm");
     // El mismo instante en Madrid es la 1:00 del domingo: mañana allá.
-    const madrid = contenidoPush("recordatorio", evento({ inicio: "2026-09-19T23:00:00Z", zona: "Europe/Madrid" }), "ambos", AHORA);
-    expect(madrid.titulo).toBe("Mañana: Noche de jazz");
-    expect(madrid.cuerpo).toBe("Mañana · 1:00 am · Casa 1100");
+    expect(contenidoPush("recordatorio", evento({ inicio: "2026-09-19T23:00:00Z", zona: "Europe/Madrid" }), "ambos", AHORA).subtitulo).toBe("Mañana a la 1 am");
+    // Con sitio reservado, solo el nombre: la dirección nunca viaja en el aviso.
+    const reservado = contenidoPush("recordatorio", evento({ inicio: "2026-09-20T01:00:00Z", lugar: null, sitio_texto: "Casa de Ana", sitio_reservado: true }), "ambos", AHORA, { direccion: "Calle secreta 1" });
+    expect(reservado.cuerpo).toBe("Casa de Ana · sitio reservado");
   });
-  it("sin lugar registrado, usa el sitio escrito a mano (o 'sitio reservado')", () => {
-    const c = contenidoPush("nuevo_evento", evento({ lugar: null, sitio_texto: "Plaza de armas" }), "ambos", AHORA);
-    expect(c.titulo).toBe("Nuevo en Plaza de armas");
-    const reservado = contenidoPush("nuevo_evento", evento({ lugar: null, sitio_texto: "Plaza de armas", sitio_reservado: true }), "ambos", AHORA);
-    expect(reservado.titulo).toBe("Nuevo en Plaza de armas · sitio reservado");
+  it("cambio: «Nueva fecha: …», «Nuevo lugar: …» o «Nueva fecha y lugar», y el «mañana» en minúscula a media frase (adiós «Ahora es Mañana»)", () => {
+    expect([contenidoPush("cambio", evento(), "cuando", AHORA).subtitulo, contenidoPush("cambio", evento(), "cuando", AHORA).cuerpo]).toEqual(["Nueva fecha: sáb 26 · 7 pm", "Casa 1100"]);
+    expect([contenidoPush("cambio", evento(), "donde", AHORA).subtitulo, contenidoPush("cambio", evento(), "donde", AHORA).cuerpo]).toEqual(["Nuevo lugar: Casa 1100", "sáb 26 · 7 pm"]);
+    expect([contenidoPush("cambio", evento(), "ambos", AHORA).subtitulo, contenidoPush("cambio", evento(), "ambos", AHORA).cuerpo]).toEqual(["Nueva fecha y lugar", "sáb 26 · 7 pm · Casa 1100"]);
+    const pronto = contenidoPush("cambio", evento({ inicio: "2026-09-20T14:00:00Z" }), "cuando", AHORA);
+    expect(pronto.subtitulo).toBe("Nueva fecha: mañana a las 8 am");
+    expect(JSON.stringify(pronto)).not.toMatch(/ Mañana/);
+    expect(pronto.url.endsWith("tipo=cambio")).toBe(true);
+  });
+  it("cancelación (su texto queda listo para la fase 4): «Se canceló» y cuándo era", () => {
+    const c = contenidoPush("cancelado", evento(), "ambos", AHORA);
+    expect([c.subtitulo, c.cuerpo, c.url.endsWith("tipo=cancelado")]).toEqual(["Se canceló", "Era el sáb 26 · 7 pm en Casa 1100.", true]);
+  });
+  it("lejos (dos semanas o más), con el mes; lo que dura varios días, sus días", () => {
+    expect(contenidoPush("nuevo_evento", evento({ inicio: "2026-11-14T02:00:00Z" }), "ambos", AHORA).cuerpo).toBe("vie 13 de nov · 8 pm");
+    expect(contenidoPush("nuevo_evento", evento({ inicio: "2026-09-25T17:00:00Z", fin: "2026-09-28T05:59:00Z" }), "ambos", AHORA).cuerpo).toBe("del vie 25 al dom 27");
+  });
+  it("nombres largos: título ≤ 40 y cuerpo ≤ 110, cortados por palabra con «…»; la razón se queda entera y se corta el nombre", () => {
+    const largo = evento({ titulo: "Festival Internacional de Danza Contemporánea Lila López: función de clausura",
+      lugar: { nombre: "Centro de las Artes de San Luis Potosí Centenario", portada: null } });
+    const descripcion = "Gala de clausura con compañías de México, Argentina y España en el foro principal del Centro de las Artes, con entrada libre hasta llenar";
+    const c = contenidoPush("nuevo_evento", largo, "ambos", AHORA, { motivo: "lugar", descripcion });
+    expect(c.titulo).toBe("Festival Internacional de Danza…");
+    expect(c.subtitulo).toBe("Nuevo en Centro de las Artes de San…");
+    expect(c.cuerpo.startsWith("sáb 26 · 7 pm · Gala de clausura")).toBe(true);
+    expect(c.cuerpo.endsWith("…")).toBe(true);
+    for (const t of [c.titulo, c.subtitulo]) expect(t.length).toBeLessThanOrEqual(LARGO_TITULO);
+    expect(c.cuerpo.length).toBeLessThanOrEqual(LARGO_CUERPO);
+    // Corte limpio: nunca a media palabra (lo de antes del «…» es una palabra entera de la descripción).
+    expect(descripcion.includes(`${c.cuerpo.slice("sáb 26 · 7 pm · ".length, -1)} `)).toBe(true);
+    const artista = contenidoPush("nuevo_evento", largo, "ambos", AHORA, { motivo: "artista:Orquesta Sinfónica del Estado de San Luis Potosí" });
+    expect(artista.subtitulo).toBe("De Orquesta Sinfónica…, a quien sigues");
+    const web = cuerpoPush(c, "web", "job-1");
+    expect(web.cuerpo.length).toBeLessThanOrEqual(LARGO_CUERPO);
+    expect(web.cuerpo.startsWith("Nuevo en Centro de las Artes de San… · sáb 26 · 7 pm · ")).toBe(true);
+  });
+});
+
+describe("recortar", () => {
+  it("lo que cabe, tal cual; lo que no, por la última palabra entera, sin «·» colgando", () => {
+    expect(recortar("Noche de jazz", 40)).toBe("Noche de jazz");
+    expect(recortar("uno dos tres cuatro", 12)).toBe("uno dos…");
+    expect(recortar("Casa 1100 · Villerías", 12)).toBe("Casa 1100…");
+    expect(recortar("Supercalifragilístico", 10)).toBe("Supercali…");
+    expect(recortar("  dos   espacios  ", 40)).toBe("dos espacios");
+  });
+});
+
+describe("cuerpoPush (OL-480): un cuerpo para la app y otro para la web", () => {
+  const forma = contenidoPush("nuevo_evento", evento(), "ambos", AHORA, { motivo: "artista:Luna Hermoso" });
+  it("app: subtítulo aparte, hilo del evento y el tag del trabajo (un reintento no sale dos veces)", () => {
+    expect(cuerpoPush(forma, "app", "job-1")).toEqual({ titulo: "Noche de jazz", subtitulo: "De Luna Hermoso, a quien sigues", cuerpo: "sáb 26 · 7 pm · Casa 1100",
+      url: "https://somosnosotros.org/eventos/evt-1?desde=aviso&tipo=nuevo", tag: "aviso-job-1", hilo: "evento-evt-1" });
+  });
+  it("web: sin subtítulo, la razón abre el cuerpo, el mismo título y el tag es el hilo del evento", () => {
+    expect(cuerpoPush(forma, "web", "job-1")).toEqual({ titulo: "Noche de jazz", cuerpo: "De Luna Hermoso, a quien sigues · sáb 26 · 7 pm · Casa 1100",
+      url: "https://somosnosotros.org/eventos/evt-1?desde=aviso&tipo=nuevo", tag: "evento-evt-1", aviso: "job-1" });
   });
 });
 
