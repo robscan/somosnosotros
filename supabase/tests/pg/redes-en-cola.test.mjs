@@ -118,6 +118,9 @@ export async function run({ as, check, expectError, query, connection }) {
     await query("begin");
     try {
       await query("update public.redes_trabajos set estado = 'publicado', terminado_en = now() where estado in ('en_cola', 'publicando')");
+      // OL-487: el latido cuenta también las ciudades a las que toca armar la semana de Instagram (los miércoles a las 9 en su hora); sin
+      // ciudades abiertas no hay ninguna, así esta prueba no depende de la hora a la que corra (lo del miércoles: semana-miercoles.test.mjs).
+      await query("update public.ciudades set estado = 'cerrada' where estado = 'abierta'");
       const latido = async () => (await query("select public.redes_latido() as n")).rows[0].n;
       check((await latido()) === 0, "sin trabajos listos, el latido no llama a nada");
       const listo = (await as("service_role", null, async () => (await query("insert into public.redes_trabajos (evento_id, red, formato) values ($1, 'instagram', '4x5') returning id", [B])).rows[0].id));

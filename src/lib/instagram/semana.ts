@@ -1,4 +1,4 @@
-import { diaConMes, diaLocal, horaDeReloj, localAIso } from "../fechas";
+import { diaConMes, diaLocal, horaDeReloj, localAIso, reloj24 } from "../fechas";
 import { porSenal, type Senal } from "./elegir";
 
 /**
@@ -53,6 +53,26 @@ export const diasDe = (lunes: string): string[] => Array.from({ length: 7 }, (_,
 export function lunesDeLaSemana(cual: "esta" | "viene", ahora: Date, zona: string): string {
   const hoy = diaLocal(ahora, zona);
   return sumar(lunesDe(hoy), cual === "viene" ? 7 : 0);
+}
+/**
+ * OL-487: «la que viene» se arma sola los miércoles entre las 9:00 y las 9:59 de la hora de la ciudad (el latido de redes pasa cada minuto). La
+ * base mira lo mismo para despertar al latido (`instagram_semana_por_armar`, migración 20261029230000): las dos reglas van juntas.
+ */
+export const SE_ARMA = { dia: 3, hora: 9 } as const;
+/** ¿Toca armar «la que viene» en este instante, en la hora de la ciudad? */
+export function tocaArmarLaQueViene(ahora: Date, zona: string): boolean {
+  return diaIso(diaLocal(ahora, zona)) === SE_ARMA.dia && Number(reloj24(ahora.toISOString(), zona).slice(0, 2)) === SE_ARMA.hora;
+}
+/**
+ * La parte de la línea de la portada sobre «la que viene»: «la que viene, armada el mié 7» (cuándo se guardó su primer día, la armara la pestaña
+ * o el latido); sin armar, «la que viene se arma el miércoles» hasta que pasa la hora del miércoles, y después «la que viene no se armó» (toca
+ * abrirla para armarla).
+ */
+export function lineaDeLaQueViene(armadaEn: string | null, ahora: Date, zona: string): string {
+  if (armadaEn) return `la que viene, armada el ${diaConMes(armadaEn, ahora, zona).replace(/ de .*$/, "")}`;
+  const n = diaIso(diaLocal(ahora, zona));
+  const hora = Number(reloj24(ahora.toISOString(), zona).slice(0, 2));
+  return n < SE_ARMA.dia || (n === SE_ARMA.dia && hora <= SE_ARMA.hora) ? "la que viene se arma el miércoles" : "la que viene no se armó";
 }
 /** El momento en que sale un día (su fecha y la hora de la regla, en la zona de la ciudad). */
 export const salePara = (fecha: string, hora: string, zona: string): string => localAIso(`${fecha}T${hora.slice(0, 5)}`, zona) ?? `${fecha}T${hora}`;
