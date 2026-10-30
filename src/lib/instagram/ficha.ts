@@ -5,7 +5,7 @@ import { diaConMes, diaLocal, horaCorta, localAIso } from "../fechas";
 import { cejaArtista, cejaLugar, proximaEnTarjeta, textoArtista, textoLugar, textoSemana, tituloSemana, type ArtistaDestacado, type LugarDestacado, type Proxima } from "./destacado";
 import { bajarCartel, encajarCartel } from "./imagen";
 import { lunesDe } from "./semana";
-import { usuarioDeInstagram } from "./texto";
+import { conCreditoDeFoto, usuarioDeInstagram } from "./texto";
 
 /**
  * Lo que la semana de Instagram necesita de una ficha (artista o lugar) y de «Esta semana» para enseñarlo en la hoja del día y para publicarlo
@@ -26,6 +26,8 @@ export type FichaParaPublicar = {
   ceja: string;
   cuenta: string | null;
   portada: string | null;
+  /** Autor y licencia de la portada, si no es de la ficha (OL-491): el texto dice «Foto: …» con él. */
+  portadaCredito?: string | null;
   foto: string | null;
   /** El artista: su próxima fecha en 30 días. */
   proxima: (Proxima & { titulo: string }) | null;
@@ -66,9 +68,9 @@ export async function cargarFicha(db: SupabaseClient, tipo: "artista" | "lugar",
   if (tipo === "artista") {
     const { data: a } = await db
       .from("artistas")
-      .select("id, slug, nombre, disciplina, detalle, tipo, descripcion, foto, portada, redes, ciudad, visible")
+      .select("id, slug, nombre, disciplina, detalle, tipo, descripcion, foto, portada, portada_credito, redes, ciudad, visible")
       .eq("id", id)
-      .maybeSingle<{ id: string; slug: string; nombre: string; disciplina: string; detalle: string | null; tipo: string; descripcion: string | null; foto: string | null; portada: string | null; redes: unknown; ciudad: string; visible: boolean }>();
+      .maybeSingle<{ id: string; slug: string; nombre: string; disciplina: string; detalle: string | null; tipo: string; descripcion: string | null; foto: string | null; portada: string | null; portada_credito: string | null; redes: unknown; ciudad: string; visible: boolean }>();
     if (!a) return null;
     const desde = new Date(Math.max(ahora.getTime(), fecha ? new Date(localAIso(`${fecha}T00:00`, "America/Mexico_City") ?? ahora).getTime() : 0));
     const ligados = await db.from("eventos_artistas").select("evento_id").eq("artista_id", a.id).limit(500);
@@ -89,15 +91,15 @@ export async function cargarFicha(db: SupabaseClient, tipo: "artista" | "lugar",
     const datos: ArtistaDestacado = { nombre: a.nombre, slug: a.slug, descripcion: a.descripcion ?? "", disciplina: a.disciplina, detalle: a.detalle, ciudad: a.ciudad, redes: a.redes, proxima };
     return {
       tipo, id: a.id, slug: a.slug, nombre: a.nombre, ciudad: a.ciudad, ciudadSlug, visible: a.visible, grupo: a.tipo !== "solista",
-      ceja: cejaArtista(a), cuenta: usuarioDeInstagram(a.redes), portada: a.portada, foto: a.foto, proxima, semana: [], datos,
+      ceja: cejaArtista(a), cuenta: usuarioDeInstagram(a.redes), portada: a.portada, portadaCredito: a.portada_credito, foto: a.foto, proxima, semana: [], datos,
       ubicacion: await ubicacionDe(db, ciudadSlug, null, a.ciudad),
     };
   }
   const { data: l } = await db
     .from("lugares")
-    .select("id, slug, nombre, tipo, detalle, descripcion, portada, redes, ciudad, direccion, visible, privado, zona")
+    .select("id, slug, nombre, tipo, detalle, descripcion, portada, portada_credito, redes, ciudad, direccion, visible, privado, zona")
     .eq("id", id)
-    .maybeSingle<{ id: string; slug: string; nombre: string; tipo: string; detalle: string | null; descripcion: string | null; portada: string | null; redes: unknown; ciudad: string; direccion: string | null; visible: boolean; privado: boolean; zona: string | null }>();
+    .maybeSingle<{ id: string; slug: string; nombre: string; tipo: string; detalle: string | null; descripcion: string | null; portada: string | null; portada_credito: string | null; redes: unknown; ciudad: string; direccion: string | null; visible: boolean; privado: boolean; zona: string | null }>();
   if (!l) return null;
   const zona = l.zona ?? "America/Mexico_City";
   const s = semanaDe(fecha ?? diaLocal(ahora, zona), zona);
@@ -109,16 +111,18 @@ export async function cargarFicha(db: SupabaseClient, tipo: "artista" | "lugar",
   const datos: LugarDestacado = { nombre: l.nombre, slug: l.slug, descripcion: l.descripcion ?? "", tipo: l.tipo, detalle: l.detalle, ciudad: l.ciudad, direccion: l.direccion, redes: l.redes, semana };
   return {
     tipo, id: l.id, slug: l.slug, nombre: l.nombre, ciudad: l.ciudad, ciudadSlug, visible: l.visible && !l.privado, grupo: true,
-    ceja: cejaLugar(l), cuenta: usuarioDeInstagram(l.redes), portada: l.portada, foto: null, proxima: null, semana, datos,
+    ceja: cejaLugar(l), cuenta: usuarioDeInstagram(l.redes), portada: l.portada, portadaCredito: l.portada_credito, foto: null, proxima: null, semana, datos,
     ubicacion: await ubicacionDe(db, ciudadSlug, l.id, l.ciudad),
   };
 }
 
-/** El texto que arma el sistema; sin la cuenta si la administración la quitó (`quitadas`): sin mención ni crédito. */
+/** El texto que arma el sistema; sin la cuenta si la administración la quitó (`quitadas`): sin mención ni «Foto: @cuenta». Con crédito de la
+ *  portada (OL-491), su línea «Foto: …» lo dice. */
 export function textoDeFicha(f: FichaParaPublicar, ahora: Date, quitadas: readonly string[] = []): string {
   const sinCuenta = !!f.cuenta && quitadas.includes(f.cuenta);
   const datos = sinCuenta ? { ...f.datos, redes: [] } : f.datos;
-  return f.tipo === "artista" ? textoArtista(datos as ArtistaDestacado, ahora) : textoLugar(datos as LugarDestacado, ahora);
+  const texto = f.tipo === "artista" ? textoArtista(datos as ArtistaDestacado, ahora) : textoLugar(datos as LugarDestacado, ahora);
+  return f.portada ? conCreditoDeFoto(texto, f.portadaCredito) : texto;
 }
 
 /** La tarjeta de la ficha en JPEG (1080, o el ancho de la vista previa). Si la portada o la foto no se pueden bajar, la imagen de relleno. */

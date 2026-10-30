@@ -30,6 +30,24 @@ describe("Heroe: la portada y el título de una ficha (docs/rediseno/50, P6)", (
   });
 });
 
+describe("Heroe: el crédito de la portada (OL-491)", () => {
+  const base = { portada: "https://example.com/portada.jpg", alt: "Portada del Museo", titulo: "Museo" };
+  it("con crédito, una línea «Foto: …» fuera de la portada (después de la figura y del título), sin enlace si no trae dirección", () => {
+    const html = pintar(createElement(Heroe, { ...base, credito: "Pablo Pérez · CC BY-SA 4.0" }));
+    expect(html).toMatch(/<\/figure>[^]*<p class="[^"]*credito[^"]*">Foto: Pablo Pérez · CC BY-SA 4.0<\/p>$/);
+    expect(html.indexOf("credito")).toBeGreaterThan(html.indexOf("</h1>"));
+    expect(html).not.toContain("<a ");
+  });
+  it("con dirección, el nombre enlaza a la foto (rel noopener) y la licencia sigue en texto", () => {
+    const html = pintar(createElement(Heroe, { ...base, credito: "Pablo Pérez · CC BY-SA 4.0 (https://commons.wikimedia.org/wiki/File:Museo.jpg)" }));
+    expect(html).toMatch(/Foto: <a href="https:\/\/commons\.wikimedia\.org\/wiki\/File:Museo\.jpg"[^>]*rel="noopener[^"]*"[^>]*>Pablo Pérez<\/a> · CC BY-SA 4\.0<\/p>/);
+  });
+  it("sin crédito o sin portada, ninguna línea", () => {
+    expect(pintar(createElement(Heroe, { ...base, credito: null }))).not.toContain("Foto:");
+    expect(pintar(createElement(Heroe, { ...base, portada: null, credito: "Pablo Pérez · CC BY" }))).not.toContain("Foto:");
+  });
+});
+
 describe("Heroe: la cabecera oscura de exposición, taller y festival (OL-351)", () => {
   const numeros = Kpis({ piel: "banda", children: createElement(Kpi, { icono: null, etiqueta: "Actos", valor: 11 }) }); // `Kpis` no tiene estado: se llama directo
   it("con números en la banda: la portada y el título llevan su piel oscura y los números van en su fila, en la piel de la banda", () => {

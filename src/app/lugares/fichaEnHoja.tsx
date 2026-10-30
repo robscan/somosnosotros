@@ -9,7 +9,8 @@ import CuerpoLugar, { cargarFicha, OpcionesLugar, SeguirLugar } from "./[id]/Cue
  * enviadas ya listas, para que la hoja las ponga en su sitio sin volver a pedir la página entera. null si el lugar ya no
  * existe o quien mira no puede verlo: la hoja lo dice y ofrece abrir la ficha completa.
  */
-export async function abrirFichaEnHoja(idOSlug: string): Promise<{ cuerpo: ReactNode; opciones: ReactNode; seguir: ReactNode } | null> {
+export async function abrirFichaEnHoja(idOSlug: string): Promise<{ cuerpo: ReactNode; opciones: ReactNode; seguir: ReactNode; credito: string | null } | null> {
   const f = await cargarFicha(idOSlug);
-  return f ? { cuerpo: <CuerpoLugar f={f} />, opciones: <OpcionesLugar f={f} />, seguir: <SeguirLugar f={f} /> } : null;
+  // El crédito de la portada (OL-491) llega con el cuerpo: la lista de Lugares no lo trae.
+  return f ? { cuerpo: <CuerpoLugar f={f} />, opciones: <OpcionesLugar f={f} />, seguir: <SeguirLugar f={f} />, credito: f.lugar.portada_credito ?? null } : null;
 }

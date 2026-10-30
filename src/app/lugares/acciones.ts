@@ -8,6 +8,7 @@ import { deducirTipo } from "@/lib/buscarLugares";
 import { esUuid } from "@/lib/formulario";
 import { horarioDesdeJson } from "@/lib/horarioLugar";
 import { rutaSegura } from "@/lib/rutas";
+import { creditoAlGuardar } from "@/lib/creditoFoto";
 import { hrefLugar, validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { esSlugDeSitio } from "@/lib/sitios";
@@ -146,11 +147,14 @@ export async function actualizarLugar(id: string, _previo: ResultadoLugar | null
   const { datos, errores } = validarLugar(leer(formData), { esAdmin, portadaActual: existente?.portada ?? null, actual: existente });
   const horario = horarioDesdeJson(formData.get("horario"));
   if (horario.error) errores.horario = horario.error;
+  // El crédito de la portada (OL-491): sin portada se borra; si el formulario no lo mandó, no se toca.
+  const credito = creditoAlGuardar(formData, datos.portada);
+  if (credito.error) errores.credito = credito.error;
   if (Object.keys(errores).length) return { ok: false, errores };
 
   const { data, error } = await supabase
     .from("lugares")
-    .update({ ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: privadoPermitido(datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null })
+    .update({ ...datos, ...("credito" in credito ? { portada_credito: credito.credito } : {}), zona: zonaDePunto(datos.lat, datos.lng), privado: privadoPermitido(datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null })
     .eq("id", id)
     .select("id, slug")
     .maybeSingle();

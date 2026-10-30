@@ -1,3 +1,4 @@
+import { limpiarCreditoFoto } from "../creditoFoto";
 import { normalizarRedes } from "../enlaces";
 import { claseDeCosto, COSTO_OPCIONAL, POR_CONFIRMAR, type Clase } from "../eventos";
 import { diaConMes, diaLocal, esDeVariosDias, eventoPaso, formatearLargo, horaCorta, horasDelEvento, textoDePeriodo } from "../fechas";
@@ -346,4 +347,19 @@ export function revisarTexto(texto: string): Limites {
           ? `Lleva ${menciones} menciones (@) y Instagram deja ${TOPE_MENCIONES}.`
           : null;
   return { caracteres, hashtags, menciones, problema };
+}
+
+/**
+ * OL-491: el crédito de la portada de un lugar o un artista en el texto de su tarjeta de la semana (`textoArtista` y `textoLugar` lo arman; aquí
+ * solo se ajusta su línea «Foto:»). Con crédito, esa línea dice el crédito («Foto: Pablo Pérez · CC BY-SA 4.0») en lugar de «Foto: @cuenta», y si
+ * el texto no la tenía (la ficha no tiene Instagram, o la administración quitó la cuenta) va tras «Lee su ficha…». Sin crédito, el texto no cambia:
+ * la foto vino de su Instagram y sigue «Foto: @cuenta».
+ */
+export function conCreditoDeFoto(texto: string, credito: string | null | undefined): string {
+  const limpio = limpiarCreditoFoto(credito);
+  if (!limpio) return texto;
+  const linea = `Foto: ${limpio}`;
+  if (/^Foto: .*$/m.test(texto)) return texto.replace(/^Foto: .*$/m, () => linea);
+  if (/^Lee su ficha en .*$/m.test(texto)) return texto.replace(/^Lee su ficha en .*$/m, (l) => `${l}\n${linea}`);
+  return `${texto}\n\n${linea}`;
 }

@@ -17,6 +17,7 @@ import ListaFlotante from "@/components/ui/ListaFlotante";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
 import { alElegirDisciplina, alElegirSubcategoria, alQuitarDisciplina, artistaIgual, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, LIMITES_ARTISTA, pasoQueHace, preguntaSubcategoria, subcategoriaParecida, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type Subcategoria, type TipoArtista } from "@/lib/artistas";
 import type { CiudadConArtistas } from "@/lib/ciudad";
+import { AYUDA_CREDITO_FOTO, TOPE_CREDITO_FOTO } from "@/lib/creditoFoto";
 import { normalizarRedes } from "@/lib/enlaces";
 import { faltaEnArtista } from "@/lib/formulario";
 import { normalizarNombre } from "@/lib/lugares";
@@ -77,7 +78,13 @@ export default function FormularioArtista({ accion, artista, usuarioId, esAdmin 
   const [tipo, setTipo] = useState<TipoArtista>(artista.tipo);
   const [ciudad, setCiudad] = useState(ciudadInicial);
   const [foto, setFoto] = useState<string | null>(artista.foto);
-  const [portada, setPortada] = useState<string | null>(artista.portada);
+  const [portada, setPortadaGuardada] = useState<string | null>(artista.portada);
+  // El crédito de la foto (OL-491) es de esa portada: con otra, o sin ninguna, se vacía solo.
+  const [credito, setCredito] = useState(artista.portada_credito ?? "");
+  const setPortada = (url: string | null) => {
+    if (url !== portada) setCredito("");
+    setPortadaGuardada(url);
+  };
   const subida = useSubidaDeFoto<"foto" | "portada">();
   const subiendo = !!subida.subiendo;
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
@@ -434,6 +441,12 @@ export default function FormularioArtista({ accion, artista, usuarioId, esAdmin 
             <p className={renglon.nota} role="alert">
               {errorPortada ?? errores.portada}
             </p>
+          )}
+          {/* El crédito de la portada (OL-491), junto a ella y solo si la hay. */}
+          {portada && (
+            <div className={renglon.cuerpo}>
+              <Campo etiqueta="Crédito de la foto" name="portada_credito" value={credito} onChange={(e) => setCredito(e.target.value)} maxLength={TOPE_CREDITO_FOTO} placeholder="Ej. Pablo Pérez · CC BY-SA 4.0" ayuda={AYUDA_CREDITO_FOTO} error={errores.credito} autoComplete="off" />
+            </div>
           )}
         </li>
 

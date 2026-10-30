@@ -104,6 +104,8 @@ export function ordenEfectivo(elegido: OrdenLugares | null, hayPunto: boolean): 
 }
 
 export type Lugar = LugarResumen & {
+  /** Autor y licencia de la portada, si no es de la ficha (OL-491; `lib/creditoFoto`). Solo llega donde se pide. */
+  portada_credito?: string | null;
   descripcion: string | null;
   /** Qué es, cuando el tipo es Otro (opcional; migración 0022). */
   detalle?: string | null;
@@ -371,7 +373,7 @@ export type DatosLugar = {
   /** Deducida por Mapbox al ubicar el lugar (o la de contexto si el punto cae cerca de su centro); vacía, no se publica. */
   ciudad: string;
 };
-export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces" | "detalle" | "ciudad" | "horario", string>>;
+export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "credito" | "enlaces" | "detalle" | "ciudad" | "horario", string>>;
 
 
 /** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `portadaActual` es la
