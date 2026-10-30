@@ -19,6 +19,7 @@ import {
   indicadores,
   indicadoresAportes,
   indicadoresFichas,
+  indicadoresHoja,
   indicadoresPortada,
   leerAportes,
   leerComparado,
@@ -498,6 +499,17 @@ describe("Esta semana en números (OL-494)", () => {
     const r = resumen(null);
     const uno = indicadoresPortada({ ...r, gestionar: { ...r.gestionar, personas_nuevas: 1 }, ahora: { ...r.ahora, lugares: 1, lugares_con_fecha: 1 } }, null, HOY);
     expect([uno[0].base, uno[2].base]).toEqual(["cuenta nueva, de 80", "en 1 de 1 lugar"]);
+  });
+  it("la hoja «Todos los números» no repite lo de arriba (OL-496): cinco, sin Voy y Me interesa ni la agenda", () => {
+    const avisos = { mandados: 48, mandados_antes: 40, abiertos: 11, abiertos_antes: 7, tipos: { nuevo: { mandados: 28, abiertos: 8 }, cambio: { mandados: 9, abiertos: 2 }, recordatorio: { mandados: 11, abiertos: 1 }, cancelado: { mandados: 0, abiertos: 0 } } };
+    const r = resumen(null);
+    const hoja = indicadoresHoja(r, aportesPortada, avisos, HOY);
+    expect(hoja.map((i) => i.nombre)).toEqual(["Personas activas", "Coincidencias", "Publica la comunidad", "Primera publicación", "Avisos abiertos"]);
+    const arriba = indicadoresPortada(r, aportesPortada, HOY).map((i) => i.clave);
+    expect(hoja.filter((i) => arriba.includes(i.clave))).toEqual([]);
+    expect(hoja[0]).toEqual(indicadores(r, HOY)[0]); // los mismos cuadros de siempre, con su tendencia cuando la hay
+    // Sin aportes ni avisos, lo que se pudo leer: la agenda sigue arriba y no vuelve a la hoja.
+    expect(indicadoresHoja(r, null, null, HOY).map((i) => i.clave)).toEqual(["activas", "coincidencias", "comunidad"]);
   });
   it("lee «comparado» solo con sus tres cuentas", () => {
     expect(leerComparado({ personas_nuevas_antes: 0, comunidad: 2, comunidad_antes: 1 })).toEqual({ personas_nuevas_antes: 0, comunidad: 2, comunidad_antes: 1 });

@@ -21,6 +21,8 @@ const mocks = {
   "next/link": "import React from 'react';export default function Link(p){return React.createElement('a',p)}",
 };
 const cuadro = (clave, nombre, valor, base, cambio) => ({ clave, nombre, valor, base, cambio, serie: null, que: `Qué cuenta ${nombre}`, partes: [`${valor} esta semana`], enlace: { texto: "Ver la lista", href: "/admin/personas" } });
+// La hoja (OL-496): los cinco de «Últimos 7 días» que no están en la portada.
+const CINCO = [cuadro("activas", "Personas activas", 20, "de 80 cuentas", "▲ 2 más"), cuadro("coincidencias", "Coincidencias", 4, "eventos con 2 o más que van", null), cuadro("comunidad", "Publica la comunidad", 9, "de 37 eventos próximos", null), cuadro("primeras", "Primera publicación", 2, "de 21 cuentas", "▲ 1 más"), cuadro("avisos", "Avisos abiertos", 11, "de 48 mandados, sin saber quién", "▲ 4 más")];
 const CUADROS = [cuadro("nuevas", "Personas nuevas", 3, "cuentas nuevas, de 80", "▲ 2 más"), cuadro("publicados", "Eventos de la comunidad", 3, "publicados por gente que no es de administración", "▲ 1 más"), cuadro("gestos", "Voy y Me interesa", 18, "de 12 personas", "▲ 5 más"), cuadro("agenda", "Eventos esta semana", 37, "en 18 de 71 lugares", "▲ 2 más")];
 
 before(async () => {
@@ -44,13 +46,18 @@ before(async () => {
         if (p.has('falla') && window.qa.pedidos === 1) throw new Error('sin red');
         return { cuerpo: <><h2>Últimos 7 días</h2><p>Los siete de siempre</p></>, fallos: 0 };
       };
-      createRoot(document.getElementById('root')).render(
+      createRoot(document.getElementById('root')).render(p.has('cinco') ? (
+        <main className={plantilla.paginaContenido}>
+          <h2>Últimos 7 días</h2>
+          <Indicadores lista={${JSON.stringify(CINCO)}} nota="Comparado con hace una semana" desglose="desglose-hoja" />
+        </main>
+      ) : (
         <main className={plantilla.paginaContenido}>
           <h2>Esta semana en números</h2>
-          <Indicadores lista={${JSON.stringify(CUADROS)}} nota="Comparado con la semana anterior" numeros />
+          <Indicadores lista={${JSON.stringify(CUADROS)}.filter((c) => !p.has('tres') || c.clave !== 'gestos')} nota="Comparado con la semana anterior" numeros />
           <TodosLosNumeros abrir={abrir} />
         </main>
-      );
+      ));
     `,
     },
     plugins: [{
@@ -83,11 +90,11 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(ancho = 390, consulta = "") {
+async function abrir(ancho = 390, consulta = "", primero = /^Personas nuevas/) {
   const context = await browser.newContext({ viewport: { width: ancho, height: 844 } });
   const page = await context.newPage();
   await page.goto(origin + "/admin" + consulta);
-  await page.getByRole("button", { name: /^Personas nuevas/ }).waitFor();
+  await page.getByRole("button", { name: primero }).waitFor();
   return { context, page };
 }
 /** Un toque real: el ratón en el centro de lo que se ve; si algo lo tapa, el toque cae en otra cosa y la prueba lo nota. */
@@ -155,4 +162,41 @@ test("si el servidor falla, lo dice y «Intentar de nuevo» lo vuelve a pedir", 
   await hoja.getByText("Los siete de siempre").waitFor();
   assert.equal(await page.evaluate(() => window.qa.pedidos), 2);
   await context.close();
+});
+
+test("la hoja con cinco (OL-496): dos por fila y el quinto a todo lo ancho, también con un desglose abierto; igual a 768", async () => {
+  for (const ancho of [390, 768]) {
+    const { context, page } = await abrir(ancho, "?cinco", /^Personas activas/);
+    const lista = await page.locator("main > ul").boundingBox();
+    const caja = async (nombre) => page.getByRole("button", { name: nombre }).boundingBox();
+    assert.equal(await filas(page), 3, `${ancho}: tres filas para cinco`);
+    const [activas, coincidencias, avisos] = [await caja(/^Personas activas/), await caja(/^Coincidencias/), await caja(/^Avisos abiertos/)];
+    assert.ok(Math.abs(activas.y - coincidencias.y) < 1 && activas.width < lista.width / 2, `${ancho}: los dos primeros en una fila`);
+    assert.ok(Math.abs(avisos.width - lista.width) < 2, `${ancho}: el quinto ocupa la fila entera, no queda solo a la mitad`);
+    // Abrir el cuarto: su desglose va bajo la segunda fila y el quinto sigue entero debajo.
+    const primeras = page.getByRole("button", { name: /^Primera publicación/ });
+    await toca(page, primeras);
+    const d = await page.locator("#desglose-hoja").boundingBox();
+    const [p2, av2] = [await primeras.boundingBox(), await caja(/^Avisos abiertos/)];
+    assert.ok(d.y > p2.y + p2.height - 1 && av2.y > d.y + d.height - 1, `${ancho}: el desglose entre la segunda fila y el quinto`);
+    assert.ok(Math.abs(av2.width - lista.width) < 2, `${ancho}: el quinto sigue a todo lo ancho`);
+    // Abrir el quinto: su desglose va justo debajo de él.
+    await toca(page, page.getByRole("button", { name: /^Avisos abiertos/ }));
+    const [av3, d3] = [await caja(/^Avisos abiertos/), await page.locator("#desglose-hoja").boundingBox()];
+    assert.ok(d3.y > av3.y + av3.height - 1, `${ancho}: el desglose del quinto, debajo`);
+    await context.close();
+  }
+});
+
+test("la portada con tres (sin Voy y Me interesa): el tercero a lo ancho en el teléfono y los tres en una fila a 768", async () => {
+  // El caso raro de los aportes sin leer: la regla del impar no puede romper la fila de cuatro columnas de la tableta.
+  for (const [ancho, n] of [[390, 2], [768, 1]]) {
+    const { context, page } = await abrir(ancho, "?tres");
+    assert.equal(await filas(page), n, `${ancho}: ${n} filas`);
+    const lista = await page.locator("main > ul").boundingBox();
+    const tercero = await page.getByRole("button", { name: /^Eventos esta semana/ }).boundingBox();
+    if (ancho === 390) assert.ok(Math.abs(tercero.width - lista.width) < 2, "390: el tercero a todo lo ancho");
+    else assert.ok(tercero.width < lista.width / 3, "768: el tercero en su columna");
+    await context.close();
+  }
 });

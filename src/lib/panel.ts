@@ -468,8 +468,8 @@ export function indicadorAvisos(a: AvisosPanel): Indicador {
 /**
  * «Esta semana en números» (OL-494, variante C firmada del prototipo OL-493, bitácora 525): los cuatro cuadros de la portada, en su orden.
  * Personas nuevas y Eventos de la comunidad se comparan con los 7 días anteriores (`comparado`; sin él, sin «▲»); Voy y Me interesa es el de
- * los aportes (sin ellos, no sale); Eventos esta semana es la agenda de 7 días con la foto de hace una semana. Sin tendencia: la línea va en
- * «Todos los números». Los siete de siempre siguen en la hoja.
+ * los aportes (sin ellos, no sale); Eventos esta semana es la agenda de 7 días con la foto de hace una semana. Sin tendencia. La hoja «Todos los números»
+ * lleva lo demás, sin repetir estos (`indicadoresHoja`, OL-496).
  */
 export function indicadoresPortada(r: Resumen, aportes: Aportes | null, hoy: string): Indicador[] {
   const g = r.gestionar;
@@ -506,6 +506,18 @@ export function indicadoresPortada(r: Resumen, aportes: Aportes | null, hoy: str
     ...(gestos ? [gestos] : []),
     { ...agenda, nombre: "Eventos esta semana", base: `en ${a.lugares_con_fecha} de ${a.lugares} ${a.lugares === 1 ? "lugar" : "lugares"}`, serie: null },
   ];
+}
+
+/**
+ * «Últimos 7 días» de la hoja «Todos los números» (OL-496): lo que no cabe arriba. Los siete de siempre menos los que ya están en «Esta semana en
+ * números» de la portada (hoy «Voy y Me interesa» y la agenda, que arriba se llama «Eventos esta semana»), sacados de `indicadoresPortada` para
+ * que la hoja no repita nada aunque cambie la portada. Quedan cinco: Personas activas, Coincidencias, Publica la comunidad, Primera publicación y
+ * Avisos abiertos. Sin aportes o sin avisos, los que se pudieron leer.
+ */
+export function indicadoresHoja(r: Resumen, aportes: Aportes | null, avisos: AvisosPanel | null, hoy: string): Indicador[] {
+  const arriba = new Set(indicadoresPortada(r, aportes, hoy).map((i) => i.clave));
+  const todos = [...indicadores(r, hoy), ...(aportes ? indicadoresAportes(aportes) : []), ...(avisos ? [indicadorAvisos(avisos)] : [])];
+  return todos.filter((i) => !arriba.has(i.clave));
 }
 
 export function notaSemana(lista: Indicador[]): string {

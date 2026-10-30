@@ -272,10 +272,17 @@ a.ficha::after,
 /* «Esta semana en números» de la portada (OL-494, variante C firmada del prototipo OL-493): dos por fila en el teléfono (tres no caben: a 390 la
    frase quedaba en cuatro renglones y a 320 una palabra se salía, bitácora 525) y los cuatro en una fila desde la tableta. El desglose va tras el
    segundo de la fila tocada; con cuatro por fila, `dense` sube los otros dos a la fila del tocado y el desglose queda debajo, entero. */
+/* Con un número impar de cuadros, el último a todo lo ancho (OL-496: la hoja lleva cinco), para que no quede uno solo en su fila. */
+.ancho {
+  grid-column: 1 / -1;
+}
 @media (min-width: 768px) {
   .enSemana {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-auto-flow: row dense;
+  }
+  .enSemana > .ancho {
+    grid-column: auto;
   }
 }
 /* «Ver todos los números ›» bajo los cuadros: del ancho de su texto, a la izquierda. */
