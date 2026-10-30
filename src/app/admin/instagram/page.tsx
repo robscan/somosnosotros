@@ -15,6 +15,7 @@ import { cargarCiudadesInstagram, cargarSugerencias } from "./datos";
 import PantallaInstagram from "./PantallaInstagram";
 import { pestanaInicial, semanaConAlgo } from "./pestana";
 import { cargarSemana } from "./semana";
+import { cargarSinSalir } from "./sinSalir";
 import styles from "../admin.module.css";
 
 export const metadata = { title: tituloDePagina("Instagram", "Administración"), robots: { index: false, follow: false } };
@@ -31,6 +32,8 @@ export const metadata = { title: tituloDePagina("Instagram", "Administración"),
  * OL-495 (firmado en el prototipo de OL-493, variante C, bitácora 525): abre con la ciudad de quien entra (`ciudadDeLaPantalla`) y su nombre de
  * `ciudades`; la conexión es un botón con su punto junto a las pestañas (el renglón, solo si falta algo o caducó; «caducó» lo dice la cola); y la
  * pestaña inicial es «Semana» si tiene algo de hoy en adelante y «Eventos» si no, con «Falta material» arriba cuando la semana está vacía por eso.
+ * OL-496: al volver de Meta con `?conectado=1`, la hoja de la conexión se abre con lo que se quedó sin salir esta semana por la conexión caducada
+ * («Se quedó sin salir») y «Volver a publicar (N)»; si no hay nada, no se ofrece nada.
  */
 export default async function Instagram({ searchParams }: { searchParams: Promise<{ ciudad?: string; evento?: string; conectado?: string; error?: string; semana?: string; dia?: string }> }) {
   const actual = await usuarioActual();
@@ -40,7 +43,8 @@ export default async function Instagram({ searchParams }: { searchParams: Promis
   const ciudad = await ciudadDeLaPantalla(p.ciudad, (await cookies()).get(GALLETA_CIUDAD)?.value ?? null, actual.perfil.id);
   const cual = p.semana === "viene" ? "viene" : "esta";
   const supabase = await clienteServidor();
-  const [sugerencias, deEventos, nombres, conexion, semana] = supabase
+  const conectado = p.conectado === "1";
+  const [sugerencias, deEventos, nombres, conexion, semana, sinSalir] = supabase
     ? await Promise.all([
         cargarSugerencias(supabase, ciudad),
         cargarCiudadesInstagram(supabase),
@@ -50,8 +54,10 @@ export default async function Instagram({ searchParams }: { searchParams: Promis
           .then(({ data }) => new Map(((data ?? []) as { slug: string; nombre: string }[]).map((c) => [c.slug, c.nombre]))),
         leerConexion(supabase),
         ciudad ? cargarSemana(supabase, ciudad, cual) : Promise.resolve(null),
+        // OL-496: al volver de Meta con la conexión hecha, lo que se quedó sin salir esta semana por la conexión caducada.
+        conectado ? cargarSinSalir(supabase, new Date()).then((x) => x.renglones) : Promise.resolve([]),
       ])
-    : [null, [], new Map<string, string>(), { fila: null, ultimo: null }, null];
+    : [null, [], new Map<string, string>(), { fila: null, ultimo: null }, null, []];
   // El nombre de cada ciudad sale de `ciudades` (con su acento: «Querétaro», no «queretaro»); si no está ahí, el de sus eventos.
   const ciudades = deEventos.map((c) => ({ ...c, nombre: nombres.get(c.slug) ?? c.nombre }));
   const nombre = ciudad ? (nombres.get(ciudad) ?? ciudades.find((c) => c.slug === ciudad)?.nombre ?? sugerencias?.filas[0]?.ciudad_nombre ?? ciudad) : "Todas las ciudades";
@@ -70,7 +76,8 @@ export default async function Instagram({ searchParams }: { searchParams: Promis
       <PantallaInstagram
         inicial={inicial}
         conexion={estado}
-        vuelta={p.conectado === "1" ? "conectado" : claveDeVuelta(p.error)}
+        vuelta={conectado ? "conectado" : claveDeVuelta(p.error)}
+        sinSalir={sinSalir}
         semana={{ ciudad: { slug: ciudad, nombre }, ciudades: elegidas, semana, cual, abrir: esUuid(p.dia) ? p.dia! : null, usuarioId: actual.perfil.id }}
         eventos={{
           ciudad: { slug: ciudad, nombre },
