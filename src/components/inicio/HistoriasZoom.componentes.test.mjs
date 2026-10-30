@@ -126,7 +126,19 @@ async function abrir(t, { tactil = true, viewport = { width: 390, height: 844 } 
       const barra = document.getAnimations().find((a) => String(a.animationName).includes("llena"));
       return { pausada: d.dataset.pausada === "true", barra: barra?.playState ?? null, titulo: d.querySelector("h2")?.textContent };
     });
-  return { page, toque, jalar, cartel, avance };
+  /**
+   * Espera a que el cartel termine de volver a 1× (OL-496): la vuelta con un toque se anima (`data-suave`, `--duracion`) y en el Chromium sin
+   * pantalla de la CI de Linux tarda más que en la Mac; con una espera fija de 400 ms la prueba leyó 1.00233 a media transición (corrida
+   * 40988580569). Aquí se espera al estado, no al reloj: sin transición corriendo en el cartel y con la escala en 1, con tope de 5 s.
+   */
+  const a1x = () =>
+    page.waitForFunction(() => {
+      const el = document.querySelector("[role=dialog] img");
+      return el && el.getAnimations().every((a) => a.playState !== "running") && new DOMMatrix(getComputedStyle(el).transform).a === 1;
+    }, null, { timeout: 5000 });
+  /** Espera a que la historia a la vista sea `titulo` (el paso de historia tampoco se mide con un reloj fijo). */
+  const enHistoria = (titulo) => page.waitForFunction((t) => document.querySelector("[role=dialog] h2")?.textContent === t, titulo, { timeout: 5000 });
+  return { page, toque, jalar, cartel, avance, a1x, enHistoria };
 }
 
 /** Un pellizco hacia fuera alrededor del centro del cartel: los dedos pasan de ±20 px a ±`abre` px. */
@@ -183,14 +195,14 @@ test("acercado, un toque no pasa de historia: devuelve el cartel a 1× y el avan
   await pellizcar(h);
   assert.ok((await h.cartel()).escala > 1.9);
   await h.page.touchscreen.tap(330, 420); // a la derecha: a 1× pasaría a la siguiente
-  await espera(400); // la transición de vuelta
+  await h.a1x(); // la transición de vuelta, hasta que acabe
   const vuelta = await h.cartel();
   assert.deepEqual([vuelta.escala, Math.round(vuelta.x), Math.round(vuelta.y)], [1, 0, 0], "el toque lo devuelve a 1×");
   const sigue = await h.avance();
   assert.deepEqual([sigue.pausada, sigue.barra, sigue.titulo], [false, "running", "Caracolas para Luciana"], "misma historia y el avance sigue");
   assert.equal(await h.page.locator("[role=dialog] [data-acercada]").count(), 0);
   await h.page.touchscreen.tap(330, 420);
-  await espera(100);
+  await h.enHistoria("Evento rato"); // a 1× el toque pasa de historia (si no pasara, se acaba el tope y la prueba falla)
   assert.equal((await h.avance()).titulo, "Evento rato", "a 1× el toque pasa de historia");
 });
 
@@ -219,7 +231,7 @@ test("en escritorio la rueda sobre el cartel lo acerca y pausa; un clic lo devue
   assert.ok((await h.cartel()).escala > 1.2, "la rueda acerca");
   assert.equal((await h.avance()).barra, "paused");
   await h.page.mouse.click(cx + 40, cy);
-  await espera(400);
+  await h.a1x();
   assert.equal((await h.cartel()).escala, 1);
   const sigue = await h.avance();
   assert.deepEqual([sigue.barra, sigue.titulo], ["running", "Caracolas para Luciana"]);

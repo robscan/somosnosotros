@@ -1,11 +1,13 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useState, type ComponentProps } from "react";
 import { Pestana, Pestanas } from "@/components/ui/Pestanas";
 import type { ClaveVuelta, EstadoConexion } from "@/lib/instagram/conexionEstado";
 import { guardarMemoria, leerMemoria } from "@/lib/memoriaPantalla";
-import ConexionInstagram, { BotonConexion, HojaConexion } from "./ConexionInstagram";
+import type { RenglonSinSalir } from "@/lib/redes/sinSalir";
+import { volverAPublicar, type Vueltos } from "./acciones";
+import ConexionInstagram, { BotonConexion, HojaConexion, porVolver } from "./ConexionInstagram";
 import ListaInstagram from "./ListaInstagram";
 import { pestanaDeLaDireccion, type PestanaInstagram } from "./pestana";
 import { SemanaSinMaterial } from "./RenglonFalta";
@@ -25,12 +27,23 @@ const MEMORIA = "/admin/instagram#pestana";
  * (memoria de pantalla) y, si no eligió, `inicial` (la regla de `pestana.ts`: «Semana» si tiene algo de hoy en adelante; si no, «Eventos»). A la
  * derecha de las pestañas, el botón de la conexión (icono de Instagram con su punto) abre la hoja de la conexión; bajo la cabecera, solo la vuelta
  * de Meta y, si falta algo o caducó, el renglón con la causa.
+ * OL-496: al volver de Meta con la conexión hecha y algo que se quedó sin salir esta semana por la conexión caducada (`sinSalir`), la hoja de la
+ * conexión se abre sola con «Se quedó sin salir», la lista corta y «Volver a publicar (N)»; cerrada, la línea verde lleva de vuelta a ella.
+ * La lista se guarda al llegar (la dirección pierde `?conectado` y el servidor ya no la manda) y la respuesta también: no se ofrece dos veces.
  */
-export default function PantallaInstagram({ semana, eventos, conexion, vuelta, inicial, sinMaterial }: { semana: Omit<ComponentProps<typeof SemanaInstagram>, "pestanas" | "conexion">; eventos: Omit<ComponentProps<typeof ListaInstagram>, "pestanas" | "conexion" | "sinMaterial">; conexion: EstadoConexion; vuelta: ClaveVuelta | null; inicial: PestanaInstagram; sinMaterial: { falta: FaltaMaterial; usuarioId: string } | null }) {
+export default function PantallaInstagram({ semana, eventos, conexion, vuelta, inicial, sinMaterial, sinSalir = [] }: { semana: Omit<ComponentProps<typeof SemanaInstagram>, "pestanas" | "conexion">; eventos: Omit<ComponentProps<typeof ListaInstagram>, "pestanas" | "conexion" | "sinMaterial">; conexion: EstadoConexion; vuelta: ClaveVuelta | null; inicial: PestanaInstagram; sinMaterial: { falta: FaltaMaterial; usuarioId: string } | null; sinSalir?: RenglonSinSalir[] }) {
   const ruta = usePathname();
   const params = useSearchParams();
+  const router = useRouter();
   const [elegida, setElegida] = useState<PestanaInstagram | null>(null);
-  const [hojaConexion, setHojaConexion] = useState(false);
+  const [renglones] = useState(() => (vuelta === "conectado" ? sinSalir : []));
+  const [vueltos, setVueltos] = useState<Vueltos | null>(null);
+  const [hojaConexion, setHojaConexion] = useState(renglones.length > 0);
+  const quedan = porVolver({ renglones, vueltos }).length;
+  const alTerminar = (v: Vueltos) => {
+    setVueltos(v);
+    if (v.ok && v.enCamino) router.refresh(); // la lista y la semana dicen «Publicando…»
+  };
   // Antes de pintar: la que se eligió en esta sesión (volver a la pantalla, recargarla), sin parpadeo.
   useLayoutEffect(() => {
     const m = leerMemoria<PestanaInstagram>(MEMORIA)?.estado;
@@ -62,11 +75,11 @@ export default function PantallaInstagram({ semana, eventos, conexion, vuelta, i
       <BotonConexion estado={conexion} onAbrir={() => setHojaConexion(true)} />
     </div>
   );
-  const bloque = <ConexionInstagram estado={conexion} vuelta={vuelta} />;
+  const bloque = <ConexionInstagram estado={conexion} vuelta={vuelta} sinSalir={quedan} onVerSinSalir={() => setHojaConexion(true)} />;
   return (
     <>
       {pestana === "semana" ? <SemanaInstagram {...semana} pestanas={pestanas} conexion={bloque} /> : <ListaInstagram {...eventos} pestanas={pestanas} conexion={bloque} sinMaterial={sinMaterial && <SemanaSinMaterial {...sinMaterial} />} />}
-      {hojaConexion && <HojaConexion estado={conexion} onCerrar={() => setHojaConexion(false)} />}
+      {hojaConexion && <HojaConexion estado={conexion} onCerrar={() => setHojaConexion(false)} sinSalir={renglones.length ? { renglones, vueltos, alTerminar, volver: volverAPublicar } : undefined} />}
     </>
   );
 }

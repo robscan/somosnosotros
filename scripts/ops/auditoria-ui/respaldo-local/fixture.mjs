@@ -1503,8 +1503,8 @@ tablas.instagram_ubicaciones = [{ tipo: "ciudad", clave: "san-luis-potosi", pagi
   const modo = process.env.RESPALDO_INSTAGRAM_CONEXION;
   const permisos = ["business_management", "instagram_basic", "instagram_content_publish", "instagram_manage_insights", "pages_manage_posts", "pages_read_engagement", "pages_show_list"];
   tablas.instagram_conexion =
-    modo === "todo" || modo === "sin-lectura" || modo === "caduco"
-      ? [{ id: 1, pagina_id: "1374800000000461", pagina_nombre: "Somos Nosotrxs", instagram_id: "17841400000000458", instagram_usuario: "smsnstrsapp", permisos: modo === "sin-lectura" ? permisos.filter((x) => x !== "instagram_manage_insights") : permisos, conectado_por: ADMIN, conectado_en: hace(modo === "caduco" ? 9 : 0) }]
+    modo === "todo" || modo === "sin-lectura" || modo === "caduco" || modo === "reconectada"
+      ? [{ id: 1, pagina_id: "1374800000000461", pagina_nombre: "Somos Nosotrxs", instagram_id: "17841400000000458", instagram_usuario: "smsnstrsapp", permisos: modo === "sin-lectura" ? permisos.filter((x) => x !== "instagram_manage_insights") : permisos, conectado_por: ADMIN, conectado_en: hace(modo === "caduco" ? 9 : modo === "reconectada" ? 1 / 1440 : 0) }]
       : [];
 }
 // OL-465: la cola de redes (vacía al arrancar) y lo leído de los carteles; `redes_reciente` y `redes_encolar` con la regla de la base (en camino, o
@@ -1523,6 +1523,23 @@ if (process.env.RESPALDO_INSTAGRAM_FALLO) {
   const cuando = new Date(Date.now() - 30 * 60e3).toISOString();
   tablas.redes_trabajos.push({ id: "eeee0494-0000-4000-8000-000000000001", evento_id: E.master, artista_id: null, lugar_id: null, red: "instagram", formato: "4x5", pedido: {}, estado: "fallido", avance: {}, resultado: null, intentos: 1, fallos: 1, error, turno: 1, ocupada_hasta: null, siguiente_en: cuando, avisado_en: cuando, pedido_por: ADMIN, creado_en: cuando, actualizado_en: cuando, terminado_en: cuando });
   for (const c of tablas.instagram_conexion) c.conectado_en = hace(2);
+}
+// OL-496: con `RESPALDO_INSTAGRAM_CONEXION=reconectada`, se acaba de reconectar (hace un minuto) después de que la conexión caducara. Se quedaron
+// sin salir esta semana, por permiso, tres publicaciones (la Master Class dos veces: sale una), y no se ofrecen una que falló por la imagen, una de
+// la semana pasada ni una que ya volvió a salir después de fallar. Todo inventado.
+if (process.env.RESPALDO_INSTAGRAM_CONEXION === "reconectada") {
+  const trabajo = (n, evento, red, formato, pedido, estado, error, dias) => ({ id: `eeee0496-0000-4000-8000-00000000000${n}`, evento_id: evento, artista_id: null, lugar_id: null, red, formato, pedido, estado, avance: {}, resultado: null, intentos: 1, fallos: estado === "fallido" ? 1 : 0, error, turno: 1, ocupada_hasta: null, siguiente_en: hace(dias), avisado_en: hace(dias), pedido_por: ADMIN, creado_en: hace(dias), actualizado_en: hace(dias), terminado_en: hace(dias) });
+  const hoja = (facebook) => ({ recorte: false, diseno: 0, texto: null, quitadas: [], facebook });
+  tablas.redes_trabajos.push(
+    trabajo(1, E.master, "instagram", "4x5", hoja(true), "fallido", "permiso", 0.125),
+    trabajo(2, E.master, "instagram", "4x5", hoja(true), "fallido", "permiso", 1),
+    trabajo(3, E.leonora, "instagram", "9x16", hoja(false), "fallido", "permiso", 1.05),
+    trabajo(4, E.feleal, "facebook", "4x5", { texto: null }, "fallido", "permiso", 2.1),
+    trabajo(5, E.pimpolina, "instagram", "4x5", hoja(true), "fallido", "imagen", 0.2),
+    trabajo(6, E.arttoy, "instagram", "4x5", hoja(true), "fallido", "permiso", 5),
+    trabajo(7, E.oca, "instagram", "4x5", hoja(true), "fallido", "permiso", 1.5),
+    trabajo(8, E.oca, "instagram", "4x5", hoja(true), "publicado", null, 1.2),
+  );
 }
 tablas.cartel_lecturas = [];
 const recienteRedes = (t, evento, red, formato) => {

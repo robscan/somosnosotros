@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import hoja from "@/components/ui/Hoja.module.css";
 import { diaLocal } from "@/lib/fechas";
-import { indicadorAvisos, indicadores, indicadoresAportes, indicadoresFichas, notaFichas, notaSemana } from "@/lib/panel";
+import { indicadoresFichas, indicadoresHoja, notaFichas, notaSemana } from "@/lib/panel";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import CapoComoVa from "./CapoComoVa";
 import { cargarCapo } from "./capo-consultas";
@@ -21,15 +21,15 @@ const NoSePudo = ({ texto }: { texto: string }) => (
 
 /**
  * La hoja «Todos los números» de Administración (OL-494, variante C firmada del prototipo OL-493, bitácora 525): lo que salió de la portada, sin
- * borrar nada. Los siete indicadores de «Últimos 7 días» con su línea de tendencia, «Cómo va la comunidad», «Fichas» y «Campañas pasadas» (el
- * CAPO con su medición entera). Se arma en el servidor al abrir la hoja, con la sesión de quien mira: la portada ya no lee el embudo, las fichas
+ * borrar nada. «Últimos 7 días» sin los que ya están en la portada (OL-496: Voy y Me interesa y la agenda; quedan cinco, con su línea de
+ * tendencia), «Cómo va la comunidad», «Fichas» y «Campañas pasadas» (el CAPO con su medición entera). Se arma en el servidor al abrir la hoja, con la sesión de quien mira: la portada ya no lee el embudo, las fichas
  * ni el CAPO al entrar. `fallos`: cuántos bloques no se pudieron leer (la hoja ofrece volver a pedirlos). null sin la administración.
  */
 export async function abrirTodosLosNumeros(): Promise<{ cuerpo: ReactNode; fallos: number } | null> {
   const actual = await usuarioActual();
   if (!actual || actual.perfil.rol !== "admin") return null;
   const [resumen, aportes, avisos, comunidad, vinculadas, capo] = await Promise.all([cargarSoloResumen(), cargarAportes(), cargarAvisos(), cargarComunidad(), cargarVinculadas(), cargarCapo()]);
-  const lista = resumen ? [...indicadores(resumen, diaLocal(new Date())), ...(aportes ? indicadoresAportes(aportes) : []), ...(avisos ? [indicadorAvisos(avisos)] : [])] : [];
+  const lista = resumen ? indicadoresHoja(resumen, aportes, avisos, diaLocal(new Date())) : [];
   const fichas = vinculadas ? indicadoresFichas(vinculadas) : [];
   const fallos = [resumen, comunidad, vinculadas, capo].filter((x) => !x).length + (resumen && (!aportes || !avisos) ? 1 : 0);
   const cuerpo = (
@@ -37,7 +37,7 @@ export async function abrirTodosLosNumeros(): Promise<{ cuerpo: ReactNode; fallo
       <p className={hoja.nota}>Toca un número para ver qué cuenta y de dónde sale.</p>
       <h2 className={resumen ? `${styles.grupo} ${styles.conNota}` : styles.grupo}>Últimos 7 días</h2>
       {resumen ? <Indicadores lista={lista} nota={notaSemana(lista)} desglose="desglose-hoja" /> : <NoSePudo texto="No pudimos leer los indicadores." />}
-      {resumen && !aportes && <NoSePudo texto="No pudimos leer Voy y Me interesa ni las primeras publicaciones." />}
+      {resumen && !aportes && <NoSePudo texto="No pudimos leer las primeras publicaciones." />}
       {resumen && !avisos && <NoSePudo texto="No pudimos leer los avisos abiertos." />}
 
       <h2 className={styles.grupo}>Cómo va la comunidad</h2>

@@ -17,13 +17,15 @@ export default function Indicadores({ lista, nota, desglose = "desglose", numero
   // El desglose va tras el segundo indicador de la fila tocada.
   const tras = i < 0 ? -1 : Math.min(i | 1, lista.length - 1);
   const elegido = i < 0 ? null : lista[i];
+  // Con un número impar, el último va a todo lo ancho: dos por fila no deja un cuadro solo (la hoja «Todos los números» lleva cinco, OL-496).
+  const solo = lista.length % 2 === 1 ? lista.length - 1 : -1;
   return (
     <>
       <p className={styles.nota}>{nota}</p>
       <ul className={numeros ? `${styles.indicadores} ${styles.enSemana}` : styles.indicadores}>
         {lista.map((x, k) => (
           <Fragment key={x.clave}>
-            <li>
+            <li className={k === solo ? styles.ancho : undefined}>
               <button type="button" className={styles.indicador} aria-expanded={abierto === x.clave} aria-controls={abierto === x.clave ? desglose : undefined} onClick={() => setAbierto(abierto === x.clave ? null : x.clave)}>
                 <span className={styles.nombreIndicador}>{x.nombre}</span>
                 <b>{x.valor}</b>
