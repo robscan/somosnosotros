@@ -269,6 +269,20 @@ a.ficha::after,
   grid-template-columns: 1fr 1fr;
   gap: var(--espacio-2);
 }
+/* «Esta semana en números» de la portada (OL-494, variante C firmada del prototipo OL-493): dos por fila en el teléfono (tres no caben: a 390 la
+   frase quedaba en cuatro renglones y a 320 una palabra se salía, bitácora 525) y los cuatro en una fila desde la tableta. El desglose va tras el
+   segundo de la fila tocada; con cuatro por fila, `dense` sube los otros dos a la fila del tocado y el desglose queda debajo, entero. */
+@media (min-width: 768px) {
+  .enSemana {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-flow: row dense;
+  }
+}
+/* «Ver todos los números ›» bajo los cuadros: del ancho de su texto, a la izquierda. */
+.verTodos {
+  justify-self: start;
+  margin-top: var(--espacio-1);
+}
 .indicador {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -524,6 +538,14 @@ a.pildora {
 }
 li > small.conexionFalta {
   color: var(--error);
+}
+/* Un renglón de Pendiente que avisa que algo dejó de funcionar (OL-494: «Instagram dejó de publicar»): la causa en rojo. */
+.falla > small {
+  color: var(--error);
+}
+/* Va antes de lo demás de Pendiente (las propuestas por revisar, los reclamos y reportes), con su aire. */
+.avisoPendiente + ul {
+  margin-top: var(--espacio-3);
 }
 .quitar {
   color: var(--error);

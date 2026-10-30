@@ -169,6 +169,13 @@ PASOS["admin-anadir"] = async (page) => {
 };
 // OL-458: Administración › Instagram con la hoja «Publicar en Instagram» abierta (el primer evento por publicar): la imagen ya dibujada.
 // OL-471: el primer renglón de evento (el de arriba es el bloque «Conexión», cuyo enlace lleva al inicio de sesión de Meta).
+// OL-494: la hoja «Todos los números» de la portada de Administración, entera (se arma en el servidor al abrirla).
+PASOS["admin-numeros"] = async (page) => {
+  await page.getByRole("button", { name: "Ver todos los números ›" }).click();
+  await page.getByRole("dialog", { name: "Todos los números" }).getByRole("heading", { name: "Campañas pasadas" }).waitFor();
+  await aquietar(page);
+};
+
 PASOS["admin-instagram-hoja"] = async (page) => {
   await page.locator('main li a[href^="/eventos/"]').first().click();
   const hoja = page.getByRole("dialog", { name: "Publicar en Instagram" });

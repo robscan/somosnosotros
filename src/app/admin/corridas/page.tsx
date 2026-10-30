@@ -7,8 +7,10 @@ import { IconoCalendario, IconoCartel, IconoDestello, IconoDocumento, IconoEstre
 import plantilla from "@/components/ui/Plantilla.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { avanceDe, credito, detalleCorrida, fechaVence, gruposDeCorridas, pildoraCorrida, tituloCorrida, usd, usdCorto, type CorridaPanel, type Pildora, type TipoCorrida } from "@/lib/ciudadesAdmin";
-import { usuarioActual } from "@/lib/supabase/servidor";
+import { CLAVE_SEMANAL, leerAjusteSemanal, lineaSemanal } from "@/lib/rutinas/ajusteSemanal";
+import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import Reintentar from "../Reintentar";
+import InterruptorFichas from "../rutinas/InterruptorFichas";
 import { cargarPanelCiudades, pedirPasoSiHayVaradas } from "../ciudades/consultas";
 import styles from "../admin.module.css";
 import css from "../ciudades/ciudades.module.css";
@@ -27,15 +29,20 @@ const FILTROS = [
 /**
  * Corridas (OL-427; prototipo firmado OL-425, pantalla E): arriba el crédito de la API y lo gastado (el gasto real lo descuenta la rutina,
  * OL-428); después cada corrida por cuándo —en curso, esta semana, por mes— con su fecha, parámetros, resultados, gasto y estado. Una corrida
- * con propuestas lleva a su bandeja. Se entra desde Ciudades y Atrás vuelve ahí.
+ * con propuestas lleva a su bandeja. Se entra desde Ciudades y Atrás vuelve ahí; o desde el renglón «Rutinas» de la portada (`?desde=admin`, OL-494),
+ * y Atrás vuelve a Administración. Arriba de todo, OL-494 (variante C firmada del prototipo OL-493): el interruptor de «Completar fichas», que
+ * antes estaba en la portada (un ajuste que se toca una vez: en la portada confundía).
  */
-export default async function Corridas({ searchParams }: { searchParams: Promise<{ tipo?: string }> }) {
+export default async function Corridas({ searchParams }: { searchParams: Promise<{ tipo?: string; desde?: string }> }) {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/admin/corridas");
   if (actual.perfil.rol !== "admin") redirect("/");
-  const { tipo } = await searchParams;
-  const panel = await cargarPanelCiudades();
-  const barra = <Barra volver={{ href: "/admin/ciudades", texto: "Ciudades" }} titulo="Corridas" />;
+  const { tipo, desde } = await searchParams;
+  const deAdmin = desde === "admin";
+  const supabase = await clienteServidor();
+  const [panel, semanal] = await Promise.all([cargarPanelCiudades(), supabase ? supabase.from("configuracion").select("valor").eq("clave", CLAVE_SEMANAL).maybeSingle() : null]);
+  const barra = <Barra volver={deAdmin ? { href: "/admin", texto: "Administración" } : { href: "/admin/ciudades", texto: "Ciudades" }} titulo="Corridas" />;
+  const filtrar = (valor: string | null) => `/admin/corridas${valor || deAdmin ? `?${new URLSearchParams({ ...(valor ? { tipo: valor } : {}), ...(deAdmin ? { desde: "admin" } : {}) })}` : ""}`;
   if (!panel)
     return (
       <main className={plantilla.paginaContenido}>
@@ -60,12 +67,12 @@ export default async function Corridas({ searchParams }: { searchParams: Promise
         <Cabecera
           contexto={
             <>
-              <Chip activo={!filtro} href="/admin/corridas">
+              <Chip activo={!filtro} href={filtrar(null)}>
                 Todas
                 <Cuenta n={panel.corridas.length} />
               </Chip>
               {FILTROS.map((f) => (
-                <Chip key={f.valor} activo={filtro?.valor === f.valor} href={`/admin/corridas?tipo=${f.valor}`}>
+                <Chip key={f.valor} activo={filtro?.valor === f.valor} href={filtrar(f.valor)}>
                   {f.etiqueta}
                   <Cuenta n={panel.corridas.filter(f.es).length} />
                 </Chip>
@@ -74,6 +81,20 @@ export default async function Corridas({ searchParams }: { searchParams: Promise
           }
         />
       )}
+      {/* Rutinas (OL-489): las que corren solas una vez por semana, con su interruptor; el gasto de todas, debajo. */}
+      <h2 className={styles.grupo}>Rutinas</h2>
+      {semanal && !semanal.error ? (
+        <ul className={renglon.tarjeta}>
+          <li>
+            <div className={renglon.ajuste}>
+              <InterruptorFichas activa={leerAjusteSemanal(semanal.data?.valor).activa} lineas={lineaSemanal(leerAjusteSemanal(semanal.data?.valor), panel.corridas, ahora)} />
+            </div>
+          </li>
+        </ul>
+      ) : (
+        <Reintentar texto="No pudimos leer las rutinas." />
+      )}
+      <h2 className={styles.grupo}>Crédito</h2>
       <ul className={`${styles.indicadores} ${css.credito}`}>
         <li>
           <div className={`${styles.indicador} ${css.quieto}`}>
