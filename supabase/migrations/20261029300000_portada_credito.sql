@@ -1,4 +1,4 @@
--- somosnosotros · OL-491 · migración 20261029260000 · el crédito de la portada de lugares y artistas (bitácora 523)
+-- somosnosotros · OL-491 · migración 20261029300000 · el crédito de la portada de lugares y artistas (bitácora 523)
 -- La semana de Instagram solo publica fichas con material (OL-488) y para completar portadas se consiguieron fotos de Wikimedia Commons con
 -- licencias CC BY y CC BY-SA, que piden decir autor y licencia donde se usa la foto: la ficha pública y la publicación. Hasta hoy ni `lugares`
 -- ni `artistas` tenían dónde guardarlo.

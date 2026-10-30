@@ -1,4 +1,4 @@
-// OL-491 (bitácora 523): el crédito de la portada de lugares y artistas (migración 20261029260000_portada_credito.sql). La columna se lee y se
+// OL-491 (bitácora 523): el crédito de la portada de lugares y artistas (migración 20261029300000_portada_credito.sql). La columna se lee y se
 // escribe como `portada`: la lee quien ve la ficha (anónimo incluido, si es visible y pública) y la escribe quien la edita (su autor, su cuenta
 // ligada y la administración); nadie más. Texto corto en una línea: de 1 a 160, sin saltos. Datos sintéticos en una transacción que se deshace.
 const id = (n) => `00000000-0000-4000-8000-00000491${String(n).padStart(4, '0')}`;

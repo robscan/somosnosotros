@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-29. **Rama:** `portada-credito` (desde `origin/main` `5bd1ec60`, con `origin/main` unido después en `cc546ab3`). **Quién:** agente del Gestor de cambios VII (Opus 5.5, árbol aislado), sin subagentes.
 **Manda:** el encargo OL-491 del gestor: la semana de Instagram solo publica fichas con material (OL-488) y, para completar las portadas de 80 lugares con fecha próxima, se consiguieron 47 fotos, 44 de Wikimedia Commons con licencias CC BY, CC BY-SA, CC0 y dominio público. Las CC BY y CC BY-SA piden decir autor y licencia donde se usa la foto: la ficha pública y la publicación de Instagram.
-**Estado:** hecho, con **una migración** (`20261029260000_portada_credito.sql`, solo añade). Sin variables nuevas. No toqué producción, `.env` ni llaves. Espera revisión del gestor y el «publica» del founder.
+**Estado:** hecho, con **una migración** (`20261029300000_portada_credito.sql`, solo añade). Sin variables nuevas. No toqué producción, `.env` ni llaves. Espera revisión del gestor y el «publica» del founder.
 
 Términos (una línea cada uno):
 - **CC BY / CC BY-SA:** licencias libres que dejan usar la foto si se dice quién la hizo y con qué licencia (la SA, además, pide compartir igual lo que se derive).
@@ -10,7 +10,7 @@ Términos (una línea cada uno):
 
 ## 1. La base
 
-`supabase/migrations/20261029260000_portada_credito.sql`:
+`supabase/migrations/20261029300000_portada_credito.sql`:
 - `lugares.portada_credito text` y `artistas.portada_credito text`, nulas (nula = sin crédito), con `check`: de 1 a 160 letras y en una línea (sin saltos ni caracteres de control).
 - Quién la lee y quién la escribe: lo mismo que `portada`. Las políticas de las dos tablas son por fila y ninguna tiene permisos por columna: la lee quien ve la ficha (anónimo incluido si es visible y pública) y la escriben su autor, su cuenta ligada y la administración.
 - **Lecturas públicas:** no hay vistas sobre estas tablas, y la ficha, la hoja de Lugares y el trabajador de Instagram leen la tabla directamente (se añadió la columna a sus `select`). Las funciones que devuelven `portada` son de Administración (`panel_lugares`, `admin_buscar_fichas`, `instagram_candidatos`) o la de la página de la bio (`instagram_semana_bio`, la miniatura en /ig, que lleva a la ficha con su crédito): ninguna pinta la portada grande, así que no se vuelve a crear ninguna y ninguna firma cambia (las de Instagram las tocan otras piezas).
