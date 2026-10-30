@@ -1,0 +1,22 @@
+✓ tocar «Voy y Me interesa» abre su desglose
+✓ tocarlo otra vez lo cierra
+✓ «Ver todos los números ›» abre la hoja con lo que salió de la portada
+✓ la hoja tiene 9 cuadros (7 de los 7 días y 2 de Fichas) y 5 líneas de tendencia
+✓ Atrás cierra la hoja sin salir de Administración
+✓ la ✕ la cierra
+✓ tocar el velo la cierra
+✓ desde la lista de un desglose, Atrás vuelve a la hoja abierta
+✓ y Atrás otra vez la cierra, en Administración
+✓ «Rutinas» lleva a Corridas con el interruptor de «Completar fichas» arriba
+✓ su Atrás dice Administración
+✓ a 320: sin desplazamiento a lo ancho y ningún toque menor de 44 px en la portada
+✓ a 430: sin desplazamiento a lo ancho y ningún toque menor de 44 px en la portada
+✓ a 768, con «Personas nuevas» abierto los cuatro siguen en una fila y el desglose va debajo
+✓ a 768: sin desplazamiento a lo ancho y ningún toque menor de 44 px en la portada
+✓ a 320: 4 cuadros en 2 filas, 5 rótulos, 2.2 pantallas de alto, 185 nodos
+✓ a 390: 4 cuadros en 2 filas, 5 rótulos, 2 pantallas de alto, 185 nodos
+✓ a 430: 4 cuadros en 2 filas, 5 rótulos, 1.9 pantallas de alto, 185 nodos
+✓ a 768: 4 cuadros en 1 fila, 5 rótulos, 1.4 pantallas de alto, 185 nodos
+✓ «Instagram dejó de publicar · La conexión caducó el mié 7 de oct: reconecta» en Pendiente, la causa en rojo (rgb(179, 38, 30))
+✓ el pendiente lleva a Administración › Instagram
+errores de página y consola: ninguno

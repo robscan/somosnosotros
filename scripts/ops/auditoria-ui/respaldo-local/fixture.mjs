@@ -1170,6 +1170,8 @@ Object.assign(rpcs, {
     },
     historia: [fotoDe(28, 15, 1, 29, 41), fotoDe(21, 17, 2, 31, 44), fotoDe(14, 19, 2, 33, 47), fotoDe(7, 20, 3, 35, 49)],
     gestionar: { personas: 80, personas_nuevas: 3, nunca_entraron: 6, correo_con_problema: 1, lugares: 71, lugares_sin_fecha: 53, lugares_ocultos: 2, lugares_privados: 1, eventos: 383, eventos_sin_imagen: 41, artistas: 686, artistas_ocultos: 4, artistas_llevados: 19, invitaciones: 0 },
+    // OL-494 (migración 20261029270000): la semana anterior de «Personas nuevas» y «Eventos de la comunidad».
+    comparado: { personas_nuevas_antes: 1, comunidad: 3, comunidad_antes: 2 },
   }),
   panel_pendientes: () => [],
   panel_comunidad: () => ({ registradas: 14, hicieron_algo: 9, vuelven_base: 11, vuelven: 5 }),
@@ -1513,6 +1515,15 @@ tablas.redes_trabajos =
   process.env.RESPALDO_INSTAGRAM_CONEXION === "caduco"
     ? [{ id: "eeee0495-0000-4000-8000-000000000001", evento_id: E.master, red: "instagram", formato: "4x5", pedido: {}, estado: "fallido", avance: {}, resultado: null, intentos: 1, fallos: 1, error: "permiso", turno: 1, ocupada_hasta: null, siguiente_en: hace(0.3), avisado_en: hace(0.3), pedido_por: ADMIN, creado_en: hace(0.3), actualizado_en: hace(0.3), terminado_en: hace(0.3) }]
     : [];
+// OL-494: con `RESPALDO_INSTAGRAM_FALLO=permiso` (o `=imagen`), el último trabajo de Instagram falló hace media hora (después de todo lo que
+// publicó la semana): «Instagram dejó de publicar» sube a Pendiente de la portada (con `permiso` y la conexión de dos días antes, «La conexión
+// caducó…»).
+if (process.env.RESPALDO_INSTAGRAM_FALLO) {
+  const error = process.env.RESPALDO_INSTAGRAM_FALLO;
+  const cuando = new Date(Date.now() - 30 * 60e3).toISOString();
+  tablas.redes_trabajos.push({ id: "eeee0494-0000-4000-8000-000000000001", evento_id: E.master, artista_id: null, lugar_id: null, red: "instagram", formato: "4x5", pedido: {}, estado: "fallido", avance: {}, resultado: null, intentos: 1, fallos: 1, error, turno: 1, ocupada_hasta: null, siguiente_en: cuando, avisado_en: cuando, pedido_por: ADMIN, creado_en: cuando, actualizado_en: cuando, terminado_en: cuando });
+  for (const c of tablas.instagram_conexion) c.conectado_en = hace(2);
+}
 tablas.cartel_lecturas = [];
 const recienteRedes = (t, evento, red, formato) => {
   const vivo = t.redes_trabajos.some((x) => x.evento_id === evento && ["en_cola", "publicando"].includes(x.estado) && x.formato === formato && (x.red === red || (red === "facebook" && x.red === "instagram" && x.pedido?.facebook === true)));

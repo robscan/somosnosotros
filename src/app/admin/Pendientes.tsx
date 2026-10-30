@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { IconoBandera, IconoCalendario, IconoCamara, IconoCartel, IconoChevronDerecha, IconoDestello, IconoDocumento, IconoEstrella, IconoOk, IconoPersona, IconoPin } from "@/components/ui/Iconos";
+import { IconoBandera, IconoCalendario, IconoCamara, IconoCartel, IconoChevronDerecha, IconoDestello, IconoDocumento, IconoEstrella, IconoInstagram, IconoOk, IconoPersona, IconoPin } from "@/components/ui/Iconos";
 import renglon from "@/components/ui/Renglon.module.css";
 import type { PorRevisar } from "@/lib/ciudadesAdmin";
+import type { PendienteInstagram } from "@/lib/portadaAdmin";
 import { accionDe, esReclamo, etiquetaFicha, quePide, rutaFicha, textoDejar, textoHecho, type Decision, type Pendiente } from "@/lib/panel";
 import { cambiarVisibilidad, decidirPendiente } from "./acciones";
 import Reintentar from "./Reintentar";
@@ -19,17 +20,32 @@ const ICONO_CORRIDA: Record<PorRevisar["tipo"], typeof IconoPin> = { lugares: Ic
  * Pendiente (decisiones 1 a 3): el rótulo con cuántos quedan y una tarjeta por reclamo o reporte, del más viejo al más
  * nuevo. Al decidir, la tarjeta se vuelve la línea de lo hecho y se queda hasta salir del panel, aunque el servidor
  * ya la haya quitado de la lista (la lista se toma al entrar). Antes, las propuestas de las rutinas por revisar (OL-427, firma de
- * OL-425): un renglón por corrida que lleva a su bandeja, y su cuenta se suma al rótulo.
+ * OL-425): un renglón por corrida que lleva a su bandeja, y su cuenta se suma al rótulo. Antes de todo, OL-494 (lo firmó el founder): si Instagram
+ * dejó de publicar, su renglón con la causa en rojo, que lleva a Administración › Instagram.
  */
-export default function Pendientes({ iniciales, error, porRevisar = [] }: { iniciales: PendienteConCuando[]; error: boolean; porRevisar?: PorRevisar[] }) {
+export default function Pendientes({ iniciales, error, porRevisar = [], instagram = null }: { iniciales: PendienteConCuando[]; error: boolean; porRevisar?: PorRevisar[]; instagram?: PendienteInstagram | null }) {
   const [lista] = useState(iniciales);
   const [decididos, setDecididos] = useState<string[]>([]);
-  const quedan = lista.length - decididos.length + porRevisar.reduce((t, p) => t + p.n, 0);
+  const quedan = lista.length - decididos.length + porRevisar.reduce((t, p) => t + p.n, 0) + (instagram ? 1 : 0);
   return (
     <>
       <h2 className={styles.grupo}>
         Pendiente{quedan > 0 && <b>{quedan}</b>}
       </h2>
+      {instagram && (
+        <ul className={`${renglon.tarjeta} ${styles.avisoPendiente}`} aria-label="Instagram">
+          <li>
+            <Link href="/admin/instagram" className={`${renglon.ajuste} ${styles.falla}`}>
+              <IconoInstagram width={20} height={20} />
+              <b>{instagram.titulo}</b>
+              <small>{instagram.detalle}</small>
+              <span>
+                <IconoChevronDerecha />
+              </span>
+            </Link>
+          </li>
+        </ul>
+      )}
       {porRevisar.length > 0 && (
         <ul className={`${renglon.tarjeta} ${ciudades.porRevisar}`} aria-label="Propuestas por revisar">
           {porRevisar.map((p) => {
@@ -54,7 +70,7 @@ export default function Pendientes({ iniciales, error, porRevisar = [] }: { inic
       {error ? (
         <Reintentar texto="No pudimos leer lo pendiente." />
       ) : lista.length === 0 ? (
-        porRevisar.length > 0 ? null : (
+        porRevisar.length > 0 || instagram ? null : (
           <p className={styles.nada}>
             <IconoOk width={20} height={20} />
             <b>Nada pendiente</b>

@@ -19,7 +19,9 @@ import {
   indicadores,
   indicadoresAportes,
   indicadoresFichas,
+  indicadoresPortada,
   leerAportes,
+  leerComparado,
   leerFichas,
   leerLista,
   nombradoPor,
@@ -163,10 +165,13 @@ describe("gestionar", () => {
       ["Personas", 5, "4 nuevas · 1 nunca entró"],
       ["Lugares", 58, "41 sin fecha próxima · 1 oculto"],
       ["Eventos", 85, "70 sin imagen"],
-      ["Artistas", 522, "1 llevado por su gente · 15 invitaciones"],
+      ["Artistas", 522, "1 llevado por su gente"],
     ]);
     const nada = renglonesGestionar({ ...gestionar, personas_nuevas: 0, nunca_entraron: 0, lugares_sin_fecha: 0, lugares_ocultos: 0, eventos_sin_imagen: 0, artistas_llevados: 0, invitaciones: 0 });
     expect(nada.map((r) => r.detalle)).toEqual(["Nada que atender", "Todos con fecha próxima", "Todos con imagen", "Ninguno llevado por su gente"]);
+  });
+  it("las invitaciones del CAPO ya no salen en Artistas: viven en «Campañas pasadas» (OL-494)", () => {
+    expect(renglonesGestionar({ ...gestionar, artistas_ocultos: 4 })[3].detalle).toBe("1 llevado por su gente · 4 ocultos");
   });
   it("el renglón de Ajustes dice lo pendiente", () => {
     expect([0, 1, 2].map(textoPendientes)).toEqual(["Nada pendiente", "1 pendiente", "2 pendientes"]);
@@ -455,5 +460,48 @@ describe("Avisos abiertos (OL-480)", () => {
     expect(i.enlace).toBeUndefined();
     expect(i.que).toMatch(/nunca por persona/);
     expect(indicadorAvisos({ ...datos, mandados: 1 }).base).toBe("de 1 mandado, sin saber quién");
+  });
+});
+
+describe("Esta semana en números (OL-494)", () => {
+  const aportesPortada: Aportes = { gestos_ahora: 18, gestos_antes: 13, voy: 11, me_interesa: 7, personas: 12, primeras_ahora: 2, primeras_antes: 1, han_publicado: 21 };
+  const resumen = (comparado: unknown) => ({
+    ahora: ahora({ eventos_semana: 37, lugares_con_fecha: 18, lugares: 71, comunidad_nuevos: 3, desglose: { ...ahora().desglose, personas_que_publican: 9 } }),
+    historia: [{ ...foto("2026-09-09", 2), eventos_semana: 35 }],
+    gestionar: { ...gestionar, personas: 80, personas_nuevas: 3 },
+    comparado: comparado as never,
+  });
+  it("los cuatro cuadros de la variante C, en su orden, con los textos firmados", () => {
+    const lista = indicadoresPortada(resumen({ personas_nuevas_antes: 1, comunidad: 4, comunidad_antes: 4 }), aportesPortada, HOY);
+    expect(lista.map((i) => [i.nombre, i.valor, i.base, i.cambio])).toEqual([
+      ["Personas nuevas", 3, "cuentas nuevas, de 80", "▲ 2 más"],
+      ["Eventos de la comunidad", 4, "publicados por gente que no es de administración", "Igual que hace una semana"],
+      ["Voy y Me interesa", 18, "de 12 personas", "▲ 5 más"],
+      ["Eventos esta semana", 37, "en 18 de 71 lugares", "▲ 2 más"],
+    ]);
+    expect(lista.every((i) => i.serie === null)).toBe(true);
+    expect(lista[0].partes).toEqual(["3 cuentas nuevas esta semana", "1 en los 7 días anteriores", "1 cuenta nunca entró"]);
+    expect(lista[0].enlace?.href).toBe("/admin/personas?filtro=nuevas");
+    expect(lista[1].partes).toEqual(["4 publicados esta semana", "4 en los 7 días anteriores", "9 personas publican eventos próximos"]);
+    expect(lista[1].enlace?.href).toBe("/admin/eventos?filtro=comunidad");
+    expect(new Set(lista.map((i) => i.clave)).size).toBe(4);
+  });
+  it("sin la migración (o con una respuesta a medias), los dos cuadros nuevos salen sin comparación y con lo de siempre", () => {
+    const lista = indicadoresPortada(resumen(undefined), aportesPortada, HOY);
+    expect([lista[0].cambio, lista[1].cambio, lista[1].valor]).toEqual([null, null, 3]);
+    expect(indicadoresPortada(resumen({ personas_nuevas_antes: 1, comunidad: "4", comunidad_antes: 4 }), aportesPortada, HOY)[1].cambio).toBeNull();
+  });
+  it("sin los aportes, tres cuadros: no se inventa el de Voy y Me interesa", () => {
+    expect(indicadoresPortada(resumen(null), null, HOY).map((i) => i.nombre)).toEqual(["Personas nuevas", "Eventos de la comunidad", "Eventos esta semana"]);
+  });
+  it("una cuenta y un lugar, en singular", () => {
+    const r = resumen(null);
+    const uno = indicadoresPortada({ ...r, gestionar: { ...r.gestionar, personas_nuevas: 1 }, ahora: { ...r.ahora, lugares: 1, lugares_con_fecha: 1 } }, null, HOY);
+    expect([uno[0].base, uno[2].base]).toEqual(["cuenta nueva, de 80", "en 1 de 1 lugar"]);
+  });
+  it("lee «comparado» solo con sus tres cuentas", () => {
+    expect(leerComparado({ personas_nuevas_antes: 0, comunidad: 2, comunidad_antes: 1 })).toEqual({ personas_nuevas_antes: 0, comunidad: 2, comunidad_antes: 1 });
+    expect(leerComparado({ personas_nuevas_antes: 0, comunidad: 2 })).toBeNull();
+    expect(leerComparado(null)).toBeNull();
   });
 });
