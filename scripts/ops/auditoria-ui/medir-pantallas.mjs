@@ -234,12 +234,18 @@ async function esperar(url, proceso) {
 // El pulso (`Mapa.tsx`: un marcador que se quita en su `animationend`) hay que esperarlo por su presencia y no solo por su animación:
 // con la máquina cargada `getAnimations()` ya lo da por terminado (`finished`) uno o varios cuadros antes de que se despache el
 // `animationend` que lo retira, y la medición lo contaba (un nodo de más y un marcador fuera de la caja de su padre; OL-292).
+// OL-496: la presencia se buscaba por su clase (`[class*="__pulso"]`), y desde Next 16.4 (OL-483) la clase compilada es `<hash>_pulso`: la
+// búsqueda no encontraba nada y la CI de Linux volvió a medir el anillo a 320 (corrida 40988580569: 168 nodos y «fuera de la caja ·
+// span.Mapa/pulso.mapboxgl-marker»). Ahora se busca sin depender del nombre: un marcador de Mapbox con una animación con fin dentro (el ::after
+// del anillo, que con `forwards` sigue en `getAnimations` hasta que se quita el marcador). Ningún otro marcador anima con fin; el punto de «tú»,
+// si late, lo hace sin fin y no cuenta.
 async function aquietar(page) {
   await page.waitForLoadState("networkidle", { timeout: 20000 });
   const pendiente = await page.evaluate(async () => {
     await document.fonts.ready;
     const animando = () => document.getAnimations().some((a) => a.playState === "running" && a.effect?.getTiming().iterations !== Infinity);
-    const pendiente = () => document.querySelectorAll('template[id^="B:"], [hidden][id^="S:"]').length > 0 || document.body.innerText.includes("Cargando el mapa") || animando() || document.querySelector('.mapboxgl-marker[class*="__pulso"]') !== null;
+    const pulso = () => [...document.querySelectorAll(".mapboxgl-marker")].some((m) => m.getAnimations({ subtree: true }).some((a) => a.effect?.getTiming().iterations !== Infinity));
+    const pendiente = () => document.querySelectorAll('template[id^="B:"], [hidden][id^="S:"]').length > 0 || document.body.innerText.includes("Cargando el mapa") || animando() || pulso();
     const quieto = (cuadros) =>
       new Promise((ok) => {
         let n = 0;
