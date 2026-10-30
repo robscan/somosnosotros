@@ -76,7 +76,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       <BarraFicha volver={{ href: "/lugares", texto: "Lugares" }} titulo={lugar.nombre}>
         <OpcionesLugar f={f} />
       </BarraFicha>
-      <Heroe portada={lugar.portada} alt={`Portada de ${lugar.nombre}`} titulo={lugar.nombre} etiqueta={etiquetaLugar(lugar)} />
+      <Heroe portada={lugar.portada} alt={`Portada de ${lugar.nombre}`} titulo={lugar.nombre} etiqueta={etiquetaLugar(lugar)} credito={lugar.portada_credito} />
 
       {hayAvisos && (
         <div className={ficha.avisos}>

@@ -5,6 +5,7 @@ import { redirect, RedirectType } from "next/navigation";
 import { after } from "next/server";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { artistaIgual, hrefArtista, validarArtista, type ArtistaResumen, type ErroresArtista } from "@/lib/artistas";
+import { creditoAlGuardar } from "@/lib/creditoFoto";
 import { esUuid } from "@/lib/formulario";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
@@ -80,11 +81,14 @@ export async function actualizarArtista(id: string, _previo: ResultadoArtista | 
   const { supabase, user } = await sesionOEntrar(`/artistas/${id}/editar`);
   const [esAdmin, { data: existente }] = await Promise.all([esAdminDeSesion(supabase, user.id), supabase.from("artistas").select("foto, portada").eq("id", id).maybeSingle()]);
   const { datos, errores } = validarArtista(leer(formData), { esAdmin, fotoActual: existente?.foto ?? null, portadaActual: existente?.portada ?? null });
+  // El crédito de la portada (OL-491): sin portada se borra; si el formulario no lo mandó, no se toca.
+  const credito = creditoAlGuardar(formData, datos.portada);
+  if (credito.error) errores.credito = credito.error;
   if (Object.keys(errores).length) return { ok: false, errores };
 
   // La ciudad también se edita: es un renglón del formulario (pedido del founder, 2026-09-16, noche).
   const { nombre, disciplina, detalle, tipo, descripcion, foto, portada, redes, ciudad } = datos;
-  const cambios = { nombre, disciplina, detalle, tipo, descripcion, foto, portada, redes, ciudad };
+  const cambios = { nombre, disciplina, detalle, tipo, descripcion, foto, portada, redes, ciudad, ...("credito" in credito ? { portada_credito: credito.credito } : {}) };
   const { data, error } = await supabase.from("artistas").update(cambios).eq("id", id).select("id, slug").maybeSingle();
   if (error?.code === "23505") return { ok: false, errores: { nombre: `Ya hay otra ficha con ese nombre en ${ciudad}.` } };
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu ficha?" };

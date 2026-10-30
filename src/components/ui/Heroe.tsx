@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { partesCreditoFoto } from "@/lib/creditoFoto";
 import Cartel from "../Cartel";
+import EnlaceExterno from "./EnlaceExterno";
 import ficha from "./Ficha.module.css";
 
 type Props = {
@@ -23,6 +25,11 @@ type Props = {
   banda?: ReactNode;
   /** `h1` en la página de la ficha; `h2` dentro de la hoja de Lugares, que ya tiene su propio título de pantalla. */
   nivel?: 1 | 2;
+  /**
+   * El crédito de la portada de un lugar o un artista (OL-491): «Foto: Pablo Pérez · CC BY-SA 4.0», en una línea discreta debajo de la
+   * portada (nunca sobre la foto); si trae la dirección de la foto, el nombre enlaza a ella. Sin portada no se pinta.
+   */
+  credito?: string | null;
 };
 
 /**
@@ -32,9 +39,10 @@ type Props = {
  * hoja miden ahí cuándo la imagen ya se fue arriba. Con `banda`, su piel oscura: las mismas piezas y la fila de los números
  * (`Ficha.module.css`, «La cabecera oscura»).
  */
-export default function Heroe({ portada, alt, titulo, etiqueta, cancelado = false, meta, avatar, banda, nivel = 1 }: Props) {
+export default function Heroe({ portada, alt, titulo, etiqueta, cancelado = false, meta, avatar, banda, nivel = 1, credito }: Props) {
   const Titulo = nivel === 1 ? "h1" : "h2";
   const oscura = banda !== undefined;
+  const c = portada ? partesCreditoFoto(credito) : null;
   return (
     <>
       <figure className={oscura ? `${ficha.portada} ${ficha.oscura}` : ficha.portada} data-portada>
@@ -47,6 +55,19 @@ export default function Heroe({ portada, alt, titulo, etiqueta, cancelado = fals
         {meta && <p className={ficha.meta}>{meta}</p>}
       </div>
       {oscura && <div className={ficha.numeros}>{banda}</div>}
+      {c && (
+        <p className={ficha.credito}>
+          Foto:{" "}
+          {c.url ? (
+            <EnlaceExterno href={c.url} className={ficha.creditoEnlace}>
+              {c.nombre}
+            </EnlaceExterno>
+          ) : (
+            c.nombre
+          )}
+          {c.resto && ` · ${c.resto}`}
+        </p>
+      )}
     </>
   );
 }

@@ -14,7 +14,7 @@ import { useHoja } from "./HojaLugares";
 import styles from "./FichaHoja.module.css";
 
 /** Lo que llega del servidor cuando la ficha se abre (`fichaEnHoja.tsx`); mientras llega, la ficha enseña su héroe y los tres números en gris. */
-export type PiezasFicha = { cuerpo: ReactNode; opciones: ReactNode; seguir: ReactNode };
+export type PiezasFicha = { cuerpo: ReactNode; opciones: ReactNode; seguir: ReactNode; credito?: string | null };
 
 type Props = {
   lugar: LugarLista;
@@ -63,7 +63,7 @@ export default function FichaHoja({ lugar, piezas, onCerrar }: Props) {
         )}
       </header>
 
-      <Heroe portada={lugar.portada} alt={`Portada de ${lugar.nombre}`} titulo={lugar.nombre} etiqueta={etiquetaTipo(lugar.tipo)} nivel={2} />
+      <Heroe portada={lugar.portada} alt={`Portada de ${lugar.nombre}`} titulo={lugar.nombre} etiqueta={etiquetaTipo(lugar.tipo)} nivel={2} credito={abierta?.credito} />
 
       {/* Lo que llega del servidor pide sus componentes de cliente y puede tardar en estar listo: cada pieza tiene su propio
           `<Suspense>` para que, si tarda, solo ella espere y no la ruta entera (que se escondería con la hoja adentro). */}

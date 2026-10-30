@@ -16,6 +16,7 @@ import { Chip } from "@/components/ui/Chip";
 import { IconoEtiqueta, IconoLapiz, IconoMas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import { ciudadParaPunto, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
+import { AYUDA_CREDITO_FOTO, TOPE_CREDITO_FOTO } from "@/lib/creditoFoto";
 import { normalizarRedes } from "@/lib/enlaces";
 import { faltaEnLugar } from "@/lib/formulario";
 import type { Punto } from "@/lib/geo";
@@ -89,14 +90,20 @@ export default function FormularioLugar({ accion, lugar, horario: horarioInicial
   const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null);
   const [ubicando, setUbicando] = useState(false);
   const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
-  const [portada, setPortada] = useState<string | null>(lugar.portada ?? null);
+  const [portada, setPortadaGuardada] = useState<string | null>(lugar.portada ?? null);
+  // El crédito de la foto (OL-491) es de esa foto: con otra portada se vacía solo.
+  const [credito, setCredito] = useState(lugar.portada_credito ?? "");
+  const setPortada = (url: string | null) => {
+    if (url !== portada) setCredito("");
+    setPortadaGuardada(url);
+  };
   const subida = useSubidaDeFoto();
   const subiendo = !!subida.subiendo;
   const [errorPortada, setErrorPortada] = useState<string | null>(null);
   const [privado, setPrivado] = useState(!!lugar.privado);
   const formRef = useRef<HTMLFormElement>(null);
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
-  useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlaces, errores.portada, errorPortada);
+  useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlaces, errores.portada, errores.credito, errorPortada);
 
   /** Lee la ubicación y la entrega a la hoja "¿Dónde está?" abierta (con su propio `moverPin`, que muestra "Ubicando…" mientras llega la
    *  dirección; mismo contrato que `onEstoyAqui` en `HojaDonde` del alta de evento, OL-211). */
@@ -268,6 +275,9 @@ export default function FormularioLugar({ accion, lugar, horario: horarioInicial
                 </p>
               )}
               {esAdmin && <CampoImagenUrl valor={portada} onCambio={setPortada} />}
+              {portada && (
+                <Campo etiqueta="Crédito de la foto" name="portada_credito" value={credito} onChange={(e) => setCredito(e.target.value)} maxLength={TOPE_CREDITO_FOTO} placeholder="Ej. Pablo Pérez · CC BY-SA 4.0" ayuda={AYUDA_CREDITO_FOTO} error={errores.credito} autoComplete="off" />
+              )}
               {esAdmin && (
                 <label className={styles.interruptor}>
                   <input type="checkbox" checked={privado} onChange={(e) => setPrivado(e.target.checked)} />
