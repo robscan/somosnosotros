@@ -49,6 +49,6 @@
   { "id": "s45a-admin-numeros", "plantilla": "tarea", "url": "/admin", "cuenta": "admin", "paso": "admin-numeros" },
   { "id": "s46-admin-instagram", "plantilla": "tarea", "url": "/admin/instagram?ciudad=san-luis-potosi&pestana=eventos", "cuenta": "admin" },
   { "id": "s47-admin-instagram-hoja", "plantilla": "tarea", "url": "/admin/instagram?ciudad=san-luis-potosi&pestana=eventos", "cuenta": "admin", "paso": "admin-instagram-hoja" },
-  { "id": "s48-admin-instagram-semana", "plantilla": "tarea", "url": "/admin/instagram?ciudad=san-luis-potosi", "cuenta": "admin" },
-  { "id": "s49-admin-instagram-dia", "plantilla": "tarea", "url": "/admin/instagram?ciudad=san-luis-potosi", "cuenta": "admin", "paso": "admin-instagram-dia" }
+  { "id": "s48-admin-instagram-semana", "plantilla": "tarea", "url": "/admin/instagram?ciudad=san-luis-potosi&pestana=semana", "cuenta": "admin" },
+  { "id": "s49-admin-instagram-dia", "plantilla": "tarea", "url": "/admin/instagram?ciudad=san-luis-potosi&pestana=semana", "cuenta": "admin", "paso": "admin-instagram-dia" }
 ]

@@ -34,8 +34,10 @@ const PALABRAS = { una: "evento", varias: "eventos", nota: "Cuenta los eventos d
  * OL-488 (añadido del founder del 2026-10-29): «Publicando…» (o «Reintentando…», si la cola va en otro intento) lleva su cargador (`ui/Girando`), y la
  * lista pregunta cada 5 s por esos trabajos y se refresca en cuanto terminan (`useAlDia`): «Publicado» con su enlace o el error con su frase.
  * OL-471 (bitácora 503): `conexion`, el bloque «Conexión» (`ConexionInstagram`), va bajo la cabecera y arriba de la lista.
+ * OL-495 (bitácora 527): con la semana vacía por falta de material, `sinMaterial` (la línea que lo dice y el renglón «Falta material» con su hoja,
+ * `SemanaSinMaterial`) va arriba de la lista; después, la lista para publicar uno a mano.
  */
-export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio, conexion, pestanas }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null; conexion?: ReactNode; pestanas?: ReactNode }) {
+export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio, conexion, pestanas, sinMaterial = null }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null; conexion?: ReactNode; pestanas?: ReactNode; sinMaterial?: ReactNode }) {
   const router = useRouter();
   const [hojaCiudad, setHojaCiudad] = useState(false);
   const [evento, setEvento] = useState<string | null>(abrir);
@@ -125,6 +127,7 @@ export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, cont
         />
       )}
       {conexion}
+      {sinMaterial}
       {conteo && <p className={lista.conteo}>{conteo}</p>}
       {vacio && <p className={lista.vacio}>{vacio}</p>}
       {para.length > 0 && (

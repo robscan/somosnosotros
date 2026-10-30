@@ -202,9 +202,9 @@
     "s44-admin-personas": { "nodos": [48, 48, 84, 84], "profundidad": [10, 10, 10, 10] },
     "s45-admin-portada": { "nodos": [143, 143, 179, 179], "profundidad": [8, 8, 8, 8] },
     "s45a-admin-numeros": { "nodos": [255, 255, 291, 291], "profundidad": [8, 8, 8, 8] },
-    "s46-admin-instagram": { "nodos": [132, 132, 168, 168], "profundidad": [9, 9, 9, 9] },
-    "s47-admin-instagram-hoja": { "nodos": [165, 165, 201, 201], "profundidad": [9, 9, 9, 9] },
-    "s48-admin-instagram-semana": { "nodos": [78, 78, 114, 114], "profundidad": [9, 9, 9, 9] },
-    "s49-admin-instagram-dia": { "nodos": [142, 142, 178, 178], "profundidad": [9, 9, 9, 9] }
+    "s46-admin-instagram": { "nodos": [145, 145, 181, 181], "profundidad": [9, 9, 9, 9] },
+    "s47-admin-instagram-hoja": { "nodos": [178, 178, 214, 214], "profundidad": [9, 9, 9, 9] },
+    "s48-admin-instagram-semana": { "nodos": [81, 81, 117, 117], "profundidad": [9, 9, 9, 9] },
+    "s49-admin-instagram-dia": { "nodos": [145, 145, 181, 181], "profundidad": [9, 9, 9, 9] }
   }
 }
