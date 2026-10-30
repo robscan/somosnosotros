@@ -1,6 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { cartelDescargable } from "../cartelDescarga";
 import { dibujarDestacado, dibujarPortadaSemana } from "../carteles/dibujar";
+import { configPublica } from "../config";
 import { diaConMes, diaLocal, horaCorta, localAIso } from "../fechas";
 import { cejaArtista, cejaLugar, proximaEnTarjeta, textoArtista, textoLugar, textoSemana, tituloSemana, type ArtistaDestacado, type LugarDestacado, type Proxima } from "./destacado";
 import { bajarCartel, encajarCartel } from "./imagen";
@@ -114,6 +116,14 @@ export async function cargarFicha(db: SupabaseClient, tipo: "artista" | "lugar",
     ceja: cejaLugar(l), cuenta: usuarioDeInstagram(l.redes), portada: l.portada, portadaCredito: l.portada_credito, foto: null, proxima: null, semana, datos,
     ubicacion: await ubicacionDe(db, ciudadSlug, l.id, l.ciudad),
   };
+}
+
+/**
+ * OL-488: ¿tiene la ficha el material que la tarjeta puede dibujar? La foto y la portada del artista, la portada del lugar, en el Storage de la
+ * app (lo único que `bajarCartel` deja bajar; otra cosa saldría con la imagen de relleno). La base pide lo mismo (`instagram_material_propio`).
+ */
+export function fichaConMaterial(f: Pick<FichaParaPublicar, "tipo" | "foto" | "portada">, supabaseUrl = configPublica().supabaseUrl): boolean {
+  return cartelDescargable(f.portada, supabaseUrl) && (f.tipo === "lugar" || cartelDescargable(f.foto, supabaseUrl));
 }
 
 /** El texto que arma el sistema; sin la cuenta si la administración la quitó (`quitadas`): sin mención ni «Foto: @cuenta». Con crédito de la

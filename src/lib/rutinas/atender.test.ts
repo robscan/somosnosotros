@@ -87,4 +87,23 @@ describe("/api/rutinas/correr", () => {
     expect(mal.status).toBe(503);
     expect(await mal.json()).toEqual({ ok: false, error: "motor_no_disponible" });
   });
+
+  it("OL-489: antes de dar pasos deja las corridas semanales (una vez por llamada); si eso falla, los pasos corren igual", async () => {
+    const orden: string[] = [];
+    const { d, despues } = dependencias([{ corrida: "c1", tipo: "fichas", estado: "terminada", usd: 0 }]);
+    const correr = d.correr;
+    d.correr = vi.fn(async () => (orden.push("paso"), correr()));
+    d.programar = vi.fn(async () => void orden.push("programar"));
+    expect((await atenderCorrer(pedido("Bearer s3cr3t"), d)).status).toBe(202);
+    expect(d.programar).not.toHaveBeenCalled();
+    await despues[0]();
+    expect(orden).toEqual(["programar", "paso", "paso"]);
+    const cae = dependencias();
+    cae.d.programar = async () => {
+      throw new Error("la base");
+    };
+    const r = await atenderCorrer(pedido("Bearer s3cr3t", `${URL_RUTA}?esperar=1`), cae.d);
+    expect(r.status).toBe(200);
+    expect(cae.d.correr).toHaveBeenCalledTimes(1);
+  });
 });

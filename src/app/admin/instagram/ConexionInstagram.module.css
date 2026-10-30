@@ -1,0 +1,35 @@
+/* El botón de la conexión de Administración › Instagram (OL-495; firmado en el prototipo de OL-493, variante C, bitácora 525): el redondo plano
+   de 44 de las barras (ui/BotonIcono) con el punto de la barra de la app (Sesion/punto), aquí del color del estado:
+   verde, conectada (--ok); gris, sin conexión (--texto-suave); rojo, caducó o le faltan permisos (--error). */
+.boton > .ok {
+  background: var(--ok);
+}
+.boton > .no {
+  background: var(--texto-suave);
+}
+.boton > .mal {
+  background: var(--error);
+}
+
+/* La nota de la hoja, cuando sigue a la tarjeta de la cuenta (sin la lista de lo que puede, que ya deja su aire): el mismo aire que la lista. */
+.nota {
+  margin-top: var(--espacio-3);
+}
+
+/* OL-496: lo que se quedó sin salir por la conexión caducada, en la hoja al volver de Meta (el enlace de la línea verde «Instagram quedó
+   conectado» que lleva de vuelta a ella va en su lugar de acción, como «Deshacer»). La nota y la lista corta; la respuesta de «Volver a publicar…» en su línea (verde si salió, roja si no). */
+.notaSinSalir {
+  margin-bottom: var(--espacio-2);
+}
+.sinSalir {
+  margin-bottom: var(--espacio-3);
+}
+.vueltos {
+  margin-bottom: var(--espacio-3);
+}
+/* Los dos botones del pie, uno sobre otro a todo lo ancho: «Volver a publicar…» (principal) y «Reconectar». */
+.pieDoble {
+  display: grid;
+  flex: 1;
+  gap: var(--espacio-2);
+}

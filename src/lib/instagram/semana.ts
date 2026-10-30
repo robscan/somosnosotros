@@ -171,11 +171,18 @@ export function armarSemana(o: {
   /** Los días que ya tienen su fila (AAAA-MM-DD) y las fichas y eventos que ya van en la semana. */
   existentes: ReadonlySet<string>;
   usados?: ReadonlySet<string>;
+  /** OL-488: los días que se arman aunque su hora ya haya pasado (la sugerencia de un día sin publicación, para «Publicar ahora»). */
+  forzar?: ReadonlySet<string>;
+  /** OL-488: ¿el cartel del evento es material que se puede publicar (del Storage de la app)? Por omisión, que tenga cartel. */
+  conCartel?: (e: EventoCandidato) => boolean;
 }): CasillaNueva[] {
   const usados = new Set(o.usados ?? []);
   const libre = (c: Candidato) => !c.ocupado_en && !usados.has(c.id);
   const dias = diasDe(o.lunes);
-  const porHacer = (fecha: string, hora: string | null) => !o.existentes.has(fecha) && (!hora || new Date(salePara(fecha, hora, o.zona)) > o.ahora);
+  const porHacer = (fecha: string, hora: string | null) => !o.existentes.has(fecha) && (!hora || !!o.forzar?.has(fecha) || new Date(salePara(fecha, hora, o.zona)) > o.ahora);
+  // OL-488: solo con material. Un evento sin cartel (o con uno que la app no puede bajar) no sale el día del evento ni en «Esta semana».
+  const conCartel = o.conCartel ?? ((e: EventoCandidato) => !!e.imagen);
+  const eventos = o.eventos.filter(conCartel);
   const casillas: CasillaNueva[] = [];
   const poner = (c: CasillaNueva) => casillas.push(c);
   const descanso = (fecha: string, motivo: string | null): CasillaNueva => ({ fecha, tipo: "descanso", hora: null, motivo });
@@ -190,30 +197,31 @@ export function armarSemana(o: {
     } else if (r.tipo === "artista") {
       const libres = o.artistas.filter(libre);
       const elegido = (r.fin ? libres.find((c) => conFechaElFin(c, o.lunes)) : undefined) ?? libres[0];
-      if (!elegido) poner(descanso(fecha, "No hay artistas con la ficha completa por salir."));
+      if (!elegido) poner(descanso(fecha, NADIE_ARTISTA));
       else {
         usados.add(elegido.id);
         poner({ fecha, tipo: "artista", hora: r.hora, artista_id: elegido.id, motivo: motivoDe(elegido, "artista", fecha, o.ahora) });
       }
     } else if (r.tipo === "lugar") {
       const elegido = [...o.lugares.filter(libre)].sort((a, b) => Number(b.eventos_semana > 0) - Number(a.eventos_semana > 0))[0];
-      if (!elegido) poner(descanso(fecha, "No hay lugares con la ficha completa por salir."));
+      if (!elegido) poner(descanso(fecha, NADIE_LUGAR));
       else {
         usados.add(elegido.id);
         poner({ fecha, tipo: "lugar", hora: r.hora, lugar_id: elegido.id, motivo: motivoDe(elegido, "lugar", fecha, o.ahora) });
       }
     } else if (r.tipo === "semana") {
       const fin = [sumar(o.lunes, 4), sumar(o.lunes, 5), sumar(o.lunes, 6)];
-      const delFin = o.eventos
+      const delFin = eventos
         .filter((e) => e.clase !== "festival" && !usados.has(e.id) && fin.includes(diaLocal(new Date(e.inicio), e.zona)))
         .sort((a, b) => porSenal(senal(a), senal(b)))
         .slice(0, EVENTOS_SEMANA)
         .sort((a, b) => a.inicio.localeCompare(b.inicio));
-      if (!delFin.length) poner(descanso(fecha, "No hay eventos el fin de semana."));
+      const hayEnElFin = o.eventos.some((e) => e.clase !== "festival" && fin.includes(diaLocal(new Date(e.inicio), e.zona)));
+      if (!delFin.length) poner(descanso(fecha, hayEnElFin ? SIN_CARTEL_FIN : "No hay eventos el fin de semana."));
       else poner({ fecha, tipo: "semana", hora: r.hora, eventos: delFin.map((e) => e.id), motivo: `Carrusel de ${delFin.length + 1} imágenes: la portada y ${delFin.length === 1 ? "el cartel del evento" : `los carteles de los ${delFin.length} eventos`} con más señal del fin.` });
     } else {
-      const e = eventoDelDia(o.eventos, fecha, usados);
-      if (!e) poner(descanso(fecha, "No hay eventos ese día."));
+      const e = eventoDelDia(eventos, fecha, usados);
+      if (!e) poner(descanso(fecha, eventoDelDia(o.eventos, fecha, usados) ? SIN_CARTEL_DIA : "No hay eventos ese día."));
       else {
         usados.add(e.id);
         poner({ fecha, tipo: "evento", hora: r.hora, evento_id: e.id, motivo: motivoDeEvento(e) });
@@ -221,6 +229,72 @@ export function armarSemana(o: {
     }
   }
   return casillas.sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+/** OL-488: lo que dice un día de evento (o «Esta semana») que tiene eventos, pero ninguno con cartel. */
+export const SIN_CARTEL_DIA = "Ningún evento de ese día tiene cartel.";
+export const SIN_CARTEL_FIN = "Ningún evento del fin de semana tiene cartel.";
+/** OL-488: los motivos con que descansa un día de artista o de lugar porque nadie tiene la ficha completa (con material). */
+export const NADIE_ARTISTA = "No hay artistas con la ficha completa por salir.";
+export const NADIE_LUGAR = "No hay lugares con la ficha completa por salir.";
+
+/**
+ * OL-488: lo que sugiere la regla para un día que no tiene publicación (no se armó porque su hora ya había pasado, o descansaba porque nadie
+ * tenía material), para «Programar» o «Publicar ahora»: la misma `armarSemana`, solo para ese día y aunque su hora haya pasado. Null en domingo.
+ * Devuelve un descanso (con su motivo) si sigue sin haber nadie con material.
+ */
+export function sugerirDia(o: Omit<Parameters<typeof armarSemana>[0], "existentes" | "forzar"> & { fecha: string }): CasillaNueva | null {
+  if (diaIso(o.fecha) === 7) return null;
+  const dias = diasDe(o.lunes);
+  if (!dias.includes(o.fecha)) return null;
+  const [c] = armarSemana({ ...o, existentes: new Set(dias.filter((d) => d !== o.fecha)), forzar: new Set([o.fecha]) });
+  return c ?? null;
+}
+
+/** OL-488: el renglón de un día que no sale nada porque nadie tiene material: «Nadie con material para hoy» o «… para el vie 30». */
+export function nadieConMaterial(fecha: string, ahora: Date, zona: string): string {
+  const n = nombreDelDia(fecha, ahora, zona);
+  return `Nadie con material para ${n === "Hoy" ? "hoy" : `el ${n.toLowerCase()}`}`;
+}
+
+/** OL-488: la línea gris de un día que ya pasó sin publicación: «Mié 7 · antes de armar la semana» (o «· nadie con material», «· quitado»). */
+export function lineaDelPasado(fecha: string, porQue: "sin-armar" | "nadie" | "quitado" | "sin" | "fallido", ahora: Date, zona: string): string {
+  const que = { "sin-armar": "antes de armar la semana", nadie: "nadie con material", quitado: "quitado", sin: "no se programó", fallido: "no se publicó" }[porQue];
+  return `${nombreDelDia(fecha, ahora, zona)} · ${que}`;
+}
+
+/** Lo que le falta a una ficha (las claves de `instagram_falta_material`). */
+export type Falta = "foto" | "portada" | "foto_ajena" | "portada_ajena";
+
+/** OL-488: «Falta la portada», «Falta la foto y la portada», «Su portada es de otra página: hay que subirla a la app». */
+export function queFalta(falta: readonly string[]): string {
+  const sin = (["foto", "portada"] as const).filter((x) => falta.includes(x));
+  const ajenas = (["foto", "portada"] as const).filter((x) => falta.includes(`${x}_ajena`));
+  const partes: string[] = [];
+  if (sin.length) partes.push(`Falta ${sin.map((x) => `la ${x}`).join(" y ")}`);
+  if (ajenas.length) {
+    const cual = ajenas.map((x) => x).join(" y ");
+    partes.push(`${partes.length ? "su" : "Su"} ${cual} ${ajenas.length > 1 ? "son" : "es"} de otra página: hay que subir${ajenas.length > 1 ? "las" : "la"} a la app`);
+  }
+  return partes.join("; ") || "Le falta material";
+}
+
+/** OL-488: el resumen del renglón «Falta material»: «3 artistas y 2 lugares con fecha se quedaron fuera por falta de foto o portada». */
+export function resumenDeLaFalta(artistas: number, lugares: number): string | null {
+  if (!artistas && !lugares) return null;
+  const a = artistas ? `${artistas} ${artistas === 1 ? "artista" : "artistas"}` : null;
+  const l = lugares ? `${lugares} ${lugares === 1 ? "lugar" : "lugares"}` : null;
+  const uno = artistas + lugares === 1;
+  return `${[a, l].filter(Boolean).join(" y ")} con fecha ${uno ? "se quedó" : "se quedaron"} fuera por falta de foto o portada`;
+}
+
+/**
+ * OL-488: la razón del aviso de «Pedírselo» (el título es el nombre de la ficha): «Completa tu portada y te presentamos en Instagram». Lenguaje
+ * llano e incluyente: «te presentamos», no «serás publicado».
+ */
+export function razonDelPedido(falta: readonly string[]): string {
+  const que = (["foto", "portada"] as const).filter((x) => falta.includes(x) || falta.includes(`${x}_ajena`));
+  return `Completa ${(que.length ? que : ["portada"]).map((x) => `tu ${x}`).join(" y ")} y te presentamos en Instagram`;
 }
 
 /** Cómo va un día, para el renglón y la hoja. */

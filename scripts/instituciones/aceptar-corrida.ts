@@ -13,7 +13,7 @@
  * que no se puede aceptar (ya pasó, ya está, inválido, el mapa no lo ubica…) se deja como está y se lista con su motivo; nada se rechaza solo.
  * Con calma: en serie, 200 ms entre propuestas, y un reintento a los 2 s si la base no respondió.
  *
- * Uso: node scripts/instituciones/correr.mjs aceptar-corrida <corrida_id> --autor <id del admin> [--simular] [--solo lugar|evento|artista]
+ * Uso: node scripts/instituciones/correr.mjs aceptar-corrida <corrida_id> --autor <id del admin> [--simular] [--solo lugar|evento|artista|ficha]
  *        [--limite N] [--salida <carpeta>]
  * Con --simular comprueba cada una (todo lo de antes de aceptarla) y no escribe nada.
  */
@@ -23,12 +23,13 @@ import { almacenDeSupabase } from "../../src/lib/rutinas/aceptarCartel";
 import { aceptarLeida, NOTA_NO_PUBLICADO, NOTA_SIN_CARTEL, type DepAceptar, type PropuestaLeida, type ResultadoAceptar } from "../../src/lib/rutinas/aceptarPropuesta";
 import { guardarInforme, requerida } from "./entorno";
 
-const USO = "node scripts/instituciones/correr.mjs aceptar-corrida <corrida_id> --autor <id del admin> [--simular] [--solo lugar|evento|artista] [--limite N] [--salida <carpeta>]";
+const USO = "node scripts/instituciones/correr.mjs aceptar-corrida <corrida_id> --autor <id del admin> [--simular] [--solo lugar|evento|artista|ficha] [--limite N] [--salida <carpeta>]";
 export const PAUSA_MS = 200;
 export const REINTENTO_MS = 2_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export type TipoAceptable = "lugar" | "evento" | "artista";
-const TIPOS: readonly TipoAceptable[] = ["lugar", "artista", "evento"];
+export type TipoAceptable = "lugar" | "evento" | "artista" | "ficha";
+/** OL-489: los campos de «Completar fichas» (`ficha`) al final: completan fichas que ya existen. */
+const TIPOS: readonly TipoAceptable[] = ["lugar", "artista", "evento", "ficha"];
 
 /** Las frases de la bandeja que dicen «inténtalo otra vez» (la base no respondió): esas se reintentan una vez. */
 const DE_NUEVO = /Intenta de nuevo|Intenta más tarde|Sin conexión/;
@@ -96,7 +97,7 @@ export async function aceptarCorrida(dep: DepCorrida, o: OpcionesAceptar): Promi
       await dormir(REINTENTO_MS);
       resultado = await aceptarLeida(depAceptar, p, ciudad);
     }
-    const nombre = String(p.datos.titulo ?? p.datos.nombre ?? "");
+    const nombre = `${String(p.datos.titulo ?? p.datos.nombre ?? "")}${p.tipo === "ficha" ? ` · ${String(p.datos.campo ?? "")}` : ""}`;
     const conImagen = p.tipo === "evento" && typeof p.datos.imagen === "string";
     const publicado = resultado.ok && !resultado.espera && resultado.nota !== NOTA_NO_PUBLICADO;
     const cartel = !o.simular && conImagen && publicado ? ((resultado.ok && resultado.nota?.includes(NOTA_SIN_CARTEL)) ? "sin" : "con") : null;
@@ -153,7 +154,7 @@ async function main() {
   const corrida = requerida(args[0] && UUID.test(args[0]) ? args[0] : undefined, "el id de la corrida", USO);
   const autor = requerida(opcion("autor"), "--autor", USO);
   const solo = opcion("solo");
-  if (solo && !(TIPOS as readonly string[]).includes(solo)) requerida(undefined, "--solo lugar, evento o artista", USO);
+  if (solo && !(TIPOS as readonly string[]).includes(solo)) requerida(undefined, "--solo lugar, evento, artista o ficha", USO);
   const limite = opcion("limite") ? Number(opcion("limite")) : null;
   if (limite !== null && !(Number.isInteger(limite) && limite > 0)) requerida(undefined, "--limite con un número mayor que 0", USO);
   const simular = args.includes("--simular");

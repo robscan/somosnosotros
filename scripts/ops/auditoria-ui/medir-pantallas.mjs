@@ -169,6 +169,13 @@ PASOS["admin-anadir"] = async (page) => {
 };
 // OL-458: Administración › Instagram con la hoja «Publicar en Instagram» abierta (el primer evento por publicar): la imagen ya dibujada.
 // OL-471: el primer renglón de evento (el de arriba es el bloque «Conexión», cuyo enlace lleva al inicio de sesión de Meta).
+// OL-494: la hoja «Todos los números» de la portada de Administración, entera (se arma en el servidor al abrirla).
+PASOS["admin-numeros"] = async (page) => {
+  await page.getByRole("button", { name: "Ver todos los números ›" }).click();
+  await page.getByRole("dialog", { name: "Todos los números" }).getByRole("heading", { name: "Campañas pasadas" }).waitFor();
+  await aquietar(page);
+};
+
 PASOS["admin-instagram-hoja"] = async (page) => {
   await page.locator('main li a[href^="/eventos/"]').first().click();
   const hoja = page.getByRole("dialog", { name: "Publicar en Instagram" });
@@ -179,7 +186,8 @@ PASOS["admin-instagram-hoja"] = async (page) => {
 };
 
 // OL-479: la hoja del día de hoy en la pestaña «Semana» (sin la marca de la semana de Instagram, el respaldo no tiene fichas completas: el día
-// que toca puede descansar y su hoja lo dice).
+// que toca puede descansar y su hoja lo dice). OL-488: hoy (miércoles, día de lugar) nadie tiene material: el renglón dice «Nadie con material
+// para hoy» y abre «Falta material» (la lista de quién se quedó fuera).
 PASOS["admin-instagram-dia"] = async (page) => {
   await page.locator("main section li", { hasText: "Hoy" }).locator("a").first().click();
   await page.getByRole("dialog").waitFor();
@@ -226,12 +234,18 @@ async function esperar(url, proceso) {
 // El pulso (`Mapa.tsx`: un marcador que se quita en su `animationend`) hay que esperarlo por su presencia y no solo por su animación:
 // con la máquina cargada `getAnimations()` ya lo da por terminado (`finished`) uno o varios cuadros antes de que se despache el
 // `animationend` que lo retira, y la medición lo contaba (un nodo de más y un marcador fuera de la caja de su padre; OL-292).
+// OL-496: la presencia se buscaba por su clase (`[class*="__pulso"]`), y desde Next 16.4 (OL-483) la clase compilada es `<hash>_pulso`: la
+// búsqueda no encontraba nada y la CI de Linux volvió a medir el anillo a 320 (corrida 40988580569: 168 nodos y «fuera de la caja ·
+// span.Mapa/pulso.mapboxgl-marker»). Ahora se busca sin depender del nombre: un marcador de Mapbox con una animación con fin dentro (el ::after
+// del anillo, que con `forwards` sigue en `getAnimations` hasta que se quita el marcador). Ningún otro marcador anima con fin; el punto de «tú»,
+// si late, lo hace sin fin y no cuenta.
 async function aquietar(page) {
   await page.waitForLoadState("networkidle", { timeout: 20000 });
   const pendiente = await page.evaluate(async () => {
     await document.fonts.ready;
     const animando = () => document.getAnimations().some((a) => a.playState === "running" && a.effect?.getTiming().iterations !== Infinity);
-    const pendiente = () => document.querySelectorAll('template[id^="B:"], [hidden][id^="S:"]').length > 0 || document.body.innerText.includes("Cargando el mapa") || animando() || document.querySelector('.mapboxgl-marker[class*="__pulso"]') !== null;
+    const pulso = () => [...document.querySelectorAll(".mapboxgl-marker")].some((m) => m.getAnimations({ subtree: true }).some((a) => a.effect?.getTiming().iterations !== Infinity));
+    const pendiente = () => document.querySelectorAll('template[id^="B:"], [hidden][id^="S:"]').length > 0 || document.body.innerText.includes("Cargando el mapa") || animando() || pulso();
     const quieto = (cuadros) =>
       new Promise((ok) => {
         let n = 0;

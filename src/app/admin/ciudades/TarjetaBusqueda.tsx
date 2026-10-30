@@ -2,16 +2,16 @@
 
 import { useState, useTransition } from "react";
 import Boton from "@/components/ui/Boton";
-import { IconoCalendario, IconoCartel, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoCartel, IconoDocumento, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import { pegado, verboDe, type LineaBusqueda, type Pildora, type TipoHoja } from "@/lib/ciudadesAdmin";
 import { cancelarCorrida } from "./acciones";
 import HojaCorrer from "./HojaCorrer";
 import styles from "../admin.module.css";
 import css from "./ciudades.module.css";
 
-const ICONO: Record<TipoHoja, typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, carteles: IconoCartel };
-/** «Carteles» (OL-444): su número son los eventos próximos sin cartel. */
-const TITULO: Record<TipoHoja, string> = { lugares: "Lugares", agendas: "Eventos próximos", artistas: "Artistas", carteles: "Carteles" };
+const ICONO: Record<TipoHoja, typeof IconoPin> = { lugares: IconoPin, agendas: IconoCalendario, artistas: IconoEstrella, carteles: IconoCartel, fichas: IconoDocumento };
+/** «Carteles» (OL-444): su número son los eventos próximos sin cartel. «Fichas» (OL-489): las fichas con fecha a las que les falta algo. */
+const TITULO: Record<TipoHoja, string> = { lugares: "Lugares", agendas: "Eventos próximos", artistas: "Artistas", carteles: "Carteles", fichas: "Fichas" };
 /** La píldora de una búsqueda es la de Corridas (`corridas/page.tsx`). */
 const CLASE_PILDORA: Record<Pildora["tono"], string> = {
   gris: styles.etiqueta,

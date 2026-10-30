@@ -49,6 +49,11 @@ export type Herramientas = {
   /** OL-479: una ficha (artista o lugar) para su día, su tarjeta en JPEG, y «Esta semana» con sus imágenes (la portada y los carteles). */
   cargarFicha: (db: SupabaseClient, tipo: "artista" | "lugar", id: string, ahora: Date) => Promise<FichaParaPublicar | null>;
   dibujarFicha: (f: FichaParaPublicar, formato: "4x5" | "9x16", ahora: Date) => Promise<Buffer>;
+  /**
+   * OL-488: ¿la ficha tiene el material que la tarjeta puede dibujar (la foto y la portada del artista, la portada del lugar, en el Storage de la
+   * app)? Sin él no se publica con la imagen de relleno. Sin esta herramienta, se da por bueno (la semana ya solo elige fichas con material).
+   */
+  conMaterial?: (f: FichaParaPublicar) => boolean;
   cargarSemana: (db: SupabaseClient, eventos: readonly string[], ahora: Date) => Promise<SemanaParaPublicar | null>;
   imagenesSemana: (s: SemanaParaPublicar, ahora: Date) => Promise<{ bytes: Buffer; etiquetas: string[] }[]>;
   /** El aviso al teléfono de quien lo pidió. Nunca lanza. */
@@ -65,6 +70,9 @@ export type Dependencias = {
 
 /** La forma que espera `atenderCorrer` (la misma ruta del motor de rutinas): `corrida` null para la serie de pasos de esta llamada. */
 export type ResultadoTrabajoPaso = { corrida: string | null; tipo: string | null; estado: "nada" | "corriendo" | "terminada" | "fallida" | "cancelada"; usd: number };
+
+/** OL-488: lo que dice un día de artista o de lugar que no salió por falta de material. */
+export const FRASE_SIN_MATERIAL = "Le falta su foto o su portada en la app: no se publicó con la imagen de relleno. Súbela o pídesela en «Falta material».";
 
 const NADA: ResultadoTrabajoPaso = { corrida: null, tipo: null, estado: "nada", usd: 0 };
 
@@ -374,6 +382,8 @@ async function enFicha(dep: Dependencias, t: Trabajo): Promise<"corriendo" | "te
   const tipo = t.artista_id ? "artista" : "lugar";
   const f = await dep.h.cargarFicha(dep.db, tipo, (t.artista_id ?? t.lugar_id)!, ahora);
   if (!f || !f.visible) return cerrar(dep, t, null, "fallido", { mensaje: "Esa ficha ya no se ve en la app: no se publicó." }, "otro", f?.nombre);
+  // OL-488: sin su foto o su portada en la app, la tarjeta saldría con la imagen de relleno: no se publica (y se dice qué falta).
+  if (!t.avance?.instagram && dep.h.conMaterial && !dep.h.conMaterial(f)) return cerrar(dep, t, null, "fallido", { mensaje: FRASE_SIN_MATERIAL }, "imagen", f.nombre);
   const formato = "4x5" as const;
   const quitadas = quitadasDe(t);
   const avance: AvanceTrabajo = { ...t.avance };

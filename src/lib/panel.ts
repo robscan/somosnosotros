@@ -52,7 +52,20 @@ export type Gestionar = {
   artistas_llevados: number;
   invitaciones: number;
 };
-export type Resumen = { ahora: Ahora; historia: Foto[]; gestionar: Gestionar };
+/**
+ * Lo de la semana anterior (OL-494, migración 20261029270000): para que «Personas nuevas» y «Eventos de la comunidad» de la portada digan
+ * «▲ N más». `comunidad` cuenta los eventos visibles que publicó la comunidad en 7 días (hayan pasado o no) y `comunidad_antes`, los de los 7
+ * anteriores: lo mismo en las dos semanas. Sin la migración aplicada no llega, y los dos cuadros salen sin comparación.
+ */
+export type Comparado = { personas_nuevas_antes: number; comunidad: number; comunidad_antes: number };
+export type Resumen = { ahora: Ahora; historia: Foto[]; gestionar: Gestionar; comparado?: Comparado | null };
+
+/** `comparado` solo si trae sus tres cuentas: una respuesta de otra versión nunca se pinta como cero. */
+export function leerComparado(d: unknown): Comparado | null {
+  const c = d as Partial<Record<keyof Comparado, unknown>> | null | undefined;
+  if (!c || typeof c !== "object") return null;
+  return esCuenta(c.personas_nuevas_antes) && esCuenta(c.comunidad) && esCuenta(c.comunidad_antes) ? (c as Comparado) : null;
+}
 
 /** Lo que devuelve `panel_aportes()` (migración 20261007090000, OL-326): lo que hizo la gente en los últimos 7 días contra los 7 anteriores. */
 export type Aportes = {
@@ -273,7 +286,7 @@ export function textoCambio(ahora: number, antes: number): string {
   return "Igual que hace una semana";
 }
 
-export type ClaveIndicador = "activas" | "coincidencias" | "agenda" | "comunidad" | "gestos" | "primeras" | "vinculadas" | "foto" | "avisos";
+export type ClaveIndicador = "activas" | "coincidencias" | "agenda" | "comunidad" | "gestos" | "primeras" | "vinculadas" | "foto" | "avisos" | "nuevas" | "publicados";
 export type Indicador = {
   clave: ClaveIndicador;
   nombre: string;
@@ -452,6 +465,61 @@ export function indicadorAvisos(a: AvisosPanel): Indicador {
   };
 }
 
+/**
+ * «Esta semana en números» (OL-494, variante C firmada del prototipo OL-493, bitácora 525): los cuatro cuadros de la portada, en su orden.
+ * Personas nuevas y Eventos de la comunidad se comparan con los 7 días anteriores (`comparado`; sin él, sin «▲»); Voy y Me interesa es el de
+ * los aportes (sin ellos, no sale); Eventos esta semana es la agenda de 7 días con la foto de hace una semana. Sin tendencia. La hoja «Todos los números»
+ * lleva lo demás, sin repetir estos (`indicadoresHoja`, OL-496).
+ */
+export function indicadoresPortada(r: Resumen, aportes: Aportes | null, hoy: string): Indicador[] {
+  const g = r.gestionar;
+  const a = r.ahora;
+  const c = leerComparado(r.comparado);
+  const agenda = indicadores(r, hoy).find((i) => i.clave === "agenda")!;
+  const publicados = c ? c.comunidad : a.comunidad_nuevos;
+  const gestos = aportes ? indicadoresAportes(aportes).find((i) => i.clave === "gestos")! : null;
+  return [
+    {
+      clave: "nuevas",
+      nombre: "Personas nuevas",
+      valor: g.personas_nuevas,
+      base: `${g.personas_nuevas === 1 ? "cuenta nueva" : "cuentas nuevas"}, de ${g.personas}`,
+      cambio: c ? textoCambio(g.personas_nuevas, c.personas_nuevas_antes) : null,
+      serie: null,
+      que: "Cuentas que se crearon en los últimos 7 días, sin contar administradores. Se compara con los 7 días anteriores.",
+      partes: [contar(g.personas_nuevas, "cuenta nueva esta semana", "cuentas nuevas esta semana"), c ? `${c.personas_nuevas_antes} en los 7 días anteriores` : null, contar(g.nunca_entraron, "cuenta nunca entró", "cuentas nunca entraron")].filter(Boolean) as string[],
+      vacio: "Nadie se registró en los últimos 7 días",
+      enlace: { texto: "Ver las personas nuevas", href: hrefLista("personas", { filtro: "nuevas" }) },
+    },
+    {
+      clave: "publicados",
+      nombre: "Eventos de la comunidad",
+      valor: publicados,
+      base: "publicados por gente que no es de administración",
+      cambio: c ? textoCambio(c.comunidad, c.comunidad_antes) : null,
+      serie: null,
+      que: "Eventos que publicó en los últimos 7 días una cuenta que no es de administración, ya hayan pasado o no. Se compara con los 7 días anteriores.",
+      partes: [contar(publicados, "publicado esta semana", "publicados esta semana"), c ? `${c.comunidad_antes} en los 7 días anteriores` : null, contar(a.desglose.personas_que_publican, "persona publica eventos próximos", "personas publican eventos próximos")].filter(Boolean) as string[],
+      vacio: "Esta semana todo lo publicó la administración",
+      enlace: { texto: "Ver los eventos de la comunidad", href: hrefLista("eventos", { filtro: "comunidad" }) },
+    },
+    ...(gestos ? [gestos] : []),
+    { ...agenda, nombre: "Eventos esta semana", base: `en ${a.lugares_con_fecha} de ${a.lugares} ${a.lugares === 1 ? "lugar" : "lugares"}`, serie: null },
+  ];
+}
+
+/**
+ * «Últimos 7 días» de la hoja «Todos los números» (OL-496): lo que no cabe arriba. Los siete de siempre menos los que ya están en «Esta semana en
+ * números» de la portada (hoy «Voy y Me interesa» y la agenda, que arriba se llama «Eventos esta semana»), sacados de `indicadoresPortada` para
+ * que la hoja no repita nada aunque cambie la portada. Quedan cinco: Personas activas, Coincidencias, Publica la comunidad, Primera publicación y
+ * Avisos abiertos. Sin aportes o sin avisos, los que se pudieron leer.
+ */
+export function indicadoresHoja(r: Resumen, aportes: Aportes | null, avisos: AvisosPanel | null, hoy: string): Indicador[] {
+  const arriba = new Set(indicadoresPortada(r, aportes, hoy).map((i) => i.clave));
+  const todos = [...indicadores(r, hoy), ...(aportes ? indicadoresAportes(aportes) : []), ...(avisos ? [indicadorAvisos(avisos)] : [])];
+  return todos.filter((i) => !arriba.has(i.clave));
+}
+
 export function notaSemana(lista: Indicador[]): string {
   return lista.some((i) => i.clave !== "comunidad" && i.cambio) ? "Comparado con hace una semana" : "Primera semana: aún sin comparación";
 }
@@ -473,7 +541,7 @@ export function renglonesGestionar(g: Gestionar): RenglonGestionar[] {
     { clave: "personas", titulo: "Personas", total: g.personas, href: "/admin/personas", detalle: unir([contar(g.personas_nuevas, "nueva", "nuevas"), contar(g.nunca_entraron, "nunca entró", "nunca entraron"), contar(g.correo_con_problema, "correo rebota o se quejó", "correos rebotan o se quejaron")], "Nada que atender") },
     { clave: "lugares", titulo: "Lugares", total: g.lugares, href: "/admin/lugares", detalle: unir([contar(g.lugares_sin_fecha, "sin fecha próxima", "sin fecha próxima"), contar(g.lugares_ocultos, "oculto", "ocultos"), contar(g.lugares_privados, "privado", "privados")], "Todos con fecha próxima") },
     { clave: "eventos", titulo: "Eventos", total: g.eventos, href: "/admin/eventos", detalle: unir([contar(g.eventos_sin_imagen, "sin imagen", "sin imagen")], g.eventos ? "Todos con imagen" : "Ninguno próximo") },
-    { clave: "artistas", titulo: "Artistas", total: g.artistas, href: "/admin/artistas", detalle: unir([contar(g.artistas_llevados, "llevado por su gente", "llevados por su gente"), contar(g.invitaciones, "invitación", "invitaciones"), contar(g.artistas_ocultos, "oculto", "ocultos")], "Ninguno llevado por su gente") },
+    { clave: "artistas", titulo: "Artistas", total: g.artistas, href: "/admin/artistas", detalle: unir([contar(g.artistas_llevados, "llevado por su gente", "llevados por su gente"), contar(g.artistas_ocultos, "oculto", "ocultos")], "Ninguno llevado por su gente") },
   ];
 }
 

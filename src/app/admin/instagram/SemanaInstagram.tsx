@@ -1,8 +1,11 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import HojaDia from "@/components/instagram/HojaDia";
+import HojaSugerencia from "@/components/instagram/HojaSugerencia";
+import useAlDia from "@/components/instagram/useAlDia";
+import Girando from "@/components/ui/Girando";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import Cabecera from "@/components/ui/Cabecera";
 import { Chip } from "@/components/ui/Chip";
@@ -11,10 +14,10 @@ import { IconoCaret, IconoPin } from "@/components/ui/Iconos";
 import Renglon from "@/components/ui/Renglon";
 import renglonCss from "@/components/ui/Renglon.module.css";
 import lista from "@/components/Lista.module.css";
-import { REFRESCO_MS } from "@/lib/redes/reglas";
 import admin from "../admin.module.css";
 import { HojaCiudades, recordarCiudad } from "../CabeceraLista";
 import type { CiudadPanel } from "../consultas";
+import RenglonFalta from "./RenglonFalta";
 import type { DiaSemana, Semana } from "./semana";
 import styles from "./SemanaInstagram.module.css";
 
@@ -27,13 +30,20 @@ const unir = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).
  * publicadas · 4 programadas · el domingo descansa») y un renglón por día con la tarjeta en pequeño, el nombre, «Lun 5 · 7:00 pm · Artista», cómo
  * va, el aviso pendiente y, si ya salió, lo que dio y «Ver». Tocar un día abre su hoja (`HojaDia`). Mientras algo se publica, la semana se
  * refresca sola cada 20 s y al volver a la app.
+ * OL-488 (bitácora 520): los días que ya pasaron sin publicación van en una línea gris («Mié 7 · antes de armar la semana»); de hoy en adelante,
+ * un día sin publicación trae lo que sugiere la regla (su hoja: «Publicar ahora» hoy, «Programar» a su hora) o, si nadie tiene material,
+ * «Nadie con material para hoy», que abre «Falta material»; y al final de la semana, el renglón «Falta material» (quién se quedó fuera por falta
+ * de foto o portada, con «Pedírselo» y «Subir yo»).
  */
-export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestanas, abrir, conexion }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; semana: Semana | null; cual: "esta" | "viene"; pestanas: ReactNode; abrir: string | null; conexion?: ReactNode }) {
+export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestanas, abrir, conexion, usuarioId = "" }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; semana: Semana | null; cual: "esta" | "viene"; pestanas: ReactNode; abrir: string | null; conexion?: ReactNode; usuarioId?: string }) {
   const router = useRouter();
   const ruta = usePathname();
   const params = useSearchParams();
   const [hojaCiudad, setHojaCiudad] = useState(false);
   const [dia, setDia] = useState<string | null>(abrir);
+  const [sugerida, setSugerida] = useState<string | null>(null);
+  const [verFalta, setVerFalta] = useState(false);
+  const falta = semana?.falta?.fichas.length ? semana.falta : null;
   // La memoria de pantalla (canon): volver de una ficha repone la semana elegida y el desplazamiento.
   useMemoriaPantalla<{ cual: "esta" | "viene" }>(null, { cual }, () => undefined);
   const ir = (cambios: Record<string, string | null>) => {
@@ -45,20 +55,15 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
     const consulta = s.toString();
     router.replace(consulta ? `${ruta}?${consulta}` : ruta, { scroll: false });
   };
-  const hayEnCamino = !!semana?.dias.some((d) => d.estado === "publicando");
-  useEffect(() => {
-    const refrescar = () => {
-      if (document.visibilityState === "visible") router.refresh();
-    };
-    document.addEventListener("visibilitychange", refrescar);
-    const reloj = hayEnCamino ? window.setInterval(refrescar, REFRESCO_MS) : null;
-    return () => {
-      document.removeEventListener("visibilitychange", refrescar);
-      if (reloj) window.clearInterval(reloj);
-    };
-  }, [hayEnCamino, router]);
+  // OL-488 (añadido): mientras un día se publica, cada 5 s se pregunta por su trabajo y la semana se refresca en cuanto termina (y al volver).
+  useAlDia((semana?.dias ?? []).flatMap((d) => (d.estado === "publicando" && d.trabajoId ? [{ id: d.trabajoId, reintentando: !!d.reintentando }] : [])), () => router.refresh());
 
-  const renglon = (d: DiaSemana) => (
+  const renglon = (d: DiaSemana) =>
+    d.pasado ? (
+      <li key={d.id} className={styles.pasado}>
+        {d.pasado}
+      </li>
+    ) : (
     <Renglon
       key={d.id}
       href={d.href}
@@ -67,7 +72,10 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
       titulo={d.nombre}
       onClick={(e) => {
         e.preventDefault();
-        if (!d.id.startsWith("sin-")) setDia(d.id);
+        if (d.sugerencia) setSugerida(d.fecha);
+        else if (d.nadie) {
+          if (d.nadie.abreFalta) setVerFalta(true);
+        } else if (!d.id.startsWith("sin-")) setDia(d.id);
       }}
       accion={
         d.estado === "publicado" && d.permalink ? (
@@ -78,11 +86,12 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
       }
     >
       <span className={renglonCss.envuelve}>{d.cuando}</span>
-      <span className={unir(renglonCss.envuelve, d.estado === "publicado" && styles.hecho)}>{d.lineaEstado}</span>
+      <span className={unir(renglonCss.envuelve, d.estado === "publicado" && styles.hecho, (d.sugerencia || d.nadie?.abreFalta) && styles.falta)}>{d.estado === "publicando" ? <Girando texto={d.lineaEstado} /> : d.lineaEstado}</span>
       {d.aviso && <span className={unir(renglonCss.envuelve, d.aviso.falta && styles.falta)}>{d.aviso.texto}</span>}
       {d.medida && <span className={renglonCss.envuelve}>{d.medida}</span>}
     </Renglon>
-  );
+    );
+  const laSugerida = semana?.dias.find((d) => d.fecha === sugerida)?.sugerencia ?? null;
 
   return (
     <>
@@ -115,7 +124,8 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
           onElegir={(slug) => {
             setHojaCiudad(false);
             recordarCiudad(slug);
-            if (slug !== ciudad.slug) ir({ ciudad: slug ?? "todas", dia: null });
+            // OL-495: cambiar de ciudad no cambia de pestaña (filtrar no es navegar): la semana se queda aunque la otra ciudad no tenga nada.
+            if (slug !== ciudad.slug) ir({ ciudad: slug ?? "todas", dia: null, pestana: "semana" });
           }}
           onCerrar={() => setHojaCiudad(false)}
         />
@@ -131,9 +141,11 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
           <Grupo titulo={semana.rango} detalle="7 días">
             {semana.dias.map(renglon)}
           </Grupo>
+          {falta && <RenglonFalta falta={falta} usuarioId={usuarioId} abierta={verFalta} onAbrir={() => setVerFalta(true)} onCerrar={() => setVerFalta(false)} />}
         </>
       )}
       {dia && <HojaDia id={dia} onCerrar={() => setDia(null)} onCambio={() => router.refresh()} />}
+      {laSugerida && semana && <HojaSugerencia ciudad={semana.ciudad} sugerencia={laSugerida} onCerrar={() => setSugerida(null)} onCambio={() => router.refresh()} />}
     </>
   );
 }

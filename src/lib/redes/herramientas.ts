@@ -5,7 +5,7 @@ import { cargarParaCartel } from "../carteles/cargar";
 import { publicarEnPagina } from "../facebook/api";
 import { cupo, publicar, publicarCarrusel } from "../instagram/api";
 import { PORTADA, type ImagenCarrusel } from "../instagram/carrusel";
-import { cargarFicha, cargarSemana, dibujarFicha, imagenesDeSemana } from "../instagram/ficha";
+import { cargarFicha, cargarSemana, dibujarFicha, fichaConMaterial, imagenesDeSemana } from "../instagram/ficha";
 import { armarImagen, bajarCartel, encajarCartel } from "../instagram/imagen";
 import { tokenPorPeticion } from "../instagram/token";
 import { enviarPush, marcarDireccionMuerta, pushActivo, type AvisoPush } from "../push";
@@ -75,6 +75,7 @@ export function herramientasReales(): Herramientas {
     publicarEnPagina: async (p) => publicarEnPagina(p, await conToken()),
     cargarFicha: (db, tipo, id, ahora) => cargarFicha(db, tipo, id, ahora),
     dibujarFicha: (f, formato, ahora) => dibujarFicha(f, formato, ahora),
+    conMaterial: (f) => fichaConMaterial(f),
     cargarSemana: (db, eventos, ahora) => cargarSemana(db, eventos, ahora),
     imagenesSemana: (s, ahora) => imagenesDeSemana(s, ahora),
     avisar: avisarAlTelefono,

@@ -34,7 +34,7 @@ export async function run({ as, check, expectError, query }) {
   const instante = async (fecha, hora, zona = MX) => (await uno("select (($1::date + $2::time) at time zone $3)::text as t", [fecha, hora, zona])).t;
   const servicio = (sql, valores) => as("service_role", null, () => query(sql, valores));
   const lugar = async (nombre, ciudad) =>
-    (await servicio("insert into public.lugares (nombre, tipo, lat, lng, ciudad, portada, descripcion, redes) values ($1, 'foro', 22.15, -100.97, $2, 'https://x.test/l.jpg', $3, '[]') returning id", [nombre, ciudad, LARGA])).rows[0].id;
+    (await servicio("insert into public.lugares (nombre, tipo, lat, lng, ciudad, portada, descripcion, redes) values ($1, 'foro', 22.15, -100.97, $2, 'https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/l.jpg', $3, '[]') returning id", [nombre, ciudad, LARGA])).rows[0].id;
   const L1 = await lugar("Foro Miercoles", "Ciudad Miercoles Prueba");
   const L2 = await lugar("Foro Miercoles Madrid", "Ciudad Miercoles Madrid");
   const L3 = await lugar("Foro Miercoles Detectada", "Ciudad Miercoles Detectada");

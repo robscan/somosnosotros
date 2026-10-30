@@ -14,6 +14,7 @@ import { leerEstadoTrabajo, leerReciente, type EstadoTrabajo, type Reciente } fr
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { cargarParaHoja } from "./datos";
+import { cargarSinSalir } from "./sinSalir";
 import type { EventoIg } from "@/lib/instagram/texto";
 
 /**
@@ -68,7 +69,7 @@ const sinProgramados = (ahora: Date) => `pedido->>casilla.is.null,siguiente_en.l
 async function ultimoTrabajo(supabase: Supabase, eventoId: string, ahora: Date): Promise<EstadoTrabajo | null> {
   const { data } = await supabase
     .from("redes_trabajos")
-    .select("id, red, formato, estado, pedido, resultado, error")
+    .select("id, red, formato, estado, pedido, resultado, error, intentos, fallos")
     .eq("evento_id", eventoId)
     .gte("creado_en", new Date(ahora.getTime() - 86_400_000).toISOString())
     .or(sinProgramados(ahora))
@@ -116,12 +117,29 @@ export async function prepararInstagram(eventoId: string): Promise<Preparado> {
   };
 }
 
-/** Cómo va un trabajo (la hoja lo pregunta cada 20 s mientras está en camino, y al volver a la app). */
+/** Cómo va un trabajo (la hoja lo pregunta cada 5 s mientras está en camino, y al volver a la app). */
 export async function estadoTrabajo(id: string): Promise<EstadoTrabajo | null> {
   const s = esUuid(id) ? await sesionAdmin() : null;
   if (!s) return null;
-  const { data } = await s.supabase.from("redes_trabajos").select("id, red, formato, estado, pedido, resultado, error").eq("id", id).maybeSingle<Record<string, unknown>>();
+  const { data } = await s.supabase.from("redes_trabajos").select("id, red, formato, estado, pedido, resultado, error, intentos, fallos").eq("id", id).maybeSingle<Record<string, unknown>>();
   return leerEstadoTrabajo(data);
+}
+
+/**
+ * OL-488: cómo van varios trabajos a la vez (la lista y la semana lo preguntan cada 5 s mientras algo dice «Publicando…»): su estado y si van en
+ * otro intento. Lo que no se pudo leer no sale (quien pregunta lo deja como estaba).
+ */
+export async function estadosTrabajos(ids: string[]): Promise<Record<string, { estado: EstadoTrabajo["estado"]; reintentando: boolean }>> {
+  const validos = Array.isArray(ids) ? [...new Set(ids.filter((x) => esUuid(x)))].slice(0, 50) : [];
+  const s = validos.length ? await sesionAdmin() : null;
+  if (!s) return {};
+  const { data } = await s.supabase.from("redes_trabajos").select("id, red, formato, estado, pedido, resultado, error, intentos, fallos").in("id", validos);
+  const fuera: Record<string, { estado: EstadoTrabajo["estado"]; reintentando: boolean }> = {};
+  for (const f of (data ?? []) as Record<string, unknown>[]) {
+    const e = leerEstadoTrabajo(f);
+    if (e) fuera[e.id] = { estado: e.estado, reintentando: e.reintentando };
+  }
+  return fuera;
 }
 
 /** `imagenes`: las claves del carrusel en el orden de la hoja (OL-464); sin ellas, una imagen como siempre. `repetir`: ya se confirmó (OL-465). */
@@ -220,6 +238,52 @@ export async function publicarEnFacebook(eventoId: string, texto: string | null 
   if (ya && !repetir) return { ok: true, id: null, yaEstaba: true };
   const propio = ig.formato !== "9x16" && typeof texto === "string" && texto.trim() ? texto.trim().slice(0, 5000) : null;
   return encolar(s.supabase, eventoId, "facebook", ig.formato === "9x16" ? "9x16" : "4x5", { texto: propio }, repetir);
+}
+
+/** Lo que dice «Volver a publicar lo que se quedó sin salir» (OL-496): cuántos quedaron en la cola, cuántos ya iban y cuáles no se pudieron guardar. */
+export type Vueltos = { ok: true; enCamino: number; yaIban: number; fallaron: string[] } | { ok: false; mensaje: string };
+
+/**
+ * OL-496 (hallazgo 3 de la bitácora 527): al reconectar Instagram, vuelve a poner en la cola lo que se quedó sin salir esta semana por la
+ * conexión caducada. La lista se recalcula aquí (`cargarSinSalir`, la misma de la hoja) y solo se toman los `ids` que siguen en ella: lo que
+ * ya volvió a salir, va en camino o ya empezó no se repite. Cada uno vuelve como entró: el día de la semana de Instagram con
+ * `instagram_semana_ahora` (sale ya, con lo que se decidió en su hoja), y lo demás con `redes_encolar` y su mismo pedido, sin `p_repetir`: si
+ * entre tanto otro toque o el latido ya lo puso en camino, la base dice «duplicado» y no se guarda otro (cuenta como «ya iba»).
+ */
+export async function volverAPublicar(ids: string[]): Promise<Vueltos> {
+  const pedidos = Array.isArray(ids) ? new Set(ids.filter((x) => esUuid(x)).slice(0, 50)) : new Set<string>();
+  const s = pedidos.size ? await sesionAdmin() : null;
+  if (!s) return { ok: false, mensaje: "Solo la administración publica en Instagram." };
+  const { lista } = await cargarSinSalir(s.supabase, new Date());
+  const elegidos = lista.filter((x) => pedidos.has(x.id));
+  let enCamino = 0;
+  let yaIban = pedidos.size - elegidos.length; // los que ya no están en la lista: salieron, van en camino o ya no se pueden
+  const fallaron: string[] = [];
+  for (const x of elegidos) {
+    if (x.casilla) {
+      const resto = Object.fromEntries(Object.entries(x.pedido).filter(([k]) => !["casilla", "tipo", "eventos"].includes(k)));
+      const { data, error } = await s.supabase.rpc("instagram_semana_ahora", { p_casilla: x.casilla, p_pedido: resto });
+      if (error?.code === "55000") yaIban++;
+      else if (error || !data) fallaron.push(x.id);
+      else enCamino++;
+      continue;
+    }
+    const { data, error } = await s.supabase.rpc("redes_encolar", { p_evento: x.evento_id, p_red: x.red, p_formato: x.formato, p_pedido: x.pedido, p_repetir: false });
+    const r = (data ?? {}) as { id?: string; duplicado?: unknown };
+    if (error || (!r.id && !r.duplicado)) fallaron.push(x.id);
+    else if (r.duplicado) yaIban++;
+    else enCamino++;
+  }
+  if (enCamino) {
+    try {
+      const h = await headers();
+      const origen = origenPropio(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
+      after(() => dispararPaso(origen, { ruta: "/api/redes/correr" }));
+    } catch {
+      console.warn("redes: no se pudo pedir el primer intento; lo toma el latido");
+    }
+  }
+  return { ok: true, enCamino, yaIban, fallaron };
 }
 
 export type Guardado = { ok: true; nombre: string } | { ok: false; mensaje: string };

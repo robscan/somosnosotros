@@ -5,6 +5,7 @@ import Boton from "@/components/ui/Boton";
 import CampoLargo from "@/components/ui/CampoLargo";
 import Casilla from "@/components/ui/Casilla";
 import { Chip, Chips } from "@/components/ui/Chip";
+import Girando from "@/components/ui/Girando";
 import Grupo from "@/components/ui/Grupo";
 import Hoja from "@/components/ui/Hoja";
 import hoja from "@/components/ui/Hoja.module.css";
@@ -69,7 +70,7 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
   }, [id, vuelta]);
 
   const listo = prep?.ok ? prep : null;
-  // Mientras se publica: preguntar cada 20 s (si la pantalla se ve) y al volver a la app.
+  // Mientras se publica: preguntar cada 5 s (si la pantalla se ve) y al volver a la app (OL-488).
   const publicando = listo?.estado === "publicando";
   const alCambiar = useRef(onCambio);
   useEffect(() => {
@@ -82,10 +83,13 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
       setVuelta((n) => n + 1);
       alCambiar.current?.();
     };
+    const alMostrar = (e: PageTransitionEvent) => e.persisted && otraVez();
     document.addEventListener("visibilitychange", otraVez);
+    window.addEventListener("pageshow", alMostrar);
     const reloj = window.setInterval(otraVez, REFRESCO_MS);
     return () => {
       document.removeEventListener("visibilitychange", otraVez);
+      window.removeEventListener("pageshow", alMostrar);
       window.clearInterval(reloj);
     };
   }, [publicando]);
@@ -391,7 +395,7 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
               {listo.estado === "publicando" && (
                 <p className={`${admin.hecho} ${propia.enCamino}`} role="status">
                   <IconoInstagram width={22} height={22} />
-                  <span>Instagram: publicando…</span>
+                  <Girando texto={listo.reintentando ? "Instagram: reintentando…" : "Instagram: publicando…"} />
                 </p>
               )}
               {listo.estado === "quitado" && (

@@ -4,6 +4,9 @@ import { leerParametrosCiudad } from "../ciudadParametros";
 import { pasoAgendas } from "./agendas";
 import { pasoArtistas } from "./artistas";
 import { pasoCarteles } from "./carteles";
+import type { CuentaGraph } from "./descubrir";
+import { pasoFichas } from "./fichas";
+import type { AlmacenFichas } from "./fichasImagen";
 import type { ClienteApi } from "./claude";
 import { FalloCorrida, pasoLugares, type CiudadRutina, type Contexto, type SalidaPaso } from "./lugares";
 import type { Mapbox } from "./mapbox";
@@ -31,7 +34,8 @@ import { pasoShowcase, type ContextoSinCiudad } from "./showcase";
  *
  * OL-430: «Buscar artistas» (`artistas.ts`) es una rutina más de una ciudad; «Investigar» del Showcase (`showcase.ts`) es la única sin ciudad
  * (la corrida `showcase` lleva `parametros.artista_id`). Las dos dan pasos de hasta 120 s (una llamada que abre catálogos o páginas tarda más
- * que una búsqueda corta). OL-444: «Buscar carteles» (`carteles.ts`) también, por lo mismo (y baja las imágenes que propone).
+ * que una búsqueda corta). OL-444: «Buscar carteles» (`carteles.ts`) también, por lo mismo (y baja las imágenes que propone). OL-489:
+ * «Completar fichas» (`fichas.ts`) igual: lee Instagram, baja imágenes y llama al modelo por ficha.
  */
 
 export type Dependencias = {
@@ -50,10 +54,15 @@ export type Dependencias = {
   dormir?: (ms: number) => Promise<void>;
   /** Lo que la lectura de la cartelera cuenta además (OL-451; el guion de la Mac y las pruebas). */
   anotarCartelera?: Contexto["anotarCartelera"];
+  /** «Completar fichas» (OL-489): dónde esperan las imágenes propuestas (por omisión, el bucket `fotos` con `db`) y la cuenta de Instagram
+   *  con la que se lee Business Discovery (la de «Conectar Instagram»; sin ella, solo se leen sitios). */
+  almacenFichas?: AlmacenFichas;
+  cuentaInstagram?: () => Promise<CuentaGraph | null>;
 };
 
 /** Las rutinas de una ciudad. Un tipo que no esté aquí ni abajo falla con «Este botón todavía no tiene rutina». */
-const RUTINAS: Record<string, (ctx: Contexto) => Promise<SalidaPaso>> = { lugares: pasoLugares, agendas: pasoAgendas, artistas: pasoArtistas, carteles: pasoCarteles };
+const RUTINAS: Record<string, (ctx: ContextoMotor) => Promise<SalidaPaso>> = { lugares: pasoLugares, agendas: pasoAgendas, artistas: pasoArtistas, carteles: pasoCarteles, fichas: pasoFichas };
+type ContextoMotor = Contexto & { almacen?: AlmacenFichas; cuentaInstagram?: () => Promise<CuentaGraph | null> };
 /** Las que no son de una ciudad (OL-430): «Investigar» a un artista del Showcase. */
 const RUTINAS_SIN_CIUDAD: Record<string, (ctx: ContextoSinCiudad) => Promise<SalidaPaso>> = { showcase: pasoShowcase };
 
@@ -174,7 +183,7 @@ export async function correrUnPaso(dep: Dependencias, reloj: () => number = Date
   const plazo =
     fila.tipo === "agendas"
       ? (dep.plazoAgendasMs ?? PLAZO_PASO_AGENDAS_MS)
-      : fila.tipo === "artistas" || fila.tipo === "showcase" || fila.tipo === "carteles"
+      : fila.tipo === "artistas" || fila.tipo === "showcase" || fila.tipo === "carteles" || fila.tipo === "fichas"
         ? (dep.plazoInvestigarMs ?? PLAZO_PASO_INVESTIGAR_MS)
         : dep.plazoMs;
   const hasta = empezo + plazo - MARGEN_GUARDAR_MS;
@@ -211,7 +220,7 @@ export async function correrUnPaso(dep: Dependencias, reloj: () => number = Date
       const ciudad = await leerCiudad(dep.db, fila.ciudad);
       if (!ciudad) return fallar("La ciudad ya no está");
       if (ciudad.estado === "cerrada") return fallar("La ciudad está cerrada");
-      salida = await rutina({ ...contexto, ciudad });
+      salida = await rutina({ ...contexto, ciudad, almacen: dep.almacenFichas, cuentaInstagram: dep.cuentaInstagram });
     }
     return await guardar(dep, fila, turno, salida.terminada ? "terminada" : "corriendo", salida.resumen, usd);
   } catch (e) {

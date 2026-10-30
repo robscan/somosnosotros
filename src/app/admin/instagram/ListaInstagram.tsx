@@ -1,11 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import HojaInstagram from "@/components/instagram/HojaInstagram";
+import useAlDia from "@/components/instagram/useAlDia";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Cabecera from "@/components/ui/Cabecera";
 import { Chip } from "@/components/ui/Chip";
+import Girando from "@/components/ui/Girando";
 import Grupo from "@/components/ui/Grupo";
 import { IconoCaret, IconoFacebook, IconoPin } from "@/components/ui/Iconos";
 import Renglon from "@/components/ui/Renglon";
@@ -14,7 +16,7 @@ import lista from "@/components/Lista.module.css";
 import { HojaCiudades, recordarCiudad } from "../CabeceraLista";
 import type { CiudadPanel } from "../consultas";
 import { ESTADO_FACEBOOK, type ClaveFacebook } from "@/lib/instagram/frases";
-import { preguntaRepetir, REFRESCO_MS } from "@/lib/redes/reglas";
+import { preguntaRepetir } from "@/lib/redes/reglas";
 import { publicarEnFacebook, type Encolado } from "./acciones";
 import type { Sugerencia } from "./datos";
 
@@ -27,11 +29,15 @@ const PALABRAS = { una: "evento", varias: "eventos", nota: "Cuenta los eventos d
  * OL-461: en «Ya en Instagram», cada renglón dice cómo va en Facebook y, si no está ahí, lleva el botón «Publicar en Facebook» (el icono de
  * Facebook a la derecha, como el «Voy» de las listas): publica la misma imagen en la página y el renglón lo dice.
  * OL-465 (bitácora 497): publicar va en segundo plano: el renglón dice «Publicando…» (o «Facebook: publicando…») mientras el trabajo está en la
- * cola, y la lista se refresca sola cada 20 s mientras lo haya y al volver a la app. Si ese evento ya se publicó en Facebook hace menos de 15
- * minutos, el botón pregunta antes de repetir.
+ * cola, y la lista se refresca sola mientras lo haya y al volver a la app. Si ese evento ya se publicó en Facebook hace menos de 15 minutos, el
+ * botón pregunta antes de repetir.
+ * OL-488 (añadido del founder del 2026-10-29): «Publicando…» (o «Reintentando…», si la cola va en otro intento) lleva su cargador (`ui/Girando`), y la
+ * lista pregunta cada 5 s por esos trabajos y se refresca en cuanto terminan (`useAlDia`): «Publicado» con su enlace o el error con su frase.
  * OL-471 (bitácora 503): `conexion`, el bloque «Conexión» (`ConexionInstagram`), va bajo la cabecera y arriba de la lista.
+ * OL-495 (bitácora 527): con la semana vacía por falta de material, `sinMaterial` (la línea que lo dice y el renglón «Falta material» con su hoja,
+ * `SemanaSinMaterial`) va arriba de la lista; después, la lista para publicar uno a mano.
  */
-export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio, conexion, pestanas }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null; conexion?: ReactNode; pestanas?: ReactNode }) {
+export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, conteo, vacio, conexion, pestanas, sinMaterial = null }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; para: Sugerencia[]; ya: Sugerencia[]; abrir: string | null; conteo: string | null; vacio: string | null; conexion?: ReactNode; pestanas?: ReactNode; sinMaterial?: ReactNode }) {
   const router = useRouter();
   const [hojaCiudad, setHojaCiudad] = useState(false);
   const [evento, setEvento] = useState<string | null>(abrir);
@@ -65,19 +71,8 @@ export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, cont
     return !!r && !r.ok && "duplicado" in r;
   };
   const faltaFacebook = (s: Sugerencia) => !!s.facebook && s.facebook.estado !== "publicada" && s.facebook.estado !== "publicando" && !hecho(s)?.ok;
-  // Mientras algo está en la cola: la lista se refresca cada 20 s (si la pantalla se ve) y al volver a la app.
-  const hayEnCamino = para.some((s) => s.publicando) || ya.some((s) => s.publicando);
-  useEffect(() => {
-    const refrescar = () => {
-      if (document.visibilityState === "visible") router.refresh();
-    };
-    document.addEventListener("visibilitychange", refrescar);
-    const reloj = hayEnCamino ? window.setInterval(refrescar, REFRESCO_MS) : null;
-    return () => {
-      document.removeEventListener("visibilitychange", refrescar);
-      if (reloj) window.clearInterval(reloj);
-    };
-  }, [hayEnCamino, router]);
+  // Mientras algo está en la cola: cada 5 s se pregunta por esos trabajos y la lista se refresca en cuanto terminan (y al volver a la app).
+  useAlDia([...para, ...ya].flatMap((s) => s.enCamino ?? []), () => router.refresh());
   const renglon = (s: Sugerencia) => {
     const facebook = lineaFacebook(s);
     return (
@@ -101,8 +96,8 @@ export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, cont
         {/* El cuándo también se parte en dos renglones: con el botón de Facebook al lado, a 320 no cabe en uno (OL-461). */}
         <span className={renglonCss.envuelve}>{s.cuando}</span>
         <span className={renglonCss.envuelve}>{s.donde}</span>
-        <span className={renglonCss.envuelve}>{s.linea}</span>
-        {facebook && <span className={renglonCss.envuelve}>{facebook}</span>}
+        <span className={renglonCss.envuelve}>{s.publicando && /…$/.test(s.linea) ? <Girando texto={s.linea} /> : s.linea}</span>
+        {facebook && <span className={renglonCss.envuelve}>{/publicando…$/.test(facebook) ? <Girando texto={facebook} /> : facebook}</span>}
       </Renglon>
     );
   };
@@ -132,6 +127,7 @@ export default function ListaInstagram({ ciudad, ciudades, para, ya, abrir, cont
         />
       )}
       {conexion}
+      {sinMaterial}
       {conteo && <p className={lista.conteo}>{conteo}</p>}
       {vacio && <p className={lista.vacio}>{vacio}</p>}
       {para.length > 0 && (

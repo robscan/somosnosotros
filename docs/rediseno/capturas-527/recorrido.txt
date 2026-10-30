@@ -1,0 +1,79 @@
+Conectada (RESPALDO_INSTAGRAM_CONEXION=todo, la semana con seis programadas)
+  ✓ sin ?ciudad ni galleta, abre con la ciudad de quien entra (en el respaldo no tiene ninguna: la inicial)
+  ✓ abre en «Semana»: tiene algo de hoy en adelante
+  ✓ el botón dice «Instagram conectado como @smsnstrsapp»
+  ✓ conectada, el bloque «Conexión» no ocupa la pantalla
+  ✓ 01-conectada: sin desplazamiento a lo ancho
+  ✓ 01-conectada: el botón de la conexión mide 44×44 y cabe
+  → 01-conectada.png
+  ✓ la hoja: la cuenta y «conectada desde el 7 de octubre»
+  ✓ la hoja: qué puede (publicar y leer cuentas)
+  ✓ «Reconectar» lleva al inicio de sesión de Meta
+  ✓ 02-hoja-conectada: sin desplazamiento a lo ancho
+  ✓ 02-hoja-conectada: el botón de la conexión mide 44×44 y cabe
+  → 02-hoja-conectada.png
+  ✓ la ✕ cierra la hoja
+  ✓ 03-hoja-ciudades: sin desplazamiento a lo ancho
+  ✓ 03-hoja-ciudades: el botón de la conexión mide 44×44 y cabe
+  → 03-hoja-ciudades.png
+  ✓ «Todas las ciudades» se elige en la hoja (no es la de omisión)
+  ✓ elegir San Luis la guarda en la misma memoria de Administración (sn_admin_ciudad)
+  ✓ eligió «Eventos»: al volver a abrir la pantalla en la misma sesión, abre en «Eventos»
+  ✓ y al volver a «Semana», abre en «Semana»
+  ✓ con ?ciudad=queretaro (en «Eventos») el chip dice «Querétaro» (con su acento)
+  ✓ y la lista «No hay eventos por publicar en Querétaro…»
+  ✓ 04-queretaro: sin desplazamiento a lo ancho
+  ✓ 04-queretaro: el botón de la conexión mide 44×44 y cabe
+  → 04-queretaro.png
+  ✓ 05-conectada-320: sin desplazamiento a lo ancho
+  ✓ 05-conectada-320: el botón de la conexión mide 44×44 y cabe
+  → 05-conectada-320.png
+  ✓ a 320 el botón se toca y abre la hoja
+  ✓ 05-conectada-768: sin desplazamiento a lo ancho
+  ✓ 05-conectada-768: el botón de la conexión mide 44×44 y cabe
+  → 05-conectada-768.png
+  ✓ a 768 el botón se toca y abre la hoja
+Sin conexión (sin fila y sin la llave de respaldo)
+  ✓ el botón dice «Instagram sin conexión»
+  ✓ el renglón «Sin conexión · Conecta Instagram para publicar» se queda a la vista
+  ✓ 06-sin-conexion: sin desplazamiento a lo ancho
+  ✓ 06-sin-conexion: el botón de la conexión mide 44×44 y cabe
+  → 06-sin-conexion.png
+  ✓ la hoja trae «Conectar Instagram»
+  ✓ 07-hoja-sin-conexion: sin desplazamiento a lo ancho
+  ✓ 07-hoja-sin-conexion: el botón de la conexión mide 44×44 y cabe
+  → 07-hoja-sin-conexion.png
+Caducó (RESPALDO_INSTAGRAM_CONEXION=caduco: conectada hace 9 días, el último trabajo falló esta mañana por permiso)
+  ✓ el botón dice «La conexión con Instagram caducó»
+  ✓ el renglón «Instagram dejó de publicar · La conexión caducó el mié 7 de oct: reconecta»
+  ✓ 08-caduco: sin desplazamiento a lo ancho
+  ✓ 08-caduco: el botón de la conexión mide 44×44 y cabe
+  → 08-caduco.png
+  ✓ la hoja dice cuándo dejó de publicar
+  ✓ 09-hoja-caduco: sin desplazamiento a lo ancho
+  ✓ 09-hoja-caduco: el botón de la conexión mide 44×44 y cabe
+  → 09-hoja-caduco.png
+Semana vacía (sin RESPALDO_INSTAGRAM_SEMANA: nadie con la ficha completa)
+  ✓ 390: la semana no tiene nada de hoy en adelante: abre en «Eventos»
+  ✓ 390: la línea de la semana vacía
+  ✓ 390: el renglón «Falta material» arriba de la lista
+  ✓ 10-semana-vacia-390: sin desplazamiento a lo ancho
+  ✓ 10-semana-vacia-390: el botón de la conexión mide 44×44 y cabe
+  → 10-semana-vacia-390.png
+  ✓ tocar «Falta material» abre su hoja
+  ✓ 11-hoja-falta-material: sin desplazamiento a lo ancho
+  ✓ 11-hoja-falta-material: el botón de la conexión mide 44×44 y cabe
+  → 11-hoja-falta-material.png
+  ✓ 320: la semana no tiene nada de hoy en adelante: abre en «Eventos»
+  ✓ 320: la línea de la semana vacía
+  ✓ 320: el renglón «Falta material» arriba de la lista
+  ✓ 10-semana-vacia-320: sin desplazamiento a lo ancho
+  ✓ 10-semana-vacia-320: el botón de la conexión mide 44×44 y cabe
+  → 10-semana-vacia-320.png
+  ✓ 768: la semana no tiene nada de hoy en adelante: abre en «Eventos»
+  ✓ 768: la línea de la semana vacía
+  ✓ 768: el renglón «Falta material» arriba de la lista
+  ✓ 10-semana-vacia-768: sin desplazamiento a lo ancho
+  ✓ 10-semana-vacia-768: el botón de la conexión mide 44×44 y cabe
+  → 10-semana-vacia-768.png
+  ✓ sin errores de página ni de consola
