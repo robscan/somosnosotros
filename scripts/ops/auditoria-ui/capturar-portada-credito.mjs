@@ -2,7 +2,7 @@
 // (a 320, 390, 430 y 1280; con dirección el nombre enlaza y abre el aviso de salida), la ficha dentro de la hoja de Lugares y la edición de lugar y
 // de artista con el campo «Crédito de la foto» (con su ✕ y su ayuda), guardando con toques reales: el respaldo anota lo que llega y se comprueba
 // que el cambio lleva `portada_credito`. La app compilada contra el respaldo local y la sesión de la cuenta de administración del respaldo. Chrome
-// real (playwright-core, channel: 'chrome'), a 2×. Toques reales (clics de Playwright en coordenadas de la página).
+// real (playwright-core, channel: 'chrome'), a 2×. Toques reales (clics de Playwright: el ratón en el centro del control, tras comprobar que nada lo tapa).
 // node scripts/ops/auditoria-ui/capturar-portada-credito.mjs <raíz del árbol> <carpeta de salida>
 // Compila `.next` contra el respaldo (SIN_BUILD=1 usa el `.next` que ya hay, compilado por este script: el respaldo va en el puerto 8878). Correrlo
 // en un árbol SIN `.env` (con él se niega a correr).
@@ -38,7 +38,19 @@ const fixture = pathToFileURL(path.join(AQUI, "respaldo-local/fixture.mjs")).hre
 const servidor = pathToFileURL(path.join(AQUI, "respaldo-local/server.mjs")).href;
 fs.writeFileSync(
   arranque,
-  `import { tablas } from ${JSON.stringify(fixture)};
+  `import http from "node:http";
+import fs from "node:fs";
+import { tablas } from ${JSON.stringify(fixture)};
+// El registro del respaldo corta cada cuerpo a 300 letras: los cambios a lugares y artistas se anotan enteros aquí, para comprobar lo guardado.
+const emitir = http.Server.prototype.emit;
+http.Server.prototype.emit = function (tipo, req, ...resto) {
+  if (tipo === "request" && req.method === "PATCH" && /^\\/rest\\/v1\\/(lugares|artistas)\\?/.test(req.url)) {
+    let cuerpo = "";
+    req.on("data", (d) => (cuerpo += d));
+    req.on("end", () => fs.appendFileSync(${JSON.stringify(path.join(tmp, "escrituras.jsonl"))}, JSON.stringify({ url: req.url, cuerpo }) + "\\n"));
+  }
+  return emitir.call(this, tipo, req, ...resto);
+};
 const lugar = (slug) => tablas.lugares.find((l) => l.slug === slug);
 lugar("teatro-de-la-paz").portada_credito = ${JSON.stringify(CREDITO_PAZ)};
 lugar("museo-del-ferrocarril-jesus-garcia-corona").portada_credito = ${JSON.stringify(CREDITO_FERRO)};
@@ -129,6 +141,16 @@ const medirCredito = (page) =>
       color: getComputedStyle(c).color,
       anterior: t?.className?.toString().slice(0, 40),
       desborde: document.documentElement.scrollWidth - innerWidth,
+      // Si algo se sale a lo ancho: qué es (el elemento visible que más se pasa del borde derecho).
+      quienDesborda: (() => {
+        let peor = null;
+        for (const el of document.querySelectorAll("body *")) {
+          const r = el.getBoundingClientRect();
+          if (r.width && r.right > innerWidth + 1 && (!peor || r.right > peor.r)) peor = { r: Math.round(r.right), el: `${el.tagName} ${String(el.className).slice(0, 50)}` };
+        }
+        return peor;
+      })(),
+      enLaColumna: Math.round(rc.right) <= innerWidth,
     };
   });
 
@@ -142,8 +164,7 @@ try {
     await foto(page, `${n}-lugar-credito-${ancho}`);
     if (ancho === 390) {
       // 04 · Tocar el nombre: el aviso de salida dice a qué sitio se va (EnlaceExterno), como cualquier enlace a un tercero.
-      const caja = await page.locator("[class*='credito'] a").boundingBox();
-      await page.mouse.click(caja.x + caja.width / 2, caja.y + caja.height / 2);
+      await page.locator("[class*='credito'] a").click();
       const aviso = page.getByRole("dialog");
       await aviso.waitFor();
       console.log("     aviso:", (await aviso.innerText()).replace(/\s+/g, " ").slice(0, 200));
@@ -203,19 +224,21 @@ try {
     console.log(`     editar lugar ${ancho}: valor «${await campo.inputValue()}»`);
     await foto(page, `${n}-editar-lugar-credito-${ancho}`);
     if (ancho === 390) {
-      const x = await page.locator("input[name='portada_credito'] + button").boundingBox();
+      // Clics de Playwright sobre el control: lo lleva a la vista y toca en su centro con el ratón (un toque real; antes comprueba que nada lo tape).
+      const equis = page.locator("input[name='portada_credito'] + button");
+      const x = await equis.boundingBox();
       console.log("     ✕:", JSON.stringify({ ancho: Math.round(x.width), alto: Math.round(x.height) }));
-      await page.mouse.click(x.x + x.width / 2, x.y + x.height / 2);
-      console.log(`     tras la ✕: «${await campo.inputValue()}»`);
+      await equis.click();
+      console.log(`     tras la ✕: «${await campo.inputValue()}», con el foco en el campo: ${await campo.evaluate((el) => el === document.activeElement)}`);
       await page.keyboard.type("Luis Martínez · CC BY 4.0 (https://commons.wikimedia.org/wiki/File:Paz_demo.jpg)");
       await campo.evaluate((el) => el.closest("div")?.scrollIntoView({ block: "center" }));
       await foto(page, "12-editar-lugar-credito-escrito-390");
-      const guardar = await page.getByRole("button", { name: "Guardar cambios" }).boundingBox();
-      await page.mouse.click(guardar.x + guardar.width / 2, guardar.y + guardar.height / 2);
+      await page.getByRole("button", { name: "Guardar cambios" }).click();
       await page.waitForURL((u) => !u.pathname.endsWith("/editar"), { timeout: 20000 }).catch(() => {});
-      const registro = await (await fetch(`${respaldo}/__registro`)).json();
-      const i = registro.findLastIndex((l) => l.startsWith("PATCH /rest/v1/lugares"));
-      console.log("     guardó:", i >= 0 ? registro[i + 1]?.match(/"portada_credito":("[^"]*"|null)/)?.[0] ?? "sin portada_credito" : "no hubo PATCH");
+      await page.waitForTimeout(500);
+      const escrituras = fs.existsSync(path.join(tmp, "escrituras.jsonl")) ? fs.readFileSync(path.join(tmp, "escrituras.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l)) : [];
+      const ultima = escrituras.findLast((w) => w.url.startsWith("/rest/v1/lugares"));
+      console.log("     guardó:", ultima ? JSON.stringify({ portada_credito: JSON.parse(ultima.cuerpo).portada_credito }) : "no hubo PATCH");
     }
     await ctx.close();
   }
@@ -231,8 +254,7 @@ try {
     await foto(page, `${n}-editar-artista-credito-${ancho}`);
     if (ancho === 390) {
       // Quitar la portada (toque real en «Quitar la portada»): el campo se va con ella.
-      const quitar = await page.getByRole("button", { name: "Quitar la portada" }).boundingBox();
-      await page.mouse.click(quitar.x + quitar.width / 2, quitar.y + quitar.height / 2);
+      await page.getByRole("button", { name: "Quitar la portada" }).click();
       console.log("     sin portada, campos de crédito:", await page.locator("input[name='portada_credito']").count());
     }
     await ctx.close();

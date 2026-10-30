@@ -227,14 +227,15 @@
 .credito {
   grid-area: credito;
   min-width: 0;
-  padding: var(--espacio-3) var(--gutter) 0;
+  padding: calc((var(--toque-min) - 1em) / 2) var(--gutter) 0;
   color: var(--texto-suave);
   font-size: var(--letra-xs);
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
+/* El relleno cuenta desde la caja de la letra (1em), no desde el renglón: así llega a 44 con cualquier letra. */
 .creditoEnlace {
-  padding-block: calc((var(--toque-min) - 1.4em) / 2);
+  padding-block: calc((var(--toque-min) - 1em) / 2);
   color: inherit;
   text-decoration: underline;
 }
