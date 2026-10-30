@@ -1,0 +1,17 @@
+/* El botón de la conexión de Administración › Instagram (OL-495; firmado en el prototipo de OL-493, variante C, bitácora 525): el redondo plano
+   de 44 de las barras (ui/BotonIcono) con el punto de la barra de la app (Sesion/punto), aquí del color del estado:
+   verde, conectada (--ok); gris, sin conexión (--texto-suave); rojo, caducó o le faltan permisos (--error). */
+.boton > .ok {
+  background: var(--ok);
+}
+.boton > .no {
+  background: var(--texto-suave);
+}
+.boton > .mal {
+  background: var(--error);
+}
+
+/* La nota de la hoja, cuando sigue a la tarjeta de la cuenta (sin la lista de lo que puede, que ya deja su aire): el mismo aire que la lista. */
+.nota {
+  margin-top: var(--espacio-3);
+}

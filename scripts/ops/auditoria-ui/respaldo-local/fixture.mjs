@@ -1079,6 +1079,8 @@ const conBusqueda = (filas, q, campo = "nombre") => (q ? filas.filter((x) => sin
 const sinAcentosPanel = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const llevaFicha = (tabla, col, id, t) => { const l = t[tabla].filter((c) => c[col] === id); return { lleva: l[0] ? personasPanel(t).find((p) => p.id === l[0].perfil_id)?.nombre ?? null : null, lleva_n: l.length }; };
 Object.assign(rpcs, {
+  // OL-495: Administración › Instagram abre con la ciudad de quien entra (en la base solo la llama la llave de servicio).
+  ciudad_de_persona: ({ p_perfil }, t) => ciudadDePersona(p_perfil, t),
   panel_lugares: ({ p_ciudad = null, p_buscar = null, p_limite = 30, p_desde = 0 }, t) => {
     const filas = conBusqueda(enCiudad(t.lugares, p_ciudad), p_buscar).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     return filas.slice(p_desde, p_desde + p_limite).map((l) => ({ id: l.id, nombre: l.nombre, foto: l.portada ?? null, tipo: l.tipo, detalle: l.detalle ?? null, visible: l.visible !== false, privado: !!l.privado, origen: l.origen ?? null, proximas: proximasDe("lugar_id", l.id, t), ...llevaFicha("lugares_cuentas", "lugar_id", l.id, t), total: filas.length }));
@@ -1499,13 +1501,18 @@ tablas.instagram_ubicaciones = [{ tipo: "ciudad", clave: "san-luis-potosi", pagi
   const modo = process.env.RESPALDO_INSTAGRAM_CONEXION;
   const permisos = ["business_management", "instagram_basic", "instagram_content_publish", "instagram_manage_insights", "pages_manage_posts", "pages_read_engagement", "pages_show_list"];
   tablas.instagram_conexion =
-    modo === "todo" || modo === "sin-lectura"
-      ? [{ id: 1, pagina_id: "1374800000000461", pagina_nombre: "Somos Nosotrxs", instagram_id: "17841400000000458", instagram_usuario: "smsnstrsapp", permisos: modo === "todo" ? permisos : permisos.filter((x) => x !== "instagram_manage_insights"), conectado_por: ADMIN, conectado_en: hace(0) }]
+    modo === "todo" || modo === "sin-lectura" || modo === "caduco"
+      ? [{ id: 1, pagina_id: "1374800000000461", pagina_nombre: "Somos Nosotrxs", instagram_id: "17841400000000458", instagram_usuario: "smsnstrsapp", permisos: modo === "sin-lectura" ? permisos.filter((x) => x !== "instagram_manage_insights") : permisos, conectado_por: ADMIN, conectado_en: hace(modo === "caduco" ? 9 : 0) }]
       : [];
 }
 // OL-465: la cola de redes (vacía al arrancar) y lo leído de los carteles; `redes_reciente` y `redes_encolar` con la regla de la base (en camino, o
 // publicado hace menos de 15 minutos; un carrusel cuenta como 4:5). Los permisos y el candado reales, en `supabase/tests/pg/redes-en-cola.test.mjs`.
-tablas.redes_trabajos = [];
+// OL-495: con `RESPALDO_INSTAGRAM_CONEXION=caduco`, la conexión es de hace 9 días y el último trabajo de Instagram falló esta mañana por permiso
+// (el token caducó; después de lo publicado el lunes y el martes con `RESPALDO_INSTAGRAM_SEMANA=1`): la pantalla lo dice como «caducó».
+tablas.redes_trabajos =
+  process.env.RESPALDO_INSTAGRAM_CONEXION === "caduco"
+    ? [{ id: "eeee0495-0000-4000-8000-000000000001", evento_id: E.master, red: "instagram", formato: "4x5", pedido: {}, estado: "fallido", avance: {}, resultado: null, intentos: 1, fallos: 1, error: "permiso", turno: 1, ocupada_hasta: null, siguiente_en: hace(0.3), avisado_en: hace(0.3), pedido_por: ADMIN, creado_en: hace(0.3), actualizado_en: hace(0.3), terminado_en: hace(0.3) }]
+    : [];
 tablas.cartel_lecturas = [];
 const recienteRedes = (t, evento, red, formato) => {
   const vivo = t.redes_trabajos.some((x) => x.evento_id === evento && ["en_cola", "publicando"].includes(x.estado) && x.formato === formato && (x.red === red || (red === "facebook" && x.red === "instagram" && x.pedido?.facebook === true)));

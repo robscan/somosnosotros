@@ -1,9 +1,12 @@
 /**
- * El bloque «Conexión» de Administración › Instagram (OL-471, bitácora 503): el componente de verdad (`ConexionInstagram`, con el estado que arma
- * `estadoConexion`) en cada estado, a 390×844, con toques reales (el ratón en coordenadas):
- *   · sin conexión propia: «Usa el token de respaldo» y «Conectar Instagram», que lleva a /api/instagram/conectar (navegación completa);
- *   · conectada: la cuenta, qué puede y desde cuándo, y «Reconectar»;
- *   · sin el permiso de leer cuentas: lo dice en rojo y pide reconectar;
+ * La conexión de Administración › Instagram (OL-471, bitácora 503; OL-495, bitácora 527): los componentes de verdad (`ConexionInstagram`, el
+ * botón `BotonConexion` y su hoja `HojaConexion`, con el estado que arma `estadoConexion`) en cada estado, a 390×844, con toques reales (el ratón
+ * en coordenadas):
+ *   · conectada: el botón con el punto verde y «Instagram conectado como @smsnstrsapp»; ningún renglón; la hoja con la cuenta, desde cuándo, qué
+ *     puede y «Reconectar», que lleva a /api/instagram/conectar (navegación completa);
+ *   · sin conexión propia (con la llave de respaldo): punto gris, sin renglón; sin ninguna: el renglón con «Conectar Instagram»;
+ *   · sin el permiso de leer cuentas: punto rojo y el renglón en rojo que pide reconectar;
+ *   · caducó (el último trabajo falló por permiso después de conectar): punto rojo, «Instagram dejó de publicar» y la hoja con «Reconectar»;
  *   · la vuelta de Meta: «Instagram quedó conectado», o la frase llana del error, que se cierra con la ✕; la dirección pierde `?conectado` / `?error`.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
@@ -30,8 +33,8 @@ before(async () => {
       resolveDir: join(root, "src/app/admin/instagram"),
       loader: "tsx",
       contents: `
-      import React from 'react';import {createRoot} from 'react-dom/client';
-      import ConexionInstagram from './ConexionInstagram';
+      import React, { useState } from 'react';import {createRoot} from 'react-dom/client';
+      import ConexionInstagram, { BotonConexion, HojaConexion } from './ConexionInstagram';
       import { claveDeVuelta, estadoConexion } from '../../../lib/instagram/conexionEstado';
       import plantilla from '../../../components/ui/Plantilla.module.css';
       import admin from '../admin.module.css';
@@ -39,14 +42,17 @@ before(async () => {
       const q = new URLSearchParams(location.search);
       const todos = ['business_management', 'instagram_basic', 'instagram_content_publish', 'instagram_manage_insights', 'pages_manage_posts', 'pages_read_engagement', 'pages_show_list'];
       const modo = q.get('modo');
-      const fila = modo === 'todo' || modo === 'sin-lectura'
-        ? { pagina_nombre: 'Somos Nosotrxs', instagram_usuario: 'smsnstrsapp', permisos: modo === 'todo' ? todos : todos.filter((x) => x !== 'instagram_manage_insights'), conectado_en: '2026-10-28T17:00:00Z' }
+      const fila = modo === 'todo' || modo === 'sin-lectura' || modo === 'caduco'
+        ? { pagina_nombre: 'Somos Nosotrxs', instagram_usuario: 'smsnstrsapp', permisos: modo === 'sin-lectura' ? todos.filter((x) => x !== 'instagram_manage_insights') : todos, conectado_en: '2026-10-28T17:00:00Z' }
         : null;
-      const estado = estadoConexion(fila, true, new Date('2026-10-28T18:00:00Z'));
+      const ultimo = modo === 'caduco' ? { estado: 'fallido', error: 'permiso', terminado_en: '2026-10-28T17:30:00Z' } : null;
+      const estado = estadoConexion(fila, q.get('respaldo') !== '0', new Date('2026-10-28T18:00:00Z'), ultimo);
       const vuelta = q.get('conectado') === '1' ? 'conectado' : claveDeVuelta(q.get('error'));
-      createRoot(document.getElementById('root')).render(
-        <main className={plantilla.paginaContenido + ' ' + admin.listado}><h1>Instagram</h1><ConexionInstagram estado={estado} vuelta={vuelta} /></main>
-      );
+      function Pantalla() {
+        const [hoja, setHoja] = useState(false);
+        return <main className={plantilla.paginaContenido + ' ' + admin.listado}><h1>Instagram</h1><BotonConexion estado={estado} onAbrir={() => setHoja(true)} /><ConexionInstagram estado={estado} vuelta={vuelta} />{hoja && <HojaConexion estado={estado} onCerrar={() => setHoja(false)} />}</main>;
+      }
+      createRoot(document.getElementById('root')).render(<Pantalla />);
     `,
     },
   });
@@ -81,7 +87,7 @@ async function abrir(t, consulta = "") {
   p.on("pageerror", (e) => errores.push(e.message));
   t.after(() => assert.deepEqual(errores, []));
   await p.goto(origin + "/" + consulta);
-  await p.getByRole("heading", { name: "Conexión" }).waitFor();
+  await p.getByRole("heading", { name: "Instagram" }).waitFor();
   return p;
 }
 /** Un toque real en el centro del elemento; antes comprueba que es él quien lo recibe (nada encima). */
@@ -95,45 +101,89 @@ async function tocar(p, l) {
 }
 const texto = (l) => l.innerText().then((x) => x.replace(/\s+/g, " ").trim());
 const renglon = (p) => p.locator("main li");
-/** El color del detalle del renglón y el de `--error`. */
+const boton = (p) => p.locator('main button[aria-haspopup="dialog"]');
+const hoja = (p) => p.getByRole("dialog", { name: "Conexión con Instagram" });
+/** El fondo del punto del botón, el color del detalle del renglón (si hay) y los de --ok, --texto-suave y --error. */
 const colores = (p) =>
   p.evaluate(() => {
-    const prueba = document.createElement("span");
-    prueba.style.color = "var(--error)";
-    document.body.append(prueba);
-    const r = [getComputedStyle(document.querySelector("main li small")).color, getComputedStyle(prueba).color];
-    prueba.remove();
-    return r;
+    const de = (v) => {
+      const s = document.createElement("span");
+      s.style.color = `var(${v})`;
+      document.body.append(s);
+      const c = getComputedStyle(s).color;
+      s.remove();
+      return c;
+    };
+    const small = document.querySelector("main li small");
+    return { punto: getComputedStyle(document.querySelector('main button[aria-haspopup="dialog"] > span')).backgroundColor, detalle: small ? getComputedStyle(small).color : null, ok: de("--ok"), gris: de("--texto-suave"), rojo: de("--error") };
   });
 
-test("sin conexión propia: dice que usa el token de respaldo y «Conectar Instagram» lleva al inicio de sesión de Meta", async (t) => {
-  const p = await abrir(t);
-  assert.equal(await texto(renglon(p)), "Sin conexión propia Usa el token de respaldo Conectar Instagram");
-  const boton = p.getByRole("link", { name: "Conectar Instagram" });
-  assert.equal(await boton.getAttribute("href"), "/api/instagram/conectar");
-  const caja = await boton.boundingBox();
-  assert.ok(caja.height >= 44, `el botón mide 44 o más (${caja.height})`);
-  const fila = await renglon(p).boundingBox();
-  assert.ok(caja.x + caja.width <= fila.x + fila.width + 0.5 && fila.x >= 15.5 && fila.x + fila.width <= 390 - 15.5, "el renglón y su botón caben con el aire de la columna");
-  assert.equal(await p.getByRole("status").count() + (await p.getByRole("alert").count()), 0, "sin vuelta, ninguna línea de aviso");
-  await tocar(p, boton);
-  await p.waitForURL(/\/api\/instagram\/conectar$/);
-});
-
-test("conectada: la cuenta, qué puede y desde cuándo, y «Reconectar»", async (t) => {
+test("conectada: punto verde, sin renglón y la hoja con la cuenta, desde cuándo, qué puede y «Reconectar»", async (t) => {
   const p = await abrir(t, "?modo=todo");
-  assert.equal(await texto(renglon(p)), "Conectada como Somos Nosotrxs (@smsnstrsapp) Publica y lee cuentas · desde el 28 de octubre Reconectar");
-  const [detalle, rojo] = await colores(p);
-  assert.notEqual(detalle, rojo, "con todo, el detalle no va en rojo");
-  await tocar(p, p.getByRole("link", { name: "Reconectar" }));
+  assert.equal(await boton(p).getAttribute("aria-label"), "Instagram conectado como @smsnstrsapp");
+  const caja = await boton(p).boundingBox();
+  assert.ok(caja.width >= 44 && caja.height >= 44, `el botón mide 44 o más (${caja.width}×${caja.height})`);
+  const c = await colores(p);
+  assert.equal(c.punto, c.ok, "el punto va en verde");
+  assert.equal(await renglon(p).count(), 0, "conectada, ningún renglón ocupa la pantalla");
+  await tocar(p, boton(p));
+  await hoja(p).waitFor();
+  assert.match(await texto(hoja(p)), /@smsnstrsapp Página Somos Nosotrxs · conectada desde el 28 de octubre Puede Publicar en Instagram Publicar en la página de Facebook Leer otras cuentas para completar fichas/i);
+  const reconectar = hoja(p).getByRole("link", { name: "Reconectar" });
+  assert.equal(await reconectar.getAttribute("href"), "/api/instagram/conectar");
+  assert.ok((await reconectar.boundingBox()).height >= 44, "«Reconectar» mide 44 o más");
+  await tocar(p, reconectar);
   await p.waitForURL(/\/api\/instagram\/conectar$/);
 });
 
-test("sin el permiso de leer cuentas: lo dice en rojo y pide reconectar", async (t) => {
+test("la ✕ cierra la hoja", async (t) => {
+  const p = await abrir(t, "?modo=todo");
+  await tocar(p, boton(p));
+  await hoja(p).waitFor();
+  await tocar(p, hoja(p).getByRole("button", { name: "Cerrar" }));
+  await hoja(p).waitFor({ state: "detached" });
+});
+
+test("con la llave de respaldo: punto gris y sin renglón; sin ninguna, el renglón con «Conectar Instagram»", async (t) => {
+  const p = await abrir(t);
+  assert.equal(await boton(p).getAttribute("aria-label"), "Instagram sin conexión propia");
+  const c = await colores(p);
+  assert.equal(c.punto, c.gris, "el punto va en gris");
+  assert.equal(await renglon(p).count(), 0);
+  const q = await abrir(t, "?respaldo=0");
+  assert.equal(await boton(q).getAttribute("aria-label"), "Instagram sin conexión");
+  assert.equal(await texto(renglon(q)), "Sin conexión Conecta Instagram para publicar Conectar Instagram");
+  const enlace = renglon(q).getByRole("link", { name: "Conectar Instagram" });
+  assert.equal(await enlace.getAttribute("href"), "/api/instagram/conectar");
+  const caja = await enlace.boundingBox();
+  assert.ok(caja.height >= 44, `el botón mide 44 o más (${caja.height})`);
+  const fila = await renglon(q).boundingBox();
+  assert.ok(caja.x + caja.width <= fila.x + fila.width + 0.5 && fila.x >= 15.5 && fila.x + fila.width <= 390 - 15.5, "el renglón y su botón caben con el aire de la columna");
+  assert.equal((await q.getByRole("status").count()) + (await q.getByRole("alert").count()), 0, "sin vuelta, ninguna línea de aviso");
+  await tocar(q, boton(q));
+  await hoja(q).waitFor();
+  await tocar(q, hoja(q).getByRole("link", { name: "Conectar Instagram" }));
+  await q.waitForURL(/\/api\/instagram\/conectar$/);
+});
+
+test("sin el permiso de leer cuentas: punto rojo y el renglón en rojo que pide reconectar", async (t) => {
   const p = await abrir(t, "?modo=sin-lectura");
   assert.match(await texto(renglon(p)), /Falta el permiso para leer cuentas: reconecta Reconectar$/);
-  const [detalle, rojo] = await colores(p);
-  assert.equal(detalle, rojo, "el detalle va en el color de error");
+  const c = await colores(p);
+  assert.equal(c.detalle, c.rojo, "el detalle va en el color de error");
+  assert.equal(c.punto, c.rojo, "el punto va en rojo");
+});
+
+test("caducó: punto rojo, «Instagram dejó de publicar» y la hoja con «Reconectar»", async (t) => {
+  const p = await abrir(t, "?modo=caduco");
+  assert.equal(await boton(p).getAttribute("aria-label"), "La conexión con Instagram caducó");
+  assert.equal(await texto(renglon(p)), "Instagram dejó de publicar La conexión caducó el mié 28 de oct: reconecta Reconectar");
+  const c = await colores(p);
+  assert.equal(c.punto, c.rojo, "el punto va en rojo");
+  await tocar(p, boton(p));
+  await hoja(p).waitFor();
+  assert.match(await texto(hoja(p)), /@smsnstrsapp Dejó de publicar el mié 28 de oct: la conexión caducó/);
+  assert.equal(await hoja(p).getByRole("link", { name: "Reconectar" }).count(), 1);
 });
 
 test("la vuelta: «Instagram quedó conectado» y la dirección pierde ?conectado", async (t) => {
@@ -144,13 +194,13 @@ test("la vuelta: «Instagram quedó conectado» y la dirección pierde ?conectad
 });
 
 test("la vuelta con error: su frase llana, sin nada técnico, y la ✕ la cierra", async (t) => {
-  const p = await abrir(t, "?error=pagina");
+  const p = await abrir(t, "?error=pagina&respaldo=0");
   const aviso = p.getByRole("alert");
   assert.equal(await texto(aviso), "La cuenta que entró no administra la página Somos Nosotrxs.");
   await p.waitForFunction(() => !location.search.includes("error"));
   await tocar(p, aviso.getByRole("button", { name: "Cerrar el aviso" }));
   await aviso.waitFor({ state: "detached" });
-  assert.equal(await texto(renglon(p)), "Sin conexión propia Usa el token de respaldo Conectar Instagram", "el renglón sigue");
+  assert.equal(await texto(renglon(p)), "Sin conexión Conecta Instagram para publicar Conectar Instagram", "el renglón sigue");
 });
 
 test("una clave de error que no conocemos no pinta nada", async (t) => {

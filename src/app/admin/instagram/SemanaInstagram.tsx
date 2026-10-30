@@ -3,7 +3,6 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import HojaDia from "@/components/instagram/HojaDia";
-import HojaMaterial from "@/components/instagram/HojaMaterial";
 import HojaSugerencia from "@/components/instagram/HojaSugerencia";
 import useAlDia from "@/components/instagram/useAlDia";
 import Girando from "@/components/ui/Girando";
@@ -15,10 +14,10 @@ import { IconoCaret, IconoPin } from "@/components/ui/Iconos";
 import Renglon from "@/components/ui/Renglon";
 import renglonCss from "@/components/ui/Renglon.module.css";
 import lista from "@/components/Lista.module.css";
-import { SIN_FOTO } from "@/lib/imagen";
 import admin from "../admin.module.css";
 import { HojaCiudades, recordarCiudad } from "../CabeceraLista";
 import type { CiudadPanel } from "../consultas";
+import RenglonFalta from "./RenglonFalta";
 import type { DiaSemana, Semana } from "./semana";
 import styles from "./SemanaInstagram.module.css";
 
@@ -125,7 +124,8 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
           onElegir={(slug) => {
             setHojaCiudad(false);
             recordarCiudad(slug);
-            if (slug !== ciudad.slug) ir({ ciudad: slug ?? "todas", dia: null });
+            // OL-495: cambiar de ciudad no cambia de pestaña (filtrar no es navegar): la semana se queda aunque la otra ciudad no tenga nada.
+            if (slug !== ciudad.slug) ir({ ciudad: slug ?? "todas", dia: null, pestana: "semana" });
           }}
           onCerrar={() => setHojaCiudad(false)}
         />
@@ -141,28 +141,11 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
           <Grupo titulo={semana.rango} detalle="7 días">
             {semana.dias.map(renglon)}
           </Grupo>
-          {falta && (
-            <Grupo>
-              <Renglon
-                href="/admin/instagram"
-                foto={falta.fichas.find((f) => f.foto)?.foto ?? SIN_FOTO}
-                redonda
-                titulo="Falta material"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setVerFalta(true);
-                }}
-              >
-                <span className={renglonCss.envuelve}>{falta.resumen}</span>
-                <span className={unir(renglonCss.envuelve, styles.falta)}>Pedírselo o subirla tú</span>
-              </Renglon>
-            </Grupo>
-          )}
+          {falta && <RenglonFalta falta={falta} usuarioId={usuarioId} abierta={verFalta} onAbrir={() => setVerFalta(true)} onCerrar={() => setVerFalta(false)} />}
         </>
       )}
       {dia && <HojaDia id={dia} onCerrar={() => setDia(null)} onCambio={() => router.refresh()} />}
       {laSugerida && semana && <HojaSugerencia ciudad={semana.ciudad} sugerencia={laSugerida} onCerrar={() => setSugerida(null)} onCambio={() => router.refresh()} />}
-      {verFalta && falta && <HojaMaterial falta={falta} usuarioId={usuarioId} onCerrar={() => setVerFalta(false)} onCambio={() => router.refresh()} />}
     </>
   );
 }

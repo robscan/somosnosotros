@@ -1,0 +1,9 @@
+/* El renglón de las pestañas de Administración › Instagram (OL-495, bitácora 527): «Semana · Eventos» (ui/Pestanas) y, a su derecha, el botón de
+   la conexión. Una rejilla de dos columnas: las pestañas ocupan lo que sobra y el botón lo suyo, con el aire de la columna a la derecha. Junto a
+   la ciudad no cabe (a 390 se veían enteros 3 de 4 controles, bitácora 525). */
+.tira {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding-right: var(--gutter);
+}
