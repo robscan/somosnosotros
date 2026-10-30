@@ -36,9 +36,26 @@ export type FichaIG = {
   portada: Buffer | null;
   proxima?: { mes: string; dia: string; texto: string } | null;
   semana?: string | null;
+  /** Segunda vuelta: la razón de la publicación («Artista de la semana», «Lugar destacado»…), arriba del nombre, en versalitas. */
+  razon?: string | null;
+  /** Segunda vuelta: la línea opcional bajo el nombre, una frase de la descripción (hasta ~90 letras, cortada por palabra). */
+  frase?: string | null;
 };
 
-export type SemanaIG = { id: string; ciudad: string; titulo: string; mes: string; dias: string; eventos: { cuando: string; titulo: string }[]; barras: string[] };
+export type SemanaIG = { id: string; ciudad: string; titulo: string; mes: string; dias: string; eventos: { cuando: string; titulo: string }[]; barras: string[]; carteles?: (Buffer | null)[] };
+
+/**
+ * La frase de la descripción para la línea opcional: la primera oración si cabe en `max` letras; si no, hasta la última palabra que cabe, con «…».
+ * Sin descripción, null.
+ */
+export function fraseDe(descripcion: string | null | undefined, max = 90): string | null {
+  const limpia = (descripcion ?? "").replace(/\s+/g, " ").trim();
+  if (!limpia) return null;
+  const primera = limpia.match(/^.+?[.!?…](?=\s|$)/)?.[0] ?? limpia;
+  if ([...primera].length <= max) return primera;
+  const corte = primera.slice(0, max - 1).replace(/\s+\S*$/, "").replace(/[,;:·\s]+$/, "");
+  return `${corte}…`;
+}
 
 export type Dibujada = { png: Buffer; jpeg: Buffer; ancho: number; alto: number; color: Color; nodos: Nodo[]; recortado: boolean; contrastes: { texto: string; ratio: number }[] };
 export type Nodo = { texto: string; x: number; y: number; ancho: number; alto: number };
@@ -86,10 +103,10 @@ const tri = (x: number, yb: number, w: number, a: number, fill: string) => `<pol
 
 let idClip = 0;
 /** La foto recortada a una forma (`d` de un path o un círculo); sin foto, el fondo `relleno` con el símbolo SN en su tinta. */
-async function fotoEn(forma: { circulo: [number, number, number] } | { arco: [number, number, number, number] }, foto: Buffer | null, relleno: string): Promise<string> {
+async function fotoEn(forma: { circulo: [number, number, number] } | { arco: [number, number, number, number] } | { rect: [number, number, number, number] }, foto: Buffer | null, relleno: string): Promise<string> {
   const id = `f${++idClip}`;
-  const caja = "circulo" in forma ? { x: forma.circulo[0] - forma.circulo[2], y: forma.circulo[1] - forma.circulo[2], w: 2 * forma.circulo[2], h: 2 * forma.circulo[2] } : { x: forma.arco[0], y: forma.arco[1] - forma.arco[3], w: forma.arco[2], h: forma.arco[3] };
-  const figura = "circulo" in forma ? circ(...forma.circulo, "#000") : `<path d="${arcoD(...forma.arco)}"/>`;
+  const caja = "circulo" in forma ? { x: forma.circulo[0] - forma.circulo[2], y: forma.circulo[1] - forma.circulo[2], w: 2 * forma.circulo[2], h: 2 * forma.circulo[2] } : "arco" in forma ? { x: forma.arco[0], y: forma.arco[1] - forma.arco[3], w: forma.arco[2], h: forma.arco[3] } : { x: forma.rect[0], y: forma.rect[1], w: forma.rect[2], h: forma.rect[3] };
+  const figura = "circulo" in forma ? circ(...forma.circulo, "#000") : "arco" in forma ? `<path d="${arcoD(...forma.arco)}"/>` : rect(...forma.rect, "#000");
   if (!foto) {
     // El símbolo SN al centro de la figura (como la imagen sin foto de la app), del ancho de media figura.
     const ancho = caja.w * 0.46;
@@ -178,7 +195,7 @@ export async function dibujar(v: Variante, formato: IdFormato, cosa: Cosa): Prom
   if (cosa.tipo === "semana") {
     const s = cosa.s;
     poner("ceja", `Esta semana en ${s.ciudad}`, linea(`Esta semana en ${s.ciudad}`, "media", util, 28, 20, tinta, 4, true), 0);
-    const t = ajustar(s.titulo, { fuente: "condensada-negra", ancho: util, renglones: formato === "4x5" ? 2 : 3, mayor: 120, menor: 72, parejo: true });
+    const t = ajustar(s.titulo, { fuente: "condensada-negra", ancho: util, renglones: formato === "4x5" || s.carteles ? 2 : 3, mayor: 120, menor: 72, parejo: true });
     poner("titulo", s.titulo, renglones(t, "condensada-negra", tinta, { interlineado: 0.96 }), 12);
     s.eventos.slice(0, 3).forEach((e, i) => {
       const cuando = linea(e.cuando, "media", util, 24, 20, tinta, 4, true);
@@ -201,7 +218,26 @@ export async function dibujar(v: Variante, formato: IdFormato, cosa: Cosa): Prom
         i === 0 ? 36 : 20,
       );
     });
-    selloFecha = sello(s.mes, s.dias);
+    // Con los carteles en las barras (segunda vuelta) no hay sello: las barras toman todo el ancho y la fecha la dice el título.
+    selloFecha = s.carteles ? null : sello(s.mes, s.dias);
+  } else if (cosa.f.razon) {
+    // Segunda vuelta: la razón en versalitas, el nombre, la frase (si va), qué es y dónde, la cuenta y la fecha o la semana.
+    const fi = cosa.f;
+    poner("razon", fi.razon, linea(fi.razon, "media", util, 30, 22, tinta, 5, true), 0);
+    poner("nombre", fi.nombre, renglones(nombreAjustado(fi.nombre, util), "condensada-negra", tinta, { interlineado: 0.98 }), 12);
+    if (fi.frase) poner("frase", fi.frase, renglones(ajustar(fi.frase, { fuente: "regular", ancho: util, renglones: 2, mayor: 36, menor: 28 }), "regular", tinta, { interlineado: 1.2 }), 18);
+    poner("ceja", `${fi.ceja} · ${fi.ciudad}`, linea(`${fi.ceja} · ${fi.ciudad}`, "media", util, 32, 22, tinta), fi.frase ? 20 : 18);
+    if (fi.cuenta) poner("cuenta", `@${fi.cuenta}`, linea(`@${fi.cuenta}`, "media", util, 32, 22, tinta), 6);
+    if (fi.proxima) {
+      const dato = linea(`Próxima fecha: ${fi.proxima.texto}`, "media", util, 32, 22, tinta);
+      poner("proxima", fi.proxima.texto, dato, 6);
+      selloFecha = sello(fi.proxima.mes, fi.proxima.dia);
+    }
+    if (fi.semana) {
+      const dato = linea(fi.semana, "media", util - 56, 32, 24, T.fondo);
+      const alto = dato.alto + 26;
+      poner("semana", fi.semana, { el: <div style={{ display: "flex", height: alto, padding: "13px 26px", borderRadius: 999, backgroundColor: tinta }}>{dato.el}</div>, alto }, 22);
+    }
   } else {
     const fi = cosa.f;
     poner("ceja", `${fi.ceja} · ${fi.ciudad}`, renglones(ajustar(`${fi.ceja} · ${fi.ciudad}`, { fuente: "media", ancho: util, renglones: 2, mayor: 28, menor: 20, espaciado: 4, mayusculas: true }), "media", tinta, { interlineado: 1.2, espaciado: 4 }), 0);
@@ -251,7 +287,7 @@ export async function dibujar(v: Variante, formato: IdFormato, cosa: Cosa): Prom
   const figs: string[] = [];
   const hueco = 28;
   /** Las barras de la semana (dónde quedó cada una), para poner su día al pie. */
-  const barrasSemana: { x: number; y: number; w: number; h: number; col: string }[] = [];
+  const barrasSemana: { x: number; y: number; w: number; h: number; col: string; img?: Buffer | null }[] = [];
   /** La caja más grande de proporción r (ancho:alto) que cabe en la L libre (como `colocar` de Inicio), apoyada en la repisa y en el margen. */
   const colocar = (r: number) => {
     const u1 = Math.min(util / r, repisa - selloAbajo - hueco);
@@ -309,15 +345,24 @@ export async function dibujar(v: Variante, formato: IdFormato, cosa: Cosa): Prom
       const sol = Math.min(libre * 0.6, u * 0.22, W - MARGEN - (x + w) - hueco);
       if (sol > 60) figs.push(circ(x + w + hueco + sol / 2, repisa - sol / 2, sol / 2, T.acento));
     } else {
-      // La semana: tres barras que crecen (el ritmo de Inicio), una por día, con su día al pie.
+      // La semana: tres barras que crecen (el ritmo de Inicio), una por día, con su día al pie. Con carteles, cada barra lleva el de su día.
       const cols = [T.dos, T.uno, T.acento];
       const total = Math.min(selloIzq - hueco - MARGEN, util);
       const ancho = (total - 2 * hueco) / 3;
       const alto = repisa - arriba;
-      [0.46, 0.72, 1].forEach((k, i) => barrasSemana.push({ x: MARGEN + i * (ancho + hueco), y: repisa - alto * k, w: ancho, h: alto * k, col: cols[i] }));
+      const ritmo = cosa.s.carteles ? [0.8, 0.9, 1] : [0.46, 0.72, 1];
+      ritmo.forEach((k, i) => barrasSemana.push({ x: MARGEN + i * (ancho + hueco), y: repisa - alto * k, w: ancho, h: alto * k, col: cols[i], img: cosa.s.carteles?.[i] ?? null }));
     }
   }
-  for (const g of barrasSemana) figs.unshift(rect(g.x, g.y, g.w, g.h, g.col));
+  // Con cartel, la barra es el cartel recortado y su día va en una franja de la tinta al pie (el texto nunca encima del cartel).
+  const conCartel = cosa.tipo === "semana" && !!cosa.s.carteles;
+  const franja = 58;
+  const barras: string[] = [];
+  for (const g of barrasSemana) {
+    if (conCartel) barras.push(await fotoEn({ rect: [g.x, g.y, g.w, g.h - franja] }, g.img ?? null, T.dos), rect(g.x, g.y + g.h - franja, g.w, franja, tinta));
+    else barras.push(rect(g.x, g.y, g.w, g.h, g.col));
+  }
+  figs.unshift(...barras);
   const fondoSvg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="${T.fondo}"/><defs><clipPath id="repisa"><rect width="${W}" height="${r2(repisa)}"/></clipPath></defs><g clip-path="url(#repisa)">${figs.join("")}</g></svg>`;
   const fondoPng = await sharp(Buffer.from(fondoSvg)).png().toBuffer();
 
@@ -332,11 +377,13 @@ export async function dibujar(v: Variante, formato: IdFormato, cosa: Cosa): Prom
   // El día al pie de cada barra de la semana, en la tinta que mejor se lee sobre ella.
   if (cosa.tipo === "semana")
     barrasSemana.forEach((g, i) => {
-      const t = tintaSobre(g.col);
+      const fondoDia = conCartel ? tinta : g.col;
+      const t = conCartel ? T.fondo : tintaSobre(g.col);
       const dia = cosa.s.barras[i];
       const b = linea(dia, "media", g.w - 32, 30, 20, t, 3, true);
-      contrastes.push({ texto: dia, ratio: contraste(t, g.col) });
-      capas.push(<Capa key={`dia${i}`} x={Math.round(g.x + 16)} y={Math.round(Math.min(g.y + g.h, repisa) - b.alto - 18)} ancho={Math.round(g.w - 32)}>{b.el}</Capa>);
+      contrastes.push({ texto: dia, ratio: contraste(t, fondoDia) });
+      const yDia = conCartel ? g.y + g.h - franja + (franja - b.alto) / 2 : Math.min(g.y + g.h, repisa) - b.alto - 18;
+      capas.push(<Capa key={`dia${i}`} x={Math.round(g.x + 16)} y={Math.round(yDia)} ancho={Math.round(g.w - 32)}>{b.el}</Capa>);
     });
   if (selloFecha) capas.push(<Capa key="sello" x={selloX} y={arriba} ancho={selloFecha.ancho} alto={selloFecha.alto}>{selloFecha.el}</Capa>);
   let y = yTexto;

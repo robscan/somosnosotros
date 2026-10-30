@@ -113,8 +113,8 @@ body[data-notas="cerradas"] .notas-cuerpo, body[data-notas="cerradas"] .notas-ca
 <script>
 const DATOS = /*__DATOS__*/null;
 
-const LETRAS = { hoy: "Hoy", A: "A", B: "B", C: "C" };
-const NOMBRE_VAR = { hoy: "Las plantillas de hoy", A: "Repisa", B: "Cruce", C: "Papel" };
+const LETRAS = { hoy: "Hoy", A: "A", B: "B", C: "C", A2f: "A2", A2s: "A2", A2h: "A2" };
+const NOMBRE_VAR = { hoy: "Las plantillas de hoy", A: "Repisa", B: "Cruce", C: "Papel", A2f: "Con la frase", A2s: "Sin la frase", A2h: "Historia 9:16" };
 const t = (clave) => DATOS.tarjetas[clave];
 const img = (src, alt) => `<img class="tarjeta" src="${src}" alt="${alt}" width="540">`;
 
@@ -158,6 +158,38 @@ const NOTAS = {
   hoy: `<h3>Hoy</h3><p>Lo que hace OL-479 con las piezas de «Crear cartel»: la portada a lo ancho arriba, la foto redonda sobre su borde y una paleta de «Crear cartel» elegida por el tono de la portada (durazno, cielo, papel). El founder pidió reemplazarlas en lo que publica la cuenta por un estilo propio de la línea de Inicio. Las plantillas de «Crear cartel» para eventos sin cartel de la gente <b>no se tocan</b>.</p>`,
 };
 
+/* ===== Segunda vuelta (solo A): fichas reales, la razón arriba del nombre y la frase opcional ===== */
+const S2 = () => DATOS.segunda;
+const ARTISTAS2 = [["leon", "frío (azul de su portada) · con fecha"], ["yanel", "cálido (terracota)"], ["above", "claro (olivo: texto negro)"], ["iyari", "violeta · con fecha · su foto es su logotipo"], ["carlos", "nombre de 32 letras"]];
+const LUGARES2 = [["leonora", "frío (azul pizarra)"], ["maravilla", "cálido (rojo de su letrero)"], ["sombra", "foto oscura · con eventos esta semana"], ["silva", "nombre de 44 letras"]];
+function lista2(casos, sufijo) {
+  return casos.map(([clave, que]) => {
+    const k = `${clave}-${sufijo}`;
+    const d = S2().tarjetas[k];
+    const f = S2().fichas[clave];
+    return `<section class="caso"><h2>${f.nombre} · ${que}</h2><p>${f.razon.toUpperCase()}${sufijo.startsWith("frase") ? ` · frase: «${f.frase}»` : ""} · base ${d.color.base}, banda ${d.color.banda}</p>${img(d.src, `Tarjeta de ${f.nombre}`)}</section>`;
+  }).join("") + revision2(casos.map(([c]) => `${c}-${sufijo}`));
+}
+function revision2(claves) {
+  const malas = claves.flatMap((k) => (S2().revision[k] ?? []).map((m) => `${k}: ${m}`));
+  return malas.length ? `<p class="mal ancho">${malas.join("<br>")}</p>` : `<p class="bien ancho">Revisado en las ${claves.length}: ningún texto fuera de su zona, encimado ni cortado; todo el texto a 4,5:1 o más. Ningún texto va encima de una foto o de un cartel.</p>`;
+}
+const PANTALLAS2 = [
+  { id: "s2-artistas", nombre: "2ª · Artistas reales", estados: [
+    { variante: "A2f", html: () => `<h1>Artistas reales · con la frase</h1><p>Fotos y portadas reales del Storage público. La razón arriba del nombre; debajo, una frase de su descripción (hasta 90 letras, cortada por palabra) y qué hace y dónde.</p>${lista2(ARTISTAS2, "frase-4x5")}` },
+    { variante: "A2s", html: () => `<h1>Artistas reales · sin la frase</h1><p>Lo mismo sin la línea de la descripción: la figura crece lo que deja la frase.</p>${lista2(ARTISTAS2, "sin-frase-4x5")}` },
+    { variante: "A2h", html: () => `<h1>Artistas reales · historia 9:16</h1><p>Con la frase. Todo el texto entre lo que tapa Instagram arriba (250) y abajo (340).</p>${lista2(ARTISTAS2, "frase-9x16")}` },
+  ] },
+  { id: "s2-lugares", nombre: "2ª · Lugares reales", estados: [
+    { variante: "A2f", html: () => `<h1>Lugares reales · con la frase</h1><p>La portada real del lugar dentro del arco.</p>${lista2(LUGARES2, "frase-4x5")}` },
+    { variante: "A2s", html: () => `<h1>Lugares reales · sin la frase</h1>${lista2(LUGARES2, "sin-frase-4x5")}` },
+    { variante: "A2h", html: () => `<h1>Lugares reales · historia 9:16</h1>${lista2(LUGARES2, "frase-9x16")}` },
+  ] },
+  { id: "s2-semana", nombre: "2ª · Esta semana", estados: [
+    { variante: "A2f", html: () => `<h1>«Esta semana» con los carteles reales</h1><p>Cada barra lleva el cartel de su día; el día va en una franja de la tinta al pie, nunca encima del cartel. Sin sello: la fecha la dice el título.</p><section class="caso">${img(S2().tarjetas["semana-4x5"].src, "Portada de «Esta semana» con tres carteles reales")}</section><section class="caso">${img(S2().tarjetas["semana-9x16"].src, "Historia de «Esta semana» con tres carteles reales")}</section>${revision2(["semana-4x5", "semana-9x16"])}` },
+  ] },
+];
+
 const PANTALLAS = [
   { id: "artista", nombre: "Artista 4:5", estados: ["hoy", "A", "B", "C"].map((v) => ({ variante: v, html: () => (v === "hoy" ? `<h1>Artista destacado, hoy</h1>${img(DATOS.hoy.artista, "Tarjeta de hoy de Valeria Quiroz")}` : pieza(v, "artista", "4x5", `Artista destacado · ${NOMBRE_VAR[v]}`, "Tarjeta de Valeria Quiroz: su foto en un círculo, su nombre, su cuenta y su próxima fecha")) })) },
   { id: "lugar", nombre: "Lugar 4:5", estados: ["hoy", "A", "B", "C"].map((v) => ({ variante: v, html: () => (v === "hoy" ? `<h1>Lugar destacado, hoy</h1>${img(DATOS.hoy.lugar, "Tarjeta de hoy del museo Leonora Carrington")}` : pieza(v, "lugar", "4x5", `Lugar destacado · ${NOMBRE_VAR[v]}`, "Tarjeta del Teatro de la Paz: su portada en un arco, su nombre, su cuenta y sus eventos de la semana")) })) },
@@ -182,6 +214,7 @@ const PANTALLAS = [
         ${revision([`${v}-clara-4x5`, `${v}-sinportada-4x5`, `${v}-largo-4x5`])}`,
     })),
   },
+  ...PANTALLAS2,
   {
     id: "nombres", nombre: "Medida de nombres",
     estados: [{ variante: "A", html: () => `<h1>¿Cabe el nombre?</h1><p>La regla, igual en las tres variantes: en un renglón mientras quepa a 84 px o más; si no, en dos renglones parejos (de 120 a 64). Medido con las anchuras de la propia fuente (<code>medir.ts</code>), en el ancho útil de 952.</p>
@@ -192,6 +225,10 @@ const PANTALLAS = [
     estados: [{ variante: "hoy", html: () => `<h1>Las portadas del sistema en Inicio</h1><p>Recortes de la maqueta real de Inicio (la app compilada contra el respaldo local). De aquí sale el estilo: color plano, figura sobre la línea del título, sello de fecha en su esquina, título en crema o en negro.</p><div class="junto ancho">${Object.entries(DATOS.inicio).map(([k, src]) => `<img src="${src}" alt="Portada del sistema de Inicio (${k})">`).join("")}</div>` }],
   },
 ];
+const NOTAS_A2 = `<span class="recomendada">Segunda vuelta</span>
+  <h3>Qué cambió</h3><ul><li><b>Fotos reales</b> de fichas reales (Storage público), dentro de la figura: ya no hay siluetas dibujadas.</li><li><b>La razón</b> arriba del nombre, en versalitas: ARTISTA DE LA SEMANA · ARTISTA DESTACADO · LUGAR DE LA SEMANA · LUGAR DESTACADO · ESTA SEMANA EN SAN LUIS POTOSÍ.</li><li><b>La frase</b> opcional bajo el nombre, sacada de la descripción (hasta 90 letras, cortada por palabra), con qué hace o qué es y la ciudad debajo. Con y sin ella, para elegir.</li><li>«Esta semana» lleva <b>los carteles reales</b> de sus tres eventos en las barras.</li></ul>
+  <h3>El texto y la foto</h3><p>Ningún texto va encima de una foto ni de un cartel: todo va sobre el color plano, debajo de la línea del título, y el día de cada barra en su franja de la tinta. Todo a 4,5:1 o más (lo mide cada tarjeta).</p>
+  <h3>Riesgos</h3><ul><li>Una portada oscura (Foro Sombra) deja el arco casi negro.</li><li>Si la foto de la ficha es un logotipo (IYARI), se ve como logotipo.</li><li>La primera oración larga se corta con «…»: la frase puede quedar a medias.</li></ul>`;
 const NOTAS_PANTALLA = {
   nombres: `<h3>La regla</h3><p>Ningún nombre se corta hasta 32 letras (tampoco más allá: el de 64 letras cabe en dos renglones a 84 px). Hasta unas 34 letras va en un renglón; los más largos, en dos renglones parejos.</p>`,
   inicio: `<h3>Para comparar</h3><p>Las tonalidades: medios tonos (saturación de 0,32 a 0,7), banda oscura con crema <code>#f4efd6</code> o clara con negro <code>#1a1a1a</code>, y los escalones del mismo color para las figuras (claro, oscuro, más oscuro).</p>`,
@@ -200,7 +237,7 @@ const NOTAS_PANTALLA = {
 /* ===== El armazón ===== */
 const $ = (s) => document.querySelector(s);
 const marco = $("#marco"), sel = $("#selector"), sub = $("#subselector"), notas = $("#notas-cuerpo"), medidor = $("#medidor");
-let pantalla = PANTALLAS[0], estado = pantalla.estados.find((e) => e.variante === "A") ?? pantalla.estados[0];
+let pantalla = PANTALLAS.find((p) => p.id === "s2-artistas"), estado = pantalla.estados[0];
 function chip(texto, pressed, onClick, extra = {}) {
   const b = document.createElement("button");
   b.type = "button";
@@ -214,13 +251,14 @@ function chip(texto, pressed, onClick, extra = {}) {
 }
 function pintarSelectores() {
   sel.replaceChildren(...PANTALLAS.map((p) => chip(p.nombre, p === pantalla, () => { const v = estado.variante; pantalla = p; estado = p.estados.find((e) => e.variante === v) ?? p.estados.find((e) => e.variante === "A") ?? p.estados[0]; pintarSelectores(); pintar(); })));
-  sub.replaceChildren(...pantalla.estados.map((e) => chip(NOMBRE_VAR[e.variante], e === estado, () => { estado = e; pintarSelectores(); pintar(); }, { variante: LETRAS[e.variante], rec: e.variante === "A" })));
+  sub.replaceChildren(...pantalla.estados.map((e) => chip(NOMBRE_VAR[e.variante], e === estado, () => { estado = e; pintarSelectores(); pintar(); }, { variante: LETRAS[e.variante], rec: e.variante === "A" || e.variante === "A2f" })));
 }
 function pintar() {
   // textContent y no innerHTML: innerHTML devuelve «>» como «&gt;» y rompe los selectores de hijo.
   const css = $("#base-css").content.textContent;
-  marco.srcdoc = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body data-variante="${estado.variante}"><main class="${pantalla.estados.length > 1 && ["artista", "lugar", "semana"].includes(pantalla.id) && estado.variante !== "hoy" ? "pieza" : ""}">${estado.html()}</main></body></html>`;
-  notas.innerHTML = `<p><b>${pantalla.nombre}</b> · ${LETRAS[estado.variante]} · ${NOMBRE_VAR[estado.variante]}</p>` + (NOTAS_PANTALLA[pantalla.id] ?? NOTAS[estado.variante] ?? "") + PREGUNTAS;
+  marco.srcdoc = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body data-variante="${estado.variante}"><main class="${["artista", "lugar", "semana"].includes(pantalla.id) && estado.variante !== "hoy" ? "pieza" : ""}">${estado.html()}</main></body></html>`;
+  const segunda = pantalla.id.startsWith("s2-");
+  notas.innerHTML = `<p><b>${pantalla.nombre}</b> · ${LETRAS[estado.variante]} · ${NOMBRE_VAR[estado.variante]}</p>` + (segunda ? NOTAS_A2 + PREGUNTAS2 : (NOTAS_PANTALLA[pantalla.id] ?? NOTAS[estado.variante] ?? "") + PREGUNTAS);
   marco.addEventListener("load", medir, { once: true });
   try { history.replaceState(null, "", `#${pantalla.id}/${estado.variante}`); } catch {}
 }
@@ -229,6 +267,11 @@ const PREGUNTAS = `<h3>Preguntas al founder</h3><ol>
   <li>Figuras: ¿artista = círculo, lugar = arco y semana = barras? (En Inicio el círculo es el festival; aquí es la persona, como su avatar).</li>
   <li>¿El sello de fecha va también en la tarjeta del lugar cuando tiene eventos (su próximo día), o solo en el artista y en la semana?</li>
   <li>¿«Esta semana» lleva también historia 9:16 (hoy no la tiene), y el evento del día se queda con su cartel tal cual?</li></ol>`;
+const PREGUNTAS2 = `<h3>Preguntas al founder (segunda vuelta)</h3><ol>
+  <li>¿Con la frase o sin ella? (Recomiendo con ella en artistas y sin ella en lugares, donde la frase suele repetir el tipo).</li>
+  <li>¿«Artista de la semana» y «Artista destacado» son dos cosas distintas para ti? Propuesta: «de la semana» cuando tiene fecha esos días; «destacado», cuando no.</li>
+  <li>¿La foto de la persona en el círculo, aunque la ficha tenga una portada más vistosa? (La portada solo da el color).</li>
+  <li>«Esta semana»: ¿los carteles en las barras, o mejor un carrusel donde la portada no lleve carteles?</li></ol>`;
 function medir() {
   const d = marco.contentDocument;
   if (!d) return;

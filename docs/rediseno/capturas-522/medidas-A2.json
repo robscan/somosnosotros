@@ -1,0 +1,497 @@
+{
+ "fichas": {
+  "leon": {
+   "nombre": "Un León Marinero",
+   "razon": "Artista de la semana",
+   "frase": "Proyecto solista de folk y canción de autor con raíces en San Luis Potosí, activo desde…",
+   "letras": 16
+  },
+  "yanel": {
+   "nombre": "Yanel Villarreal",
+   "razon": "Artista destacado",
+   "frase": "Artista y diseñadora potosina.",
+   "letras": 16
+  },
+  "above": {
+   "nombre": "Above The Blue",
+   "razon": "Artista destacado",
+   "frase": "Banda mexicana de rock y metal alternativo del sello Blegh Label; su sencillo más…",
+   "letras": 14
+  },
+  "iyari": {
+   "nombre": "IYARI, teatro de la vida",
+   "razon": "Artista de la semana",
+   "frase": "Compañía potosina que confía en la potencia del teatro como productor de vida.",
+   "letras": 24
+  },
+  "carlos": {
+   "nombre": "Carlos Alejandro Guevara Requena",
+   "razon": "Artista de la semana",
+   "frase": "Estudió artes en la Escuela Estatal de Artes Plásticas de San Luis Potosí.",
+   "letras": 32
+  },
+  "leonora": {
+   "nombre": "Museo Leonora Carrington",
+   "razon": "Lugar de la semana",
+   "frase": "Museo dentro del Centro de las Artes (antigua penitenciaría) dedicado a Leonora…",
+   "letras": 24
+  },
+  "maravilla": {
+   "nombre": "El Maravilla Café",
+   "razon": "Lugar de la semana",
+   "frase": "Café en el Barrio de San Miguelito, a un costado de la iglesia, con talleres para todas…",
+   "letras": 17
+  },
+  "sombra": {
+   "nombre": "Foro Sombra",
+   "razon": "Lugar destacado",
+   "frase": "Foro escénico independiente: una caja negra con piso de madera, parrilla de iluminación…",
+   "letras": 11
+  },
+  "silva": {
+   "nombre": "Museo Federico Silva Escultura Contemporánea",
+   "razon": "Lugar destacado",
+   "frase": "Museo dedicado a la escultura contemporánea y a la obra de Federico Silva, frente al…",
+   "letras": 44
+  }
+ },
+ "revision": {
+  "leon-frase-4x5": [],
+  "leon-sin-frase-4x5": [],
+  "leon-frase-9x16": [],
+  "yanel-frase-4x5": [],
+  "yanel-sin-frase-4x5": [],
+  "yanel-frase-9x16": [],
+  "above-frase-4x5": [],
+  "above-sin-frase-4x5": [],
+  "above-frase-9x16": [],
+  "iyari-frase-4x5": [],
+  "iyari-sin-frase-4x5": [],
+  "iyari-frase-9x16": [],
+  "carlos-frase-4x5": [],
+  "carlos-sin-frase-4x5": [],
+  "carlos-frase-9x16": [],
+  "leonora-frase-4x5": [],
+  "leonora-sin-frase-4x5": [],
+  "leonora-frase-9x16": [],
+  "maravilla-frase-4x5": [],
+  "maravilla-sin-frase-4x5": [],
+  "maravilla-frase-9x16": [],
+  "sombra-frase-4x5": [],
+  "sombra-sin-frase-4x5": [],
+  "sombra-frase-9x16": [],
+  "silva-frase-4x5": [],
+  "silva-sin-frase-4x5": [],
+  "silva-frase-9x16": [],
+  "semana-4x5": [],
+  "semana-9x16": []
+ },
+ "colores": {
+  "leon-frase-4x5": {
+   "origen": "#446fae",
+   "deDonde": "portada",
+   "base": "#3e659f",
+   "banda": "oscura",
+   "fondo": "#3e659f",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7c94b2",
+    "#2d4972",
+    "#1f3350",
+    "#f4efd6"
+   ]
+  },
+  "leon-sin-frase-4x5": {
+   "origen": "#446fae",
+   "deDonde": "portada",
+   "base": "#3e659f",
+   "banda": "oscura",
+   "fondo": "#3e659f",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7c94b2",
+    "#2d4972",
+    "#1f3350",
+    "#f4efd6"
+   ]
+  },
+  "leon-frase-9x16": {
+   "origen": "#446fae",
+   "deDonde": "portada",
+   "base": "#3e659f",
+   "banda": "oscura",
+   "fondo": "#3e659f",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7c94b2",
+    "#2d4972",
+    "#1f3350",
+    "#f4efd6"
+   ]
+  },
+  "yanel-frase-4x5": {
+   "origen": "#b74b38",
+   "deDonde": "portada",
+   "base": "#a94534",
+   "banda": "oscura",
+   "fondo": "#a94534",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c37f6b",
+    "#7a3225",
+    "#55231a",
+    "#f4efd6"
+   ]
+  },
+  "yanel-sin-frase-4x5": {
+   "origen": "#b74b38",
+   "deDonde": "portada",
+   "base": "#a94534",
+   "banda": "oscura",
+   "fondo": "#a94534",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c37f6b",
+    "#7a3225",
+    "#55231a",
+    "#f4efd6"
+   ]
+  },
+  "yanel-frase-9x16": {
+   "origen": "#b74b38",
+   "deDonde": "portada",
+   "base": "#a94534",
+   "banda": "oscura",
+   "fondo": "#a94534",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c37f6b",
+    "#7a3225",
+    "#55231a",
+    "#f4efd6"
+   ]
+  },
+  "above-frase-4x5": {
+   "origen": "#767c17",
+   "deDonde": "portada",
+   "base": "#a4ac20",
+   "banda": "clara",
+   "fondo": "#a4ac20",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#ccce7b",
+    "#808619",
+    "#5f6413",
+    "#1a1a1a"
+   ]
+  },
+  "above-sin-frase-4x5": {
+   "origen": "#767c17",
+   "deDonde": "portada",
+   "base": "#a4ac20",
+   "banda": "clara",
+   "fondo": "#a4ac20",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#ccce7b",
+    "#808619",
+    "#5f6413",
+    "#1a1a1a"
+   ]
+  },
+  "above-frase-9x16": {
+   "origen": "#767c17",
+   "deDonde": "portada",
+   "base": "#a4ac20",
+   "banda": "clara",
+   "fondo": "#a4ac20",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#ccce7b",
+    "#808619",
+    "#5f6413",
+    "#1a1a1a"
+   ]
+  },
+  "iyari-frase-4x5": {
+   "origen": "#3b1564",
+   "deDonde": "portada",
+   "base": "#4b1b7e",
+   "banda": "oscura",
+   "fondo": "#4b1b7e",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#84639c",
+    "#36135b",
+    "#260e3f",
+    "#f4efd6"
+   ]
+  },
+  "iyari-sin-frase-4x5": {
+   "origen": "#3b1564",
+   "deDonde": "portada",
+   "base": "#4b1b7e",
+   "banda": "oscura",
+   "fondo": "#4b1b7e",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#84639c",
+    "#36135b",
+    "#260e3f",
+    "#f4efd6"
+   ]
+  },
+  "iyari-frase-9x16": {
+   "origen": "#3b1564",
+   "deDonde": "portada",
+   "base": "#4b1b7e",
+   "banda": "oscura",
+   "fondo": "#4b1b7e",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#84639c",
+    "#36135b",
+    "#260e3f",
+    "#f4efd6"
+   ]
+  },
+  "carlos-frase-4x5": {
+   "origen": "#7d5532",
+   "deDonde": "portada",
+   "base": "#7d5532",
+   "banda": "oscura",
+   "fondo": "#7d5532",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a5896a",
+    "#5a3d24",
+    "#3f2b19",
+    "#f4efd6"
+   ]
+  },
+  "carlos-sin-frase-4x5": {
+   "origen": "#7d5532",
+   "deDonde": "portada",
+   "base": "#7d5532",
+   "banda": "oscura",
+   "fondo": "#7d5532",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a5896a",
+    "#5a3d24",
+    "#3f2b19",
+    "#f4efd6"
+   ]
+  },
+  "carlos-frase-9x16": {
+   "origen": "#7d5532",
+   "deDonde": "portada",
+   "base": "#7d5532",
+   "banda": "oscura",
+   "fondo": "#7d5532",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a5896a",
+    "#5a3d24",
+    "#3f2b19",
+    "#f4efd6"
+   ]
+  },
+  "leonora-frase-4x5": {
+   "origen": "#6e8ea3",
+   "deDonde": "portada",
+   "base": "#436982",
+   "banda": "oscura",
+   "fondo": "#436982",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7f979f",
+    "#304c5e",
+    "#223541",
+    "#f4efd6"
+   ]
+  },
+  "leonora-sin-frase-4x5": {
+   "origen": "#6e8ea3",
+   "deDonde": "portada",
+   "base": "#436982",
+   "banda": "oscura",
+   "fondo": "#436982",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7f979f",
+    "#304c5e",
+    "#223541",
+    "#f4efd6"
+   ]
+  },
+  "leonora-frase-9x16": {
+   "origen": "#6e8ea3",
+   "deDonde": "portada",
+   "base": "#436982",
+   "banda": "oscura",
+   "fondo": "#436982",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7f979f",
+    "#304c5e",
+    "#223541",
+    "#f4efd6"
+   ]
+  },
+  "maravilla-frase-4x5": {
+   "origen": "#5a0000",
+   "deDonde": "portada",
+   "base": "#821717",
+   "banda": "oscura",
+   "fondo": "#821717",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a96058",
+    "#5e1111",
+    "#410c0c",
+    "#f4efd6"
+   ]
+  },
+  "maravilla-sin-frase-4x5": {
+   "origen": "#5a0000",
+   "deDonde": "portada",
+   "base": "#821717",
+   "banda": "oscura",
+   "fondo": "#821717",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a96058",
+    "#5e1111",
+    "#410c0c",
+    "#f4efd6"
+   ]
+  },
+  "maravilla-frase-9x16": {
+   "origen": "#5a0000",
+   "deDonde": "portada",
+   "base": "#821717",
+   "banda": "oscura",
+   "fondo": "#821717",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a96058",
+    "#5e1111",
+    "#410c0c",
+    "#f4efd6"
+   ]
+  },
+  "sombra-frase-4x5": {
+   "origen": "#664203",
+   "deDonde": "portada",
+   "base": "#825b17",
+   "banda": "oscura",
+   "fondo": "#825b17",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a98d58",
+    "#5e4211",
+    "#412e0c",
+    "#f4efd6"
+   ]
+  },
+  "sombra-sin-frase-4x5": {
+   "origen": "#664203",
+   "deDonde": "portada",
+   "base": "#825b17",
+   "banda": "oscura",
+   "fondo": "#825b17",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a98d58",
+    "#5e4211",
+    "#412e0c",
+    "#f4efd6"
+   ]
+  },
+  "sombra-frase-9x16": {
+   "origen": "#664203",
+   "deDonde": "portada",
+   "base": "#825b17",
+   "banda": "oscura",
+   "fondo": "#825b17",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a98d58",
+    "#5e4211",
+    "#412e0c",
+    "#f4efd6"
+   ]
+  },
+  "silva-frase-4x5": {
+   "origen": "#4d80c1",
+   "deDonde": "portada",
+   "base": "#3866a1",
+   "banda": "oscura",
+   "fondo": "#3866a1",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7895b3",
+    "#284974",
+    "#1c3351",
+    "#f4efd6"
+   ]
+  },
+  "silva-sin-frase-4x5": {
+   "origen": "#4d80c1",
+   "deDonde": "portada",
+   "base": "#3866a1",
+   "banda": "oscura",
+   "fondo": "#3866a1",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7895b3",
+    "#284974",
+    "#1c3351",
+    "#f4efd6"
+   ]
+  },
+  "silva-frase-9x16": {
+   "origen": "#4d80c1",
+   "deDonde": "portada",
+   "base": "#3866a1",
+   "banda": "oscura",
+   "fondo": "#3866a1",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7895b3",
+    "#284974",
+    "#1c3351",
+    "#f4efd6"
+   ]
+  },
+  "semana-4x5": {
+   "origen": "#2d3fd6",
+   "deDonde": "respaldo",
+   "base": "#2637c4",
+   "banda": "oscura",
+   "fondo": "#2637c4",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#6c76ca",
+    "#1b288d",
+    "#131c62",
+    "#f4efd6"
+   ]
+  },
+  "semana-9x16": {
+   "origen": "#2d3fd6",
+   "deDonde": "respaldo",
+   "base": "#2637c4",
+   "banda": "oscura",
+   "fondo": "#2637c4",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#6c76ca",
+    "#1b288d",
+    "#131c62",
+    "#f4efd6"
+   ]
+  }
+ }
+}
