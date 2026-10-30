@@ -39,6 +39,9 @@ const RECORRIDO = [
   ["Esta semana 4:5", ["Las plantillas de hoy", "Repisa", "Cruce", "Papel"]],
   ["Historia 9:16", ["Repisa"]],
   ["Casos límite", ["Repisa"]],
+  ["2ª · Artistas reales", ["Con la frase", "Sin la frase", "Historia 9:16"]],
+  ["2ª · Lugares reales", ["Con la frase", "Sin la frase", "Historia 9:16"]],
+  ["2ª · Esta semana", []],
   ["Medida de nombres", []],
   ["Inicio hoy", []],
 ];
@@ -46,11 +49,13 @@ let n = 10;
 for (const [pantalla, variantes] of RECORRIDO) {
   await tocar("#selector", pantalla);
   const id = await page.evaluate(() => location.hash.slice(1).split("/")[0]);
-  if (!variantes.length) { await foto(`${n++}-${id}`); continue; }
+  // La segunda vuelta: capturas con el prefijo A2- (pedido del gestor).
+  const nombre = (resto) => (id.startsWith("s2-") ? `A2-proto-${id.slice(3)}${resto}` : `${n++}-${id}${resto}`);
+  if (!variantes.length) { await foto(nombre("")); continue; }
   for (const v of variantes) {
     await tocar("#subselector", v);
     const letra = await page.evaluate(() => location.hash.slice(1).split("/")[1]);
-    await foto(`${n++}-${id}-${letra}`);
+    await foto(nombre(`-${letra}`));
   }
 }
 // Anchos: 320 y 1280 con la recomendada.
