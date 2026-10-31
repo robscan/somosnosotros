@@ -4,6 +4,7 @@ import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
 import { IconoChevronDerecha, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import EnCamino from "@/components/ui/EnCamino";
 import renglon from "@/components/ui/Renglon.module.css";
 import { hrefArtista } from "@/lib/artistas";
 import { cuando, hrefPropuestas, informeFichas, pegado, pildoraCorrida, textoFaltan, textoPorCampo, textoRevisar, usd, usdChico, type Pildora } from "@/lib/ciudadesAdmin";
@@ -117,6 +118,7 @@ export default async function InformeCorrida({ params }: { params: Promise<{ id:
                   <span>
                     <IconoChevronDerecha />
                   </span>
+                  <EnCamino className={renglon.enCamino} />
                 </Link>
               </li>
             );

@@ -4,6 +4,7 @@ import Buscador from "@/components/ui/Buscador";
 import Cabecera from "@/components/ui/Cabecera";
 import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
 import { IconoChevronDerecha, IconoDescarga, IconoPendiente } from "@/components/ui/Iconos";
+import EnCamino from "@/components/ui/EnCamino";
 import renglon from "@/components/ui/Renglon.module.css";
 import { etiquetaDisciplina } from "@/lib/artistas";
 import { diaLocal } from "@/lib/fechas";
@@ -173,6 +174,7 @@ function RenglonPorAprobar({ inv, hoy }: { inv: Investigaciones; hoy: string }) 
             <b className={s.cuenta}>{n}</b>
             <IconoChevronDerecha />
           </span>
+          <EnCamino className={renglon.enCamino} />
         </Link>
       </li>
     </ul>

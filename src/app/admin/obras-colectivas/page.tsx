@@ -10,6 +10,7 @@ import CrearObraAqui from "./CrearObraAqui";
 import InterruptorPincel from "./InterruptorPincel";
 import { cargarAjustePincel, cargarEstadoGlobalPincel, cargarLugaresParaObra, cargarObras, TOPE_OBRAS_ABIERTAS } from "./consultas";
 import Reintentar from "../Reintentar";
+import EnCamino from "@/components/ui/EnCamino";
 import renglon from "@/components/ui/Renglon.module.css";
 import { tituloDePagina } from "@/lib/marca";
 
@@ -68,6 +69,7 @@ export default async function ObrasColectivas() {
                 <span>
                   <IconoChevronDerecha />
                 </span>
+                <EnCamino className={renglon.enCamino} />
               </Link>
             </li>
           ))}

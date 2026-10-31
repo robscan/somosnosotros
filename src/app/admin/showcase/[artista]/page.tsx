@@ -47,6 +47,7 @@ import RedesFicha from "./RedesFicha";
 import SenalFicha from "./SenalFicha";
 import admin from "../../admin.module.css";
 import ficha from "@/components/FichaPersona.module.css";
+import EnCamino from "@/components/ui/EnCamino";
 import renglon from "@/components/ui/Renglon.module.css";
 import s from "../showcase.module.css";
 import { tituloDePagina } from "@/lib/marca";
@@ -182,6 +183,7 @@ export default async function FichaShowcase({ params }: { params: Promise<{ arti
                   <span>
                     <IconoChevronDerecha />
                   </span>
+                  <EnCamino className={renglon.enCamino} />
                 </Link>
               </li>
             );

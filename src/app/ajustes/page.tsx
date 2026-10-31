@@ -18,6 +18,7 @@ import BotonSalir from "./BotonSalir";
 import GiroPortadasAjuste from "./GiroPortadasAjuste";
 import InstalarApp from "./InstalarApp";
 import RenglonLecturas from "./RenglonLecturas";
+import EnCamino from "@/components/ui/EnCamino";
 import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./ajustes.module.css";
 import { MARCA, tituloDePagina } from "@/lib/marca";
@@ -96,6 +97,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
                 <b>Administración</b>
                 <small>{pendientes === null ? "Pendientes, indicadores, personas y fichas" : textoPendientes(pendientes)}</small>
                 <IconoChevronDerecha />
+                <EnCamino className={renglon.enCamino} />
               </Link>
             </li>
           )}
