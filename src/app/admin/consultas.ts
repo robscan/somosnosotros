@@ -13,13 +13,15 @@ import { clienteServidor } from "@/lib/supabase/servidor";
  * números inventados.
  */
 
-export async function cargarResumen(): Promise<{ resumen: Resumen | null; pendientes: Pendiente[]; errorPendientes: boolean }> {
+/** Los reclamos y reportes de Pendiente (bloque Pendiente de la portada, OL-498: aparte de los números, que llegan por su cuenta). */
+export async function cargarPendientes(): Promise<{ pendientes: Pendiente[]; error: boolean }> {
   const supabase = (await clienteServidor())!;
-  const [r, p] = await Promise.all([supabase.rpc("panel_resumen"), supabase.rpc("panel_pendientes")]);
-  return { resumen: r.error ? null : (r.data as Resumen), pendientes: (p.data ?? []) as Pendiente[], errorPendientes: !!p.error };
+  const p = await supabase.rpc("panel_pendientes");
+  return { pendientes: (p.data ?? []) as Pendiente[], error: !!p.error };
 }
 
-/** Solo los indicadores (sin los pendientes): los pide la hoja «Todos los números» al abrirse (OL-494). */
+/** Solo los indicadores (sin los pendientes): los piden los números y Gestionar de la portada (OL-498) y la hoja «Todos los números» al
+ *  abrirse (OL-494). */
 export async function cargarSoloResumen(): Promise<Resumen | null> {
   const supabase = (await clienteServidor())!;
   const r = await supabase.rpc("panel_resumen");

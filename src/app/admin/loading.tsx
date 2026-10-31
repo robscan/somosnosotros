@@ -1,19 +1,6 @@
-import plantilla from "@/components/ui/Plantilla.module.css";
-import styles from "./admin.module.css";
+import EsperaAdmin from "./EsperaAdmin";
 
-/** Espera del panel y de sus listas (A4): la forma de la pantalla en gris, sin títulos ni números inventados. */
+/** Espera del panel y de sus listas (A4): la de la portada con su armazón en gris (OL-498) o la de las listas; la elige `EsperaAdmin`. */
 export default function Loading() {
-  return (
-    <main className={plantilla.paginaContenido} aria-busy="true" aria-live="polite">
-      <p className={styles.esqueleto} role="status" aria-label="Cargando">
-        <span />
-        <span />
-        <span />
-        <span />
-        <span />
-        <span />
-        <span />
-      </p>
-    </main>
-  );
+  return <EsperaAdmin />;
 }
