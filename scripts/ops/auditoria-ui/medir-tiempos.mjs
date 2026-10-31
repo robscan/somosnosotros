@@ -45,7 +45,9 @@ const CORRIDAS = Number(opcion("corridas", 5));
 const LATENCIA = Number(opcion("latencia", 80));
 // La parte A (sin navegador, barata) se repite con varios retrasos: así se ve cuánto pesa la cadena de consultas si Supabase queda más cerca o más lejos.
 const LATENCIAS = [...new Set([0, ...opcion("latencias", "30,150").split(",").map(Number), LATENCIA])].sort((a, b) => a - b);
-const SOLO = opcion("solo", null);
+// `--solo=admin,instagram`: solo esas pantallas (y los viajes cuyo nombre lleve alguna de esas palabras).
+const SOLO = opcion("solo", null)?.split(",").filter(Boolean) ?? null;
+const elegida = (id) => !SOLO || SOLO.some((s) => id.includes(s));
 // `--extra=funcion:ms,…`: lo que tarda de más una función de la base (medido aparte con el banco de Postgres de la bitácora 529), sumado al retraso
 // de esa consulta. El respaldo contesta todo al instante; así se ve qué pasa en la pantalla cuando una función es lenta de verdad.
 const EXTRA = new Map(opcion("extra", "").split(",").filter(Boolean).map((x) => { const [f, n] = x.split(":"); return [f, Number(n)]; }));
@@ -56,14 +58,17 @@ if (fs.existsSync(path.join(RAIZ, ".env"))) {
   process.exit(1);
 }
 
-// Las pantallas. `contenido`: lo primero de verdad (no la espera), en el DOM; `marca`: lo mismo, en el HTML que llega por trozos. Con sesión de
-// administración, como la abre el founder.
+// Las pantallas. `contenido`: lo primero de verdad (no la espera), en el DOM y a la vista; `marca`: lo mismo, en el HTML que llega por trozos (si
+// es una lista, vale la primera que aparezca en el HTML completo). Con sesión de administración, como la abre el founder.
+// Administración (OL-498): lo primero de verdad es Pendiente. Con la portada por bloques (`data-bloque="pendiente"`) llega antes que lo demás;
+// con la de antes (sin bloques), con toda la pantalla, cuando la página ya no tiene nada esperando (`aria-busy`).
+const PENDIENTE = 'main [data-bloque="pendiente"], main:not([aria-busy="true"]):not(:has([aria-busy="true"])) h2';
 const PANTALLAS = [
   { id: "inicio", nombre: "Inicio", url: "/", contenido: 'main a[href^="/eventos/"]', marca: 'href="/eventos/' },
-  { id: "admin", nombre: "Administración (portada)", url: "/admin", contenido: "main h2", marca: "Esta semana en números" },
+  { id: "admin", nombre: "Administración (portada)", url: "/admin", contenido: PENDIENTE, marca: ['data-bloque="pendiente"', "Esta semana en números"] },
   { id: "instagram", nombre: "Administración › Instagram", url: "/admin/instagram?ciudad=san-luis-potosi&pestana=eventos", contenido: 'main [aria-label="Instagram"]', marca: 'aria-label="Instagram"' },
   { id: "ficha", nombre: "Ficha de evento", url: "/eventos/concierto-de-la-orquesta-sinfonica-de-san-luis-potosi", contenido: "main h1", marca: "<h1" },
-].filter((p) => !SOLO || p.id.includes(SOLO));
+].filter((p) => elegida(p.id));
 
 // ---------- procesos ----------
 const hijos = [];
@@ -169,15 +174,17 @@ function pedirHtml(url, marca) {
     const t0 = performance.now();
     const trozos = [];
     let texto = "";
-    let contenido = null;
+    const marcas = [marca].flat().filter(Boolean);
+    const vistas = new Map();
     const r = http.get(`${base}${url}`, { headers: { cookie: COOKIE, "user-agent": UA, accept: "text/html" } }, (res) => {
       const primerByte = performance.now() - t0;
       res.on("data", (d) => {
         trozos.push({ t: performance.now() - t0, bytes: d.length });
         texto += d.toString("utf8");
-        if (contenido === null && marca && texto.includes(marca)) contenido = performance.now() - t0;
+        for (const m of marcas) if (!vistas.has(m) && texto.includes(m)) vistas.set(m, performance.now() - t0);
       });
-      res.on("end", () => ok({ estado: res.statusCode, primerByte, contenido, fin: performance.now() - t0, bytes: trozos.reduce((s, x) => s + x.bytes, 0), trozos, t0: t0 - reloj0 }));
+      const contenido = () => vistas.get(marcas.find((m) => vistas.has(m))) ?? null;
+      res.on("end", () => ok({ estado: res.statusCode, primerByte, contenido: contenido(), fin: performance.now() - t0, bytes: trozos.reduce((s, x) => s + x.bytes, 0), trozos, t0: t0 - reloj0 }));
     });
     r.on("error", mal);
   });
@@ -249,12 +256,15 @@ const FECHA_FIJA = `(() => {
 })();`;
 /** Lo que se instala en cada página antes de su primer guion: cuándo aparece la espera, el contenido y el último cambio del DOM. */
 const GUION = `(() => {
-  const t = (window.__t = { esqueleto: null, contenido: null, ultimo: 0, cambios: [] });
+  const t = (window.__t = { esqueleto: null, senal: null, contenido: null, ultimo: 0, cambios: [] });
   const ver = () => {
     const ahora = performance.now();
     t.ultimo = ahora;
     if (t.esqueleto === null && document.querySelector('[aria-busy="true"], [aria-label="Cargando"]')) t.esqueleto = ahora;
-    if (t.contenido === null && window.__sel && document.querySelector(window.__sel)) t.contenido = ahora;
+    // La primera señal de que el toque sirvió: la espera, o el renglón tocado «en camino» (\`ui/EnCamino\`: un \`span\` vacío y oculto dentro del enlace).
+    if (t.senal === null && (t.esqueleto !== null || (window.__enlace && window.__enlace.querySelector(':scope > span[aria-hidden="true"]:empty')))) t.senal = ahora;
+    // A la vista: React deja lo que llega por streaming en un \`<div hidden>\` hasta revelarlo.
+    if (t.contenido === null && window.__sel && [...document.querySelectorAll(window.__sel)].some((e) => e.getClientRects().length > 0)) t.contenido = ahora;
   };
   const quien = (n) => { const e = n && n.nodeType === 1 ? n : n && n.parentElement; return e ? e.tagName.toLowerCase() + (e.id ? "#" + e.id : "") + (e.getAttribute && e.getAttribute("class") ? "." + String(e.getAttribute("class")).split(" ")[0] : "") : "?"; };
   new MutationObserver((m) => { ver(); t.cambios.push([Math.round(performance.now()), m.length, quien(m[m.length - 1].target) + ":" + m[m.length - 1].type + (m[m.length - 1].attributeName ? "@" + m[m.length - 1].attributeName : "")]); }).observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
@@ -368,9 +378,11 @@ if (browser) {
     // El enlace ya a la vista: lo que Next adelanta al verlo (prefetch) tiene tiempo de llegar; con `prisa`, se toca en cuanto se ve.
     await dormir(prisa ? 50 : 1500);
     const b = await loc.boundingBox();
-    await page.evaluate((s) => {
+    await loc.evaluate((e, s) => {
+      window.__enlace = e;
       window.__sel = s;
       window.__t.esqueleto = null;
+      window.__t.senal = null;
       window.__t.contenido = null;
       window.__toque = performance.now();
     }, sel);
@@ -381,13 +393,13 @@ if (browser) {
       if (t.contenido !== null && t.quieto > 2000) break;
       await dormir(250);
     }
-    return page.evaluate(() => ({ esqueleto: window.__t.esqueleto === null ? null : window.__t.esqueleto - window.__toque, contenido: window.__t.contenido === null ? null : window.__t.contenido - window.__toque, completa: window.__t.ultimo - window.__toque }));
+    return page.evaluate(() => ({ esqueleto: window.__t.esqueleto === null ? null : window.__t.esqueleto - window.__toque, senal: window.__t.senal === null ? null : window.__t.senal - window.__toque, contenido: window.__t.contenido === null ? null : window.__t.contenido - window.__toque, completa: window.__t.ultimo - window.__toque }));
   }
   const viajes = [
-    { id: "inicio-admin", nombre: "Inicio → Administración (botón de la barra)", desde: "/", enlace: 'header a[href="/admin"], a[href="/admin"]', contenido: "main h2" },
+    { id: "inicio-admin", nombre: "Inicio → Administración (botón de la barra)", desde: "/", enlace: 'header a[href="/admin"], a[href="/admin"]', contenido: PENDIENTE },
     { id: "admin-instagram", nombre: "Administración → Instagram (su renglón)", desde: "/admin", enlace: 'main a[href="/admin/instagram"]', contenido: 'main [aria-label="Instagram"]' },
     { id: "admin-instagram-prisa", nombre: "Administración → Instagram, tocado en cuanto se ve", desde: "/admin", enlace: 'main a[href="/admin/instagram"]', contenido: 'main [aria-label="Instagram"]', prisa: true },
-  ].filter((v) => !SOLO || v.id.includes(SOLO));
+  ].filter((v) => elegida(v.id));
   for (const v of viajes) {
     const corridas = [];
     for (let i = 0; i < CORRIDAS; i++) {
@@ -409,14 +421,14 @@ if (browser) {
         await ctx.close();
       }
     }
-    resultado.navegacion[v.id] = { nombre: v.nombre, esqueleto: mediana(corridas.map((c) => c.esqueleto)), contenido: mediana(corridas.map((c) => c.contenido)), completa: mediana(corridas.map((c) => c.completa)), consultasServidor: mediana(corridas.map((c) => c.consultasServidor)), corridas };
-    console.log(`C · ${v.id}: espera ${ms(resultado.navegacion[v.id].esqueleto)}, contenido ${ms(resultado.navegacion[v.id].contenido)}, completa ${ms(resultado.navegacion[v.id].completa)}`);
+    resultado.navegacion[v.id] = { nombre: v.nombre, esqueleto: mediana(corridas.map((c) => c.esqueleto)), senal: mediana(corridas.map((c) => c.senal)), contenido: mediana(corridas.map((c) => c.contenido)), completa: mediana(corridas.map((c) => c.completa)), consultasServidor: mediana(corridas.map((c) => c.consultasServidor)), corridas };
+    console.log(`C · ${v.id}: señal ${ms(resultado.navegacion[v.id].senal)}, espera ${ms(resultado.navegacion[v.id].esqueleto)}, contenido ${ms(resultado.navegacion[v.id].contenido)}, completa ${ms(resultado.navegacion[v.id].completa)}`);
   }
   retraso = 0;
 }
 
 // ---------- D · publicar en Instagram ----------
-if (browser && !args.includes("--sin-publicar") && (!SOLO || "instagram".includes(SOLO))) {
+if (browser && !args.includes("--sin-publicar") && elegida("instagram")) {
   const TITULO = "Delirium Pollum";
   await fetch(`${respaldoUrl}/__lento?ms=8000`);
   retraso = LATENCIA;
@@ -527,8 +539,8 @@ if (Object.keys(resultado.navegador).length) {
   }
 }
 if (Object.keys(resultado.navegacion).length) {
-  lineas.push("", "## C · navegación dentro de la app (Fast 3G, CPU ×4)", "", "| Viaje | Espera visible | Contenido | Completa | Consultas del servidor |", "| --- | --- | --- | --- | --- |");
-  for (const v of Object.values(resultado.navegacion)) lineas.push(`| ${v.nombre} | ${ms(v.esqueleto)} | ${ms(v.contenido)} | ${ms(v.completa)} | ${v.consultasServidor} |`);
+  lineas.push("", "## C · navegación dentro de la app (Fast 3G, CPU ×4)", "", "| Viaje | Señal del toque | Espera visible | Contenido | Completa | Consultas del servidor |", "| --- | --- | --- | --- | --- | --- |");
+  for (const v of Object.values(resultado.navegacion)) lineas.push(`| ${v.nombre} | ${ms(v.senal)} | ${ms(v.esqueleto)} | ${ms(v.contenido)} | ${ms(v.completa)} | ${v.consultasServidor} |`);
 }
 if (resultado.publicar) {
   const r = resultado.publicar;
