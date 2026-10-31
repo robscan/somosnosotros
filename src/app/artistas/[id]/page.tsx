@@ -84,7 +84,7 @@ async function cargarArtista(idOSlug: string): Promise<ArtistaConAutor | null> {
     console.warn("[ficha] cliente no disponible: artista");
     throw new Error(ERROR_FICHA);
   }
-  const columnas = "id, slug, nombre, disciplina, detalle, tipo, foto, portada, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!artistas_creado_por_fkey(id, nombre)";
+  const columnas = "id, slug, nombre, disciplina, detalle, tipo, foto, portada, portada_credito, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!artistas_creado_por_fkey(id, nombre)";
   const data = await leerFicha<ArtistaConAutor>(
     "artista",
     () => supabase.from("artistas").select(columnas).eq("slug", idOSlug).maybeSingle(),
@@ -357,6 +357,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         etiqueta={etiquetaDisciplina(a.disciplina)}
         titulo={a.nombre}
         meta={[detalle, etiquetaTipoArtista(a.tipo), a.ciudad].filter(Boolean).join(" · ")}
+        credito={a.portada_credito}
       />
 
       {hayAvisos && (

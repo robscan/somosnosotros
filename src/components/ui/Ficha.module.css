@@ -4,7 +4,7 @@
    (una fila de alto 0 que se abre sobre el héroe), el héroe (la portada y su título, en la misma celda), los números de la cabecera
    oscura (vacía en las demás), los avisos de la página, el cuerpo y las acciones flotantes. Nada se escapa del aire con un margen negativo: la barra y el héroe llegan a los bordes
    porque la ficha no lleva aire a los lados, y el cuerpo pone el suyo.
-   1. La rejilla · 2. La barra · 3. El héroe · 3b. La cabecera oscura · 4. El cuerpo · 5. Las acciones · 6. Bloques · 7. Las acciones flotantes ·
+   1. La rejilla · 2. La barra · 3. El héroe · 3b. La cabecera oscura · 3c. El crédito de la portada · 4. El cuerpo · 5. Las acciones · 6. Bloques · 7. Las acciones flotantes ·
    8. Avisos de la página · 9. Otras páginas: la persona y la página de formulario · 10. Escritorio: dos columnas
    ========================================================================== */
 
@@ -15,11 +15,12 @@
   --alto-barra-ficha: calc(var(--barra-arriba) + var(--boton-icono) + var(--espacio-2));
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 0 max-content max-content max-content max-content 1fr;
+  grid-template-rows: 0 max-content max-content max-content max-content max-content 1fr;
   grid-template-areas:
     "barra"
     "heroe"
     "numeros"
+    "credito"
     "avisos"
     "cuerpo"
     "flotantes";
@@ -217,6 +218,26 @@
   grid-area: numeros;
   padding: var(--espacio-1) var(--gutter) var(--espacio-5);
   background: var(--banda);
+}
+
+/* 3c. El crédito de la portada (OL-491): «Foto: Pablo Pérez · CC BY-SA 4.0» en una línea discreta, debajo de la portada (y de la banda, si la
+   hay), nunca sobre la foto. Letra pequeña y gris, pegada a la foto (su aire de abajo lo pone el cuerpo). El nombre, si enlaza a la foto, va
+   subrayado y su toque llega a 44 con relleno vertical en línea: crece el área que se toca, no el renglón (con o sin enlace, la línea mide lo
+   mismo). El aire de arriba es justo ese relleno: el toque no pisa la portada, que también se toca (abre la foto entera). */
+.credito {
+  grid-area: credito;
+  min-width: 0;
+  padding: calc((var(--toque-min) - 1em) / 2) var(--gutter) 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+/* El relleno cuenta desde la caja de la letra (1em), no desde el renglón: así llega a 44 con cualquier letra. */
+.creditoEnlace {
+  padding-block: calc((var(--toque-min) - 1em) / 2);
+  color: inherit;
+  text-decoration: underline;
 }
 
 /* 4. El cuerpo: los bloques de la ficha en fila, con el aire de la página a los lados. */
@@ -478,6 +499,7 @@
       "barra barra"
       "portada titulo"
       "portada numeros"
+      "portada credito"
       "portada avisos"
       "portada cuerpo"
       "flotantes flotantes";
@@ -529,7 +551,8 @@
     background: var(--primario-suave);
   }
   .enPagina > .avisos,
-  .enPagina > .cuerpo {
+  .enPagina > .cuerpo,
+  .enPagina > .credito {
     padding-left: 0;
   }
   /* La cabecera oscura en dos columnas: la portada a la izquierda como las demás, entera (OL-403; antes, una tarjeta 4:3 que recortaba el

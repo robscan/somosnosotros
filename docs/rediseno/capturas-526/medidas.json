@@ -1,0 +1,70 @@
+{
+  "320": {
+    "anchoDePagina": 320,
+    "ventana": 320,
+    "alto": 1888,
+    "pantallas": 2.2,
+    "cuadros": 4,
+    "filas": 2,
+    "rotulos": [
+      "Pendiente25",
+      "Esta semana en números",
+      "Gestionar",
+      "Difusión",
+      "Herramientas"
+    ],
+    "toquesChicos": [],
+    "nodos": 185
+  },
+  "390": {
+    "anchoDePagina": 390,
+    "ventana": 390,
+    "alto": 1673,
+    "pantallas": 2,
+    "cuadros": 4,
+    "filas": 2,
+    "rotulos": [
+      "Pendiente25",
+      "Esta semana en números",
+      "Gestionar",
+      "Difusión",
+      "Herramientas"
+    ],
+    "toquesChicos": [],
+    "nodos": 185
+  },
+  "430": {
+    "anchoDePagina": 430,
+    "ventana": 430,
+    "alto": 1592,
+    "pantallas": 1.9,
+    "cuadros": 4,
+    "filas": 2,
+    "rotulos": [
+      "Pendiente25",
+      "Esta semana en números",
+      "Gestionar",
+      "Difusión",
+      "Herramientas"
+    ],
+    "toquesChicos": [],
+    "nodos": 185
+  },
+  "768": {
+    "anchoDePagina": 768,
+    "ventana": 768,
+    "alto": 1420,
+    "pantallas": 1.4,
+    "cuadros": 4,
+    "filas": 1,
+    "rotulos": [
+      "Pendiente25",
+      "Esta semana en números",
+      "Gestionar",
+      "Difusión",
+      "Herramientas"
+    ],
+    "toquesChicos": [],
+    "nodos": 185
+  }
+}

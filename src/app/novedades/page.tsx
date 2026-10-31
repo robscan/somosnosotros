@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Barra from "@/components/ui/Barra";
-import { IconoCalendarioMas, IconoCampana, IconoPersonas, IconoReloj } from "@/components/ui/Iconos";
+import { IconoCalendarioMas, IconoCamara, IconoCampana, IconoPersonas, IconoReloj } from "@/components/ui/Iconos";
 import { hrefEvento } from "@/lib/eventos";
 import { agruparNovedades } from "@/lib/novedades";
 import { usuarioActual } from "@/lib/supabase/servidor";
@@ -50,8 +50,8 @@ export default async function Novedades() {
             <ul className={styles.lista}>
               {g.novedades.map((n) => (
                 <li key={n.clave}>
-                  <Link href={hrefEvento({ id: n.eventoId, slug: n.eventoSlug })} className={`${styles.novedad} ${n.nueva ? styles.nueva : ""}`}>
-                    {n.tipo === "nuevo" ? <IconoCalendarioMas width={22} height={22} /> : n.tipo === "cambio" ? <IconoReloj width={22} height={22} /> : n.tipo === "hoy" ? <IconoCampana width={22} height={22} /> : <IconoPersonas width={22} height={22} />}
+                  <Link href={n.href ?? hrefEvento({ id: n.eventoId, slug: n.eventoSlug })} className={`${styles.novedad} ${n.nueva ? styles.nueva : ""}`}>
+                    {n.tipo === "nuevo" ? <IconoCalendarioMas width={22} height={22} /> : n.tipo === "cambio" ? <IconoReloj width={22} height={22} /> : n.tipo === "hoy" ? <IconoCampana width={22} height={22} /> : n.tipo === "material" ? <IconoCamara width={22} height={22} /> : <IconoPersonas width={22} height={22} />}
                     <span className={styles.que}>{n.que}</span>
                     <span className={styles.evento}>{n.titulo}</span>
                     <span className={styles.cuando}>{n.cuando}</span>

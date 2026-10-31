@@ -1,0 +1,44 @@
+1 · La hoja «Todos los números» sin lo que ya está en la portada
+  ✓ 390: la portada: Personas nuevas · Eventos de la comunidad · Voy y Me interesa · Eventos esta semana
+  ✓ 390: «Últimos 7 días» de la hoja: Personas activas · Coincidencias · Publica la comunidad · Primera publicación · Avisos abiertos
+  ✓ 390: sin «Voy y Me interesa» ni la agenda (ya están arriba)
+  ✓ 390: dos por fila y el quinto a todo lo ancho (350 de 350)
+  ✓ 390: tres filas, ningún cuadro solo a la mitad
+  ✓ 390: Fichas sigue con sus dos
+  ✓ 01-hoja-numeros: sin desplazamiento a lo ancho
+  → 01-hoja-numeros.png
+  ✓ tocar «Primera publicación» abre su desglose bajo su fila; «Avisos abiertos» sigue entero debajo
+  ✓ 01b-hoja-numeros-desglose: sin desplazamiento a lo ancho
+  → 01b-hoja-numeros-desglose.png
+  ✓ 768: la portada: Personas nuevas · Eventos de la comunidad · Voy y Me interesa · Eventos esta semana
+  ✓ 768: «Últimos 7 días» de la hoja: Personas activas · Coincidencias · Publica la comunidad · Primera publicación · Avisos abiertos
+  ✓ 768: sin «Voy y Me interesa» ni la agenda (ya están arriba)
+  ✓ 768: dos por fila y el quinto a todo lo ancho (560 de 560)
+  ✓ 768: tres filas, ningún cuadro solo a la mitad
+  ✓ 768: Fichas sigue con sus dos
+  ✓ 02-hoja-numeros-768: sin desplazamiento a lo ancho
+  → 02-hoja-numeros-768.png
+2 · Al volver de Meta con la conexión hecha (RESPALDO_INSTAGRAM_CONEXION=reconectada)
+  ✓ 03b-hoja-sin-salir-320: sin desplazamiento a lo ancho
+  → 03b-hoja-sin-salir-320.png
+  ✓ la hoja de la conexión se abre sola al volver de Meta
+  ✓ tres pendientes: Master Class - 9° Festival de Cine UASLP Instagram y Facebook · publicación · no salió el mié 7 de oct | Leonora in the morning light Instagram · historia · no salió el mar 6 de oct | Feleal: un viaje por el mundo en acordeón Facebook · no salió el lun 5 de oct
+  ✓ la Master Class una vez (falló dos veces), «Instagram y Facebook · publicación · no salió el mié 7 de oct»
+  ✓ Leonora, «Instagram · historia · no salió el mar 6 de oct»
+  ✓ Feleal, «Facebook · no salió el lun 5 de oct»
+  ✓ no salen la que falló por la imagen, la de la semana pasada ni la que ya volvió a salir
+  ✓ el botón: «Volver a publicar (3)», en una línea
+  ✓ el botón no se parte en dos renglones
+  ✓ mide 44 o más y «Reconectar» sigue debajo
+  ✓ 03-hoja-sin-salir: sin desplazamiento a lo ancho
+  → 03-hoja-sin-salir.png
+  ✓ cerrada, la línea verde «Instagram quedó conectado» lleva «3 no salieron ›»
+  ✓ 04-linea-verde: sin desplazamiento a lo ancho
+  → 04-linea-verde.png
+  ✓ al tocarlo: «3 van en camino. Te avisamos en el teléfono cuando salgan.»
+  ✓ y ya no se ofrece
+  ✓ 05-vueltos: sin desplazamiento a lo ancho
+  → 05-vueltos.png
+  ✓ la cola tiene tres trabajos nuevos en cola, uno por publicación: instagram 4x5, instagram 9x16, facebook 4x5
+  ✓ al volver otra vez de Meta ya no se ofrecen: van en camino (sin duplicar)
+  ✓ sin errores de página ni de consola

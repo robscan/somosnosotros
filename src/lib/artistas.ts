@@ -55,6 +55,8 @@ export type ArtistaLista = ArtistaResumen & { proxima: ProximaFecha | null };
 export type Artista = ArtistaResumen & {
   /** Imagen ancha de la cabecera (OL-247); sin ella, el símbolo SN. */
   portada: string | null;
+  /** Autor y licencia de la portada, si no es de la ficha (OL-491; `lib/creditoFoto`). Solo llega donde se pide. */
+  portada_credito?: string | null;
   descripcion: string | null;
   ciudad: string;
   /** Enlaces y redes reconocidos (lib/enlaces); en la base es JSON. */
@@ -334,7 +336,7 @@ export type DatosArtista = {
   /** La ciudad del renglón Ciudad (de entrada, la elegida en Artistas); vacía, la inicial. */
   ciudad: string;
 };
-export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "detalle" | "descripcion" | "foto" | "portada" | "enlaces", string>>;
+export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "detalle" | "descripcion" | "foto" | "portada" | "credito" | "enlaces", string>>;
 
 
 /** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `fotoActual` es la

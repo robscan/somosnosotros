@@ -19,6 +19,13 @@ export async function cargarResumen(): Promise<{ resumen: Resumen | null; pendie
   return { resumen: r.error ? null : (r.data as Resumen), pendientes: (p.data ?? []) as Pendiente[], errorPendientes: !!p.error };
 }
 
+/** Solo los indicadores (sin los pendientes): los pide la hoja «Todos los números» al abrirse (OL-494). */
+export async function cargarSoloResumen(): Promise<Resumen | null> {
+  const supabase = (await clienteServidor())!;
+  const r = await supabase.rpc("panel_resumen");
+  return r.error ? null : (r.data as Resumen);
+}
+
 /** El embudo de "Cómo va la comunidad" (migración 20260917150000, doc 21 opción A). Aparte de `panel_resumen`: si
  *  falla, no tumba el resto de la pantalla. */
 export async function cargarComunidad(): Promise<Comunidad | null> {

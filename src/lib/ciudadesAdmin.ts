@@ -18,12 +18,15 @@ const objeto = z.record(z.string(), z.unknown()).catch({});
 
 export const ESTADOS_CIUDAD = ["abierta", "detectada", "investigando", "cerrada"] as const;
 export type EstadoCiudad = (typeof ESTADOS_CIUDAD)[number];
-export const TIPOS_CORRIDA = ["lugares", "agendas", "artistas", "showcase", "carteles"] as const;
+export const TIPOS_CORRIDA = ["lugares", "agendas", "artistas", "showcase", "carteles", "fichas"] as const;
 export type TipoCorrida = (typeof TIPOS_CORRIDA)[number];
 /** Las tres búsquedas que alimentan la ciudad (las que cuentan para su siguiente paso y su línea en la lista). */
-export type TipoBoton = Exclude<TipoCorrida, "showcase" | "carteles">;
-/** Un botón con hoja de tope en el panel de la ciudad: las tres búsquedas y «Buscar carteles» (OL-444), que completa eventos que ya están. */
-export type TipoHoja = TipoBoton | "carteles";
+export type TipoBoton = Exclude<TipoCorrida, "showcase" | "carteles" | "fichas">;
+/**
+ * Un botón con hoja de tope en el panel de la ciudad: las tres búsquedas, «Buscar carteles» (OL-444), que completa eventos que ya están, y
+ * «Completar fichas» (OL-489), que completa artistas y lugares que ya están.
+ */
+export type TipoHoja = TipoBoton | "carteles" | "fichas";
 export const ESTADOS_CORRIDA = ["pendiente", "corriendo", "terminada", "fallida", "cancelada"] as const;
 export type EstadoCorrida = (typeof ESTADOS_CORRIDA)[number];
 
@@ -78,8 +81,10 @@ export const BOTONES: readonly { tipo: TipoBoton; verbo: string }[] = [
 
 /** «Buscar carteles» (OL-444): va aparte de `BOTONES` porque no es el siguiente paso de una ciudad recién abierta, solo completa sus eventos. */
 export const BOTON_CARTELES = { tipo: "carteles", verbo: "Buscar carteles" } as const;
+/** «Completar fichas» (OL-489): como «Buscar carteles», nunca es el siguiente paso; corre también sola cada semana (Administración › Rutinas). */
+export const BOTON_FICHAS = { tipo: "fichas", verbo: "Completar fichas" } as const;
 /** Todos los botones del panel, en su orden. */
-export const BOTONES_PANEL: readonly { tipo: TipoHoja; verbo: string }[] = [...BOTONES, BOTON_CARTELES];
+export const BOTONES_PANEL: readonly { tipo: TipoHoja; verbo: string }[] = [...BOTONES, BOTON_CARTELES, BOTON_FICHAS];
 
 /**
  * Lo que dice la hoja de cada botón: qué hace, con qué fuentes (en orden), cuánto se estima y su tope por omisión (si no, `TOPE_POR_DEFECTO`).
@@ -122,6 +127,16 @@ export const HOJAS: Record<TipoHoja, { que: string; fuentes: readonly { clave: s
     ],
     estimado: "Se estima entre 0,50 y 2 USD.",
     tope: 2,
+  },
+  fichas: {
+    que: "Busca lo que les falta a los artistas y lugares con fecha en las próximas tres semanas —foto, portada, descripción e Instagram— en su propio Instagram o su sitio, y te lo propone campo por campo con su miniatura y de dónde salió. Nunca cambia lo que la ficha ya tiene. Nada se pone hasta que lo aceptas.",
+    fuentes: [
+      { clave: "instagram", texto: () => "Su Instagram (foto de perfil, publicaciones sin texto encima y biografía)" },
+      { clave: "sitio", texto: () => "Su sitio web" },
+      { clave: "buscar", texto: (ciudad) => `Su cuenta de Instagram, si su nombre y ${ciudad} coinciden` },
+    ],
+    estimado: "Se estima menos de 0,10 USD por 20 fichas.",
+    tope: 0.5,
   },
 };
 
@@ -326,7 +341,7 @@ export function vezPasada(c: CorridaPanel | null): string | null {
 
 export type Pildora = { texto: string; tono: "gris" | "violeta" | "verde" | "naranja" | "rojo" };
 export type LineaBusqueda = { pildora: Pildora; texto: string; razon: string | null; alerta: boolean; avance: number | null };
-const LA_DE: Record<TipoHoja, string> = { lugares: "la de lugares", agendas: "la de agendas", artistas: "la de artistas", carteles: "la de carteles" };
+const LA_DE: Record<TipoHoja, string> = { lugares: "la de lugares", agendas: "la de agendas", artistas: "la de artistas", carteles: "la de carteles", fichas: "la de fichas" };
 
 /**
  * Bajo la raya de una tarjeta del panel: la última búsqueda de su botón con la píldora de Corridas y su detalle («Terminada · 20 oct · 30
@@ -338,7 +353,7 @@ export function lineaBusqueda(c: CorridaPanel, todas: readonly CorridaPanel[], a
   const e = estadoBusqueda(c);
   if (!e) return null;
   const fecha = mayuscula(cuando(c.fin ?? c.inicio ?? c.creado_en, ahora));
-  const gasto = `${usd(c.gasto_usd)} USD`;
+  const gasto = `${usdChico(c.gasto_usd)} USD`;
   const propuestos = `${c.propuestas} ${c.propuestas === 1 ? "propuesto" : "propuestos"}`;
   const n = esperanDe(c);
   const esperan = n ? `${n} ${n === 1 ? "espera" : "esperan"} a la siguiente` : null;
@@ -500,7 +515,7 @@ export function resumenCiudades(ciudades: readonly Pick<CiudadPanel, "estado">[]
 }
 
 // ---------- propuestas por revisar ----------
-const TITULO_BANDEJA: Record<TipoCorrida, string> = { lugares: "Lugares", agendas: "Agendas y eventos", artistas: "Artistas", showcase: "Showcase", carteles: "Carteles" };
+const TITULO_BANDEJA: Record<TipoCorrida, string> = { lugares: "Lugares", agendas: "Agendas y eventos", artistas: "Artistas", showcase: "Showcase", carteles: "Carteles", fichas: "Fichas" };
 
 /** «0,33 USD», «9:12 am»: que «USD», «am» y «pm» no queden solos al partir el renglón (como en el prototipo firmado). Se aplica al pintar. */
 export const pegado = (t: string): string => t.replace(/ (USD|am|pm)\b/g, "\u00a0$1");
@@ -578,7 +593,7 @@ export function juntarAlias<T extends Pick<CiudadPanel, "slug" | "estado" | "con
 }
 
 // ---------- la lista de corridas ----------
-export const TITULO_TIPO: Record<TipoCorrida, string> = { lugares: "Lugares", agendas: "Agendas y eventos", artistas: "Artistas", showcase: "Showcase", carteles: "Carteles" };
+export const TITULO_TIPO: Record<TipoCorrida, string> = { lugares: "Lugares", agendas: "Agendas y eventos", artistas: "Artistas", showcase: "Showcase", carteles: "Carteles", fichas: "Fichas" };
 
 /** «Lugares · Oaxaca». */
 export function tituloCorrida(c: Pick<CorridaPanel, "tipo">, ciudad: string | null): string {
@@ -592,6 +607,17 @@ export function detalleCorrida(c: CorridaPanel, ahora: Date = new Date()): strin
   if (c.estado === "pendiente") return unir([mayuscula(cuando(c.creado_en, ahora)), parametros, `tope ${usd(c.tope_usd)} USD`]);
   if (c.estado === "corriendo") return unir([mayuscula(cuando(c.inicio ?? c.creado_en, ahora)), pasoDe(c), `${usd(c.gasto_usd)} de ${usd(c.tope_usd)} USD`]);
   if (c.estado === "cancelada") return unir([mayuscula(cuando(c.creado_en, ahora)), parametros, "no corrió"]);
+  if (c.tipo === "fichas") {
+    const inf = informeFichas(c.resumen);
+    return unir([
+      mayuscula(cuando(c.fin ?? c.creado_en, ahora)),
+      contar(inf.revisadas, "ficha revisada", "fichas revisadas"),
+      `${c.propuestas} ${c.propuestas === 1 ? "propuesto" : "propuestos"}`,
+      contar(c.por_revisar, "por revisar", "por revisar"),
+      contar(inf.sinFuente.length, "sin fuente", "sin fuente"),
+      `${usdChico(c.gasto_usd)} USD`,
+    ]);
+  }
   return unir([
     mayuscula(cuando(c.fin ?? c.creado_en, ahora)),
     parametros,
@@ -646,4 +672,55 @@ export function fechaVence(vence: string): string {
 /** «Crédito: 187,40 USD · vence el 11 de noviembre». */
 export function lineaCredito(c: ReturnType<typeof credito>): string {
   return unir([`Crédito: ${usd(c.queda)} USD`, c.vence ? (c.dias === null ? `venció el ${fechaVence(c.vence)}` : `vence el ${fechaVence(c.vence)}`) : null]);
+}
+
+// ---------- el informe de «Completar fichas» (OL-489) ----------
+export const CAMPOS_FICHA = ["foto", "portada", "descripcion", "instagram"] as const;
+export type CampoFicha = (typeof CAMPOS_FICHA)[number];
+export const ETIQUETA_CAMPO: Record<CampoFicha, string> = { foto: "Foto", portada: "Portada", descripcion: "Descripción", instagram: "Instagram" };
+const CAMPO_EN_CUENTA: Record<CampoFicha, [string, string]> = { foto: ["foto", "fotos"], portada: ["portada", "portadas"], descripcion: ["descripción", "descripciones"], instagram: ["Instagram", "Instagram"] };
+/** «1 foto · 2 portadas · 0 descripciones · 1 Instagram»: las propuestas de una corrida de fichas por campo. */
+export const textoPorCampo = (porCampo: Record<CampoFicha, number>): string => CAMPOS_FICHA.map((k) => `${porCampo[k]} ${CAMPO_EN_CUENTA[k][porCampo[k] === 1 ? 0 : 1]}`).join(" · ");
+/** Un gasto que redondeado sería 0,00 pero no es cero: «menos de 0,01». */
+export const usdChico = (n: number): string => (n > 0 && n < 0.005 ? "menos de 0,01" : usd(n));
+export type SinFuenteFicha = { tipo: "artista" | "lugar"; id: string; nombre: string; faltan: CampoFicha[]; motivo: string };
+export type InformeFichas = { revisadas: number; incompletas: number; porCampo: Record<CampoFicha, number>; sinFuente: SinFuenteFicha[]; recientes: number; deMas: number; avisos: string[] };
+
+/** Lo que dejó una corrida de «Completar fichas» en su resumen, leído sin confiar en su forma. */
+export function informeFichas(resumen: Record<string, unknown>): InformeFichas {
+  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? Math.round(v) : 0);
+  const pc = resumen.propuestas_por_campo && typeof resumen.propuestas_por_campo === "object" ? (resumen.propuestas_por_campo as Record<string, unknown>) : {};
+  const d = resumen.descartados && typeof resumen.descartados === "object" ? (resumen.descartados as Record<string, unknown>) : {};
+  const sinFuente = (Array.isArray(resumen.sin_fuente) ? resumen.sin_fuente : [])
+    .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
+    .map((x) => ({
+      tipo: x.tipo === "lugar" ? ("lugar" as const) : ("artista" as const),
+      id: typeof x.id === "string" ? x.id : "",
+      nombre: typeof x.nombre === "string" ? x.nombre.slice(0, 120) : "Sin nombre",
+      faltan: (Array.isArray(x.faltan) ? x.faltan : []).filter((c): c is CampoFicha => (CAMPOS_FICHA as readonly unknown[]).includes(c)),
+      motivo: typeof x.motivo === "string" ? x.motivo.slice(0, 200) : "",
+    }))
+    .filter((x) => x.id);
+  return {
+    revisadas: n(resumen.revisadas),
+    incompletas: n(resumen.incompletas),
+    porCampo: Object.fromEntries(CAMPOS_FICHA.map((c) => [c, n(pc[c])])) as Record<CampoFicha, number>,
+    sinFuente,
+    recientes: n(d.recientes),
+    deMas: n(d.de_mas),
+    avisos: (Array.isArray(resumen.avisos) ? resumen.avisos : []).filter((a): a is string => typeof a === "string").slice(0, 8),
+  };
+}
+
+/** El número de la tarjeta «Fichas» del panel de una ciudad: las fichas con fecha a las que les faltaba algo en la última corrida. */
+export function baseFichas(c: Pick<CorridaPanel, "estado" | "resumen"> | null): { valor: number; base: string } {
+  if (!c || c.estado === "pendiente") return { valor: 0, base: "fichas por completar: todavía no se buscan" };
+  const n = informeFichas(c.resumen).incompletas;
+  return { valor: n, base: n === 1 ? "ficha con fecha a la que le falta algo" : "fichas con fecha a las que les falta algo" };
+}
+
+/** «Foto, portada y descripción»: lo que le falta a una ficha, en minúscula tras la primera. */
+export function textoFaltan(faltan: readonly CampoFicha[]): string {
+  const t = listaY(faltan.map((c) => (c === "instagram" ? "Instagram" : ETIQUETA_CAMPO[c].toLowerCase())));
+  return mayuscula(t);
 }

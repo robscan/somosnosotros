@@ -15,6 +15,8 @@ import type { ResultadoPaso } from "./motor";
 export type DependenciasRuta = {
   secreto: string | undefined;
   correr: () => Promise<ResultadoPaso>;
+  /** OL-489: antes de dar pasos, deja las corridas semanales que tocan (`semanales.ts`). Nunca debe tumbar la llamada. */
+  programar?: () => Promise<unknown>;
   /** `after()` de Next: corre la tarea después de responder. */
   despues: (tarea: () => Promise<unknown>) => void;
   /** Cuánto puede durar la función (su `maxDuration`), en ms. */
@@ -49,8 +51,16 @@ export async function atenderCorrer(request: Request, d: DependenciasRuta): Prom
   const hasta = ahora() + d.limiteMs - MARGEN_MS;
   if (!autorizadoPorSecreto(request.headers, d.secreto)) return new Response("No autorizado", { status: 401 });
   const esperar = new URL(request.url).searchParams.get("esperar") === "1";
+  const programar = async () => {
+    try {
+      await d.programar?.();
+    } catch {
+      console.warn("rutinas: no se pudieron dejar las corridas semanales");
+    }
+  };
   if (esperar) {
     try {
+      await programar();
       const r = await d.correr();
       return Response.json({ ok: true, ...r });
     } catch {
@@ -58,6 +68,7 @@ export async function atenderCorrer(request: Request, d: DependenciasRuta): Prom
     }
   }
   d.despues(async () => {
+    await programar();
     try {
       await pasosSeguidos(d, hasta, ahora);
     } catch {

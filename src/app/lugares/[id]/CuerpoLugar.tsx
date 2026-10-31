@@ -83,7 +83,7 @@ export async function cargarLugar(idOSlug: string): Promise<LugarConAutor | null
     console.warn("[ficha] cliente no disponible: lugar");
     throw new Error(ERROR_FICHA);
   }
-  const columnas = "id, slug, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, privado, origen, autor:perfiles!lugares_creado_por_fkey(id, nombre)";
+  const columnas = "id, slug, nombre, tipo, direccion, lat, lng, portada, portada_credito, descripcion, ciudad, redes, creado_por, visible, privado, origen, autor:perfiles!lugares_creado_por_fkey(id, nombre)";
   const data = await leerFicha<LugarConAutor>(
     "lugar",
     () => supabase.from("lugares").select(columnas).eq("slug", idOSlug).maybeSingle(),

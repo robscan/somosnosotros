@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { armarTexto, cuandoDelTexto, etiquetasDeLaFoto, etiquetasDelTexto, hashtag, INVITACION, revisarTexto, usuarioDeInstagram, type EventoIg } from "./texto";
+import { textoArtista, textoLugar, type ArtistaDestacado, type LugarDestacado } from "./destacado";
+import { armarTexto, conCreditoDeFoto, cuandoDelTexto, etiquetasDeLaFoto, etiquetasDelTexto, hashtag, INVITACION, revisarTexto, usuarioDeInstagram, type EventoIg } from "./texto";
 
 /** OL-458 (bitácora 490): el texto que arma el sistema para Instagram, lo firmado en el prototipo `admin-instagram.html`. */
 const ahora = new Date("2026-10-03T17:00:00Z"); // sábado 3 de octubre, 11:00 en San Luis Potosí
@@ -93,5 +94,55 @@ describe("revisarTexto: los límites de Instagram", () => {
     expect(revisarTexto(Array.from({ length: 31 }, (_, i) => `#e${i}`).join(" ")).problema).toBe("Lleva 31 etiquetas (#) y Instagram deja 30.");
     expect(revisarTexto(Array.from({ length: 20 }, (_, i) => `@u${i}`).join(" ")).problema).toBeNull();
     expect(revisarTexto(Array.from({ length: 21 }, (_, i) => `@u${i}`).join(" ")).problema).toBe("Lleva 21 menciones (@) y Instagram deja 20.");
+  });
+});
+
+describe("conCreditoDeFoto: el crédito de la portada en la tarjeta de la semana (OL-491)", () => {
+  const AHORA = new Date("2026-10-07T16:00:00Z");
+  const ig = (u: string) => [{ url: `https://www.instagram.com/${u}` }];
+  const lugar = (redes: unknown): LugarDestacado => ({
+    nombre: "Museo del Ferrocarril",
+    slug: "museo-del-ferrocarril",
+    descripcion: "Antigua estación de ferrocarril convertida en museo, con locomotoras de vapor y salas sobre la historia del tren.",
+    tipo: "museo",
+    ciudad: "San Luis Potosí",
+    direccion: null,
+    redes,
+    semana: [],
+  });
+  const artista: ArtistaDestacado = {
+    nombre: "Valeria Quiroz",
+    slug: "valeria-quiroz",
+    descripcion: "Cantautora potosina. Escribe canciones sobre el desierto, la carretera y las abuelas, con guitarra y una loop station.",
+    disciplina: "musica",
+    detalle: "canción",
+    ciudad: "San Luis Potosí",
+    redes: ig("valeriaquiroz"),
+    proxima: null,
+  };
+  const CREDITO = "Pablo Pérez · CC BY-SA 4.0";
+
+  it("sin crédito no cambia: la foto vino de su Instagram y sigue «Foto: @cuenta»", () => {
+    const t = textoLugar(lugar(ig("museoferrocarril")), AHORA);
+    expect(conCreditoDeFoto(t, null)).toBe(t);
+    expect(conCreditoDeFoto(t, "  ")).toBe(t);
+    expect(t).toContain("Foto: @museoferrocarril");
+  });
+  it("con crédito, la línea «Foto:» dice el crédito en vez de la cuenta (la cuenta sigue en «Más en»)", () => {
+    const t = conCreditoDeFoto(textoLugar(lugar(ig("museoferrocarril")), AHORA), CREDITO);
+    expect(t).toContain(`Más en @museoferrocarril\nFoto: ${CREDITO}`);
+    expect(t).not.toContain("Foto: @museoferrocarril");
+    expect(t.match(/^Foto: /gm)).toHaveLength(1);
+    const a = conCreditoDeFoto(textoArtista(artista, AHORA), CREDITO);
+    expect(a).toContain(`Más de su trabajo en @valeriaquiroz\nFoto: ${CREDITO}`);
+  });
+  it("una ficha sin Instagram lleva su crédito tras «Lee su ficha»", () => {
+    const t = conCreditoDeFoto(textoLugar(lugar([]), AHORA), CREDITO);
+    expect(t).toContain(`Lee su ficha en somosnosotrxs.org/lugares/museo-del-ferrocarril (enlace en la bio).\nFoto: ${CREDITO}`);
+  });
+  it("el crédito va como se guardó, sin un «Foto:» doble ni saltos, y con su dirección si la trae", () => {
+    const t = conCreditoDeFoto(textoLugar(lugar([]), AHORA), "Foto: Ana López\n· CC BY 4.0 (https://commons.wikimedia.org/wiki/File:X.jpg)");
+    expect(t).toContain("\nFoto: Ana López · CC BY 4.0 (https://commons.wikimedia.org/wiki/File:X.jpg)\n");
+    expect(revisarTexto(t).problema).toBeNull();
   });
 });

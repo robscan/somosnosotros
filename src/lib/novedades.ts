@@ -1,8 +1,11 @@
 import { diaLocal } from "./fechas";
 import { compararNombres } from "./lugares";
 
-/** Una novedad: qué pasó ("Nuevo en Casa Ocho Ventanas"), a qué evento, cuándo pasó y si es posterior a la última visita. */
-export type TipoNovedad = "nuevo" | "cambio" | "hoy" | "juntos";
+/**
+ * Una novedad: qué pasó ("Nuevo en Casa Ocho Ventanas"), a qué evento, cuándo pasó y si es posterior a la última visita. OL-488: `material` es
+ * «Pedírselo» de la semana de Instagram (completa la foto o la portada de tu ficha): no es de un evento y lleva su propia dirección (`href`).
+ */
+export type TipoNovedad = "nuevo" | "cambio" | "hoy" | "juntos" | "material";
 export type Novedad = {
   clave: string;
   tipo: TipoNovedad;
@@ -10,6 +13,8 @@ export type Novedad = {
   eventoId: string;
   /** La dirección legible del evento; opcional porque no todas las consultas lo piden todavía (bitácora 154). */
   eventoSlug?: string | null;
+  /** OL-488: adónde lleva si no es un evento (la edición de la ficha). */
+  href?: string;
   titulo: string;
   cuando: string;
   /** Cuándo empieza el evento (ISO): desempata lo que pasó a la vez, como los "Hoy vas" del día. */
