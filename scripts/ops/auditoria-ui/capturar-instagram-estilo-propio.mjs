@@ -1,6 +1,7 @@
 // OL-490 (bitácora 522): recorre el prototipo `docs/rediseno/prototipos/instagram-estilo-propio.html` con el Chrome de la Mac, con toques reales
 // (clic de Playwright en el centro del chip, nunca `element.click()`), lee el medidor de cada vista y guarda las capturas del teléfono a 2×.
-//   node scripts/ops/auditoria-ui/capturar-instagram-estilo-propio.mjs <carpeta>
+//   node scripts/ops/auditoria-ui/capturar-instagram-estilo-propio.mjs <carpeta> [--solo-tercera]
+// Con --solo-tercera recorre solo las pantallas de la tercera vuelta («3ª · …», capturas `A3-proto-*`), a 390 y a 1280.
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -8,7 +9,8 @@ import { createRequire } from "node:module";
 const AQUI = path.dirname(new URL(import.meta.url).pathname);
 const RAIZ = path.resolve(AQUI, "../../..");
 const { chromium } = createRequire(path.join(RAIZ, "package.json"))("playwright-core");
-const [dir] = process.argv.slice(2);
+const [dir] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const soloTercera = process.argv.includes("--solo-tercera");
 if (!dir) { console.error("uso: capturar-instagram-estilo-propio.mjs <carpeta>"); process.exit(1); }
 fs.mkdirSync(dir, { recursive: true });
 const url = "file://" + path.join(RAIZ, "docs/rediseno/prototipos/instagram-estilo-propio.html");
@@ -33,7 +35,13 @@ const foto = async (nombre) => {
   console.log(nombre, JSON.stringify(m), mal.length ? "· FALLA" : "· bien");
 };
 
-const RECORRIDO = [
+const TERCERA = [
+  ["3ª · Artistas", ["Con la línea", "Sin la línea", "Historia 9:16"]],
+  ["3ª · Lugares L1 o L2", ["Con la línea", "Sin la línea", "Historia 9:16"]],
+  ["3ª · Esta semana", []],
+];
+const RECORRIDO = soloTercera ? TERCERA : [
+  ...TERCERA,
   ["Artista 4:5", ["Las plantillas de hoy", "Repisa", "Cruce", "Papel"]],
   ["Lugar 4:5", ["Repisa", "Cruce", "Papel"]],
   ["Esta semana 4:5", ["Las plantillas de hoy", "Repisa", "Cruce", "Papel"]],
@@ -50,13 +58,30 @@ for (const [pantalla, variantes] of RECORRIDO) {
   await tocar("#selector", pantalla);
   const id = await page.evaluate(() => location.hash.slice(1).split("/")[0]);
   // La segunda vuelta: capturas con el prefijo A2- (pedido del gestor).
-  const nombre = (resto) => (id.startsWith("s2-") ? `A2-proto-${id.slice(3)}${resto}` : `${n++}-${id}${resto}`);
+  const nombre = (resto) => (id.startsWith("s3-") ? `A3-proto-${id.slice(3)}${resto}` : id.startsWith("s2-") ? `A2-proto-${id.slice(3)}${resto}` : `${n++}-${id}${resto}`);
   if (!variantes.length) { await foto(nombre("")); continue; }
   for (const v of variantes) {
     await tocar("#subselector", v);
     const letra = await page.evaluate(() => location.hash.slice(1).split("/")[1]);
     await foto(nombre(`-${letra}`));
   }
+}
+if (soloTercera) {
+  // La tercera vuelta a 320 y a 1280 (las notas abiertas y plegadas).
+  await tocar("#selector", "3ª · Lugares L1 o L2");
+  await tocar("#subselector", "Con la línea");
+  await tocar(".preajustes", "320");
+  await foto("A3-proto-lugares-320");
+  await tocar(".preajustes", "1280");
+  await page.screenshot({ path: path.join(dir, "A3-proto-lugares-1280.png") });
+  await page.locator("#plegar").click();
+  await page.waitForTimeout(400);
+  await tocar("#selector", "3ª · Artistas");
+  await page.screenshot({ path: path.join(dir, "A3-proto-artistas-1280.png") });
+  console.log("1280: pantallas completas");
+  await browser.close();
+  console.log(errores.length ? `ERRORES:\n${errores.join("\n")}` : "sin errores en la consola");
+  process.exit(0);
 }
 // Anchos: 320 y 1280 con la recomendada.
 await tocar("#selector", "Artista 4:5");

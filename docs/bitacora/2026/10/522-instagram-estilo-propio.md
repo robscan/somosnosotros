@@ -164,3 +164,116 @@ tarjeta a la izquierda, colores y familia a la derecha) · `27-historia-A-1280` 
 2. Figuras: ¿**artista = círculo, lugar = arco, semana = barras**? (En Inicio el círculo es el festival; aquí es la persona, como su avatar).
 3. ¿El sello de fecha va también en la tarjeta del lugar cuando tiene eventos (su próximo día), o solo en el artista y en la semana?
 4. ¿«Esta semana» lleva también historia 9:16 (hoy no la tiene), y el evento del día se queda con su cartel tal cual?
+
+## Tercera vuelta: Repisa con fotos reales y sin portada (2026-10-31)
+
+**Rama:** `instagram-estilo-propio-v2` (desde `origin/instagram-estilo-propio`, con `origin/main` unido; `OPEN_LOOPS.md` resuelto con
+`resolver_ol.py`). **Operador:** agente de la pieza (Gestor VII), sin otros agentes. **Estado:** prototipo, espera la firma del founder. Sin
+código de la app ni migración. Solo la variante A.
+
+Founder (2026-10-31): «Continuemos con Repisa como lo habías planeado. Vamos a eliminar la imagen de portada en la composición y solo usaremos
+perfil; así el material necesario será menor y evitamos dejar fuera a los que no tengan portada». Sigue en pie la regla del 29 de octubre: todo
+con fotos reales, nada de siluetas.
+
+### Qué cambió
+
+- **Sin portada en el artista.** Su **foto de perfil real** va dentro del círculo (los dos aros y el punto crema de siempre) y **el color de la
+  tarjeta sale de esa misma foto**; si la foto es casi gris (blanco y negro, por ejemplo), sale del respaldo del sistema por su id.
+- **El lugar en dos opciones**, para que el founder elija:
+  - **L1:** el arco sin ninguna foto. El arco de adentro va en la tinta (crema, o negro en la banda clara) y el **símbolo SN en el color de la
+    tarjeta** al centro. El color sale del respaldo del sistema por el id: L1 no necesita ninguna imagen.
+  - **L2:** el arco con la portada del lugar y el color de ella. Sin portada no hay L2: se queda como L1.
+- **La razón de la publicación** en versalitas arriba del nombre: ARTISTA DE LA SEMANA, ARTISTA DESTACADO, LUGAR DE LA SEMANA, LUGAR DESTACADO;
+  en la semana, ESTA SEMANA EN SAN LUIS POTOSÍ.
+- **La línea opcional** bajo el nombre: la primera oración de la descripción de la ficha si cabe en 90 letras; si no, cortada en la última palabra
+  que cabe, con «…» (`fraseDe`). Cada caso con y sin ella. Si la ficha no tiene descripción (Teatro de las Artes), va sin línea.
+- **«Esta semana» real:** del viernes 30 de octubre al domingo 1 de noviembre en San Luis Potosí, con los carteles reales de tres eventos de la
+  agenda pública (Cultura Mística en Aurora Co-Lab; Merk Local edición Catrinas en el Museo Francisco Cossío; Los Auténticos Decadentes y Los
+  Caligaris en el Parque Tangamanga II). La barra más alta mide lo que el cartel en 4:5 más su franja, así el cartel casi no se recorta.
+- Las fichas se leyeron de las páginas públicas de somosnosotros.org y las imágenes se bajan del Storage público con `fetch`; nada de `.env`
+  (`scripts/ops/auditoria-ui/prototipo/instagram-estilo-propio.tercera.json`).
+
+### Cómo se calcula el color de la foto
+
+La misma cuenta que Inicio con los carteles (`portadasSistema.ts`), con la foto de perfil (o la portada en L2) en el sitio del cartel:
+
+1. La imagen se reduce a 16×20 con sharp y `paletaDePixeles` (`coloresCartel.ts`) junta los píxeles por tono en 12 cubos de 30° más uno de
+   grises (saturación menor de 0,2 o muy oscuros); pesan más los vivos. De los tres cubos que más pesan se queda el de más croma, avivado
+   (`colores[1]`).
+2. `origenDe` lo toma si tiene tono (diferencia entre su canal mayor y el menor de 28 o más). Si no, la foto es «muy neutra» y el color es el
+   respaldo del sistema por el id (nueve colores: Cantera, Real de Catorce, Xantolo, Huasteca, Media Luna, Tangamanga…).
+3. `paleta()` se queda el tono, lleva la saturación a 0,32–0,7 y la luz a su banda: **oscura** (luminancia 0,13 o menos) con tinta crema
+   `#f4efd6`, o **clara** (0,30 o más; tonos de 40° a 80°: amarillos, mostazas, olivos) con negro `#1a1a1a`. De esa base salen los escalones de
+   las figuras: claro (base con crema), oscuro y más oscuro (base con negro).
+
+| Caso | De dónde | Origen → base · banda | Figuras (claro · oscuro · más oscuro) |
+|---|---|---|---|
+| Un León Marinero | foto (cielo azul) | `#3e7096` → `#3a698d` oscura | `#7997a6` · `#2a4c66` · `#1d3547` |
+| Hunik | foto (turquesa) | `#007c89` → `#156f78` oscura | `#619b98` · `#0f5056` · `#0b383c` |
+| Ifigenia Muluk | foto (rojo de la blusa y los labios) | `#8f0f38` → `#86183b` oscura | `#ab6170` · `#60112a` · `#430c1e` |
+| Kawasound | foto (rojo oscuro) | `#3f180d` → `#7f301a` oscura | `#a7715a` · `#5b2313` · `#40180d` |
+| Eva D Santos | foto (olivo de la pared) | `#bfba6b` → `#beb969` **clara** (texto negro) | `#d9d4a0` · `#949052` · `#6e6b3d` |
+| Emilio Manuel Palomino Santibáñez | foto (la piel) | `#a67a60` → `#845c44` oscura | `#aa8e76` · `#5f4231` · `#422e22` |
+| Carlos Alejandro Guevara Requena | **respaldo** (foto en blanco y negro) | `#c6f68d` → `#467014` oscura | `#819b56` · `#32510e` · `#23380a` |
+| Teatro de las Artes L2 | portada (verde) | `#284f3a` → `#33664b` oscura | `#75957a` · `#254936` · `#1a3326` |
+| Caja Real L2 | portada (cantera) | `#a06c47` → `#865b3c` oscura | `#ab8d70` · `#60422b` · `#432e1e` |
+| Museo Federico Silva L2 | portada (cielo) | `#4d80c1` → `#3866a1` oscura | `#7895b3` · `#284974` · `#1c3351` |
+| Bajo Ceiba L2 | portada (hojas) | `#8e9157` → `#969a4f` **clara** | `#c5c593` · `#75783e` · `#57592e` |
+| L1 (los cinco lugares) | respaldo por el id | Teatro de las Artes `#a04d1c`; Caja Real, Federico Silva y La Guarida `#b0306a`; Bajo Ceiba `#bd2f21` | — |
+| Esta semana | respaldo por el id de la semana | `#2d3fd6` → `#2637c4` oscura | `#6c76ca` · `#1b288d` · `#131c62` |
+
+### Las imágenes nuevas (`docs/rediseno/capturas-522/`, PNG de 1080), cada una abierta
+
+**Artistas** (`A3-artista-<clave>-con-linea-4x5`, `-sin-linea-4x5`, `-con-linea-9x16`):
+- `un-leon-marinero`: azul del cielo de su foto; él al centro del círculo; sello «nov 7»; «Próxima fecha: Sáb 7 de nov, 7:00 pm · Monterrey».
+- `hunik`: turquesa; la foto trae su nombre escrito («URIEL HUNIK») dentro del círculo; la línea corta en «Musica: techno…».
+- `ifigenia-muluk`: vino; su cara de cerca y la blusa roja; sin cuenta de Instagram (no se pone el renglón).
+- `kawasound`: rojo óxido; él contra el muro al sol.
+- `eva-d-santos`: banda clara, olivo con texto y punto en negro; ella sentada en el piso.
+- `emilio-palomino`: café (la piel de la foto); nombre de 33 letras en un renglón.
+- `carlos-guevara`: foto en blanco y negro → respaldo verde Huasteca; nombre de 32 letras en un renglón a 84.
+
+**Lugares** (`A3-lugar-L1-<clave>-…` y `A3-lugar-L2-<clave>-…`, mismos tres formatos):
+- `teatro-de-las-artes` (Ciudad de México, sin descripción: solo `sin-linea-4x5` y `sin-linea-9x16`): L1 cobre con el SN cobre sobre crema;
+  L2 verde con las columnas del teatro en el arco.
+- `caja-real` (39 letras, dos renglones): L1 magenta; L2 café cantera con la fachada en el arco.
+- `federico-silva` (44 letras, dos renglones parejos): L1 magenta; L2 azul con el edificio del museo.
+- `bajo-ceiba`: L1 rojo Cantera; L2 banda clara, olivo con las hojas de la ceiba y texto negro.
+- `guarida-del-coyote` (sin portada): solo L1, magenta (L2 no existe: se queda como L1).
+
+**Esta semana:** `A3-semana-4x5` y `A3-semana-9x16`: azul Tangamanga, tres barras con los carteles Mística, Catrinas y Caligaris, el día en
+su franja crema al pie, el título en dos renglones y los tres eventos con filete.
+
+**El prototipo (teléfono a 2×):** `A3-proto-artistas-A3c` / `-A3s` / `-A3h`, `A3-proto-lugares-A3c` / `-A3s` / `-A3h` (L1 y L2 lado a lado por
+lugar), `A3-proto-semana`, `A3-proto-lugares-320` (a 320, sin desborde), `A3-proto-lugares-1280` y `A3-proto-artistas-1280` (escritorio, notas
+abiertas y plegadas). Medidas de cada tarjeta en `medidas-A3.json`.
+
+### El prototipo
+
+`docs/rediseno/prototipos/instagram-estilo-propio.html` abre en la sección nueva **«Tercera vuelta: Repisa con fotos reales y sin portada»**
+(pantallas «3ª · Artistas», «3ª · Lugares L1 o L2», «3ª · Esta semana»), con sus notas (qué cambió, el color de la foto, riesgos) y las dos
+preguntas. Las vueltas anteriores siguen ahí. Se arma con `node scripts/ops/auditoria-ui/prototipo/instagram-estilo-propio.mjs --solo-tercera`
+(dibuja solo las `A3-*` y reutiliza las PNG y medidas de A/B/C y A2 ya guardadas) y se recorre con
+`node scripts/ops/auditoria-ui/capturar-instagram-estilo-propio.mjs docs/rediseno/capturas-522 --solo-tercera`.
+
+### Verificación
+
+- **Las 48 tarjetas A3** (`revisar`, con las cajas de satori): 0 con falla. Ningún texto fuera del margen ni en lo que tapa la historia, ninguno
+  encimado, ninguno cortado; todo el texto a 4,5:1 o más; ningún texto encima de una foto ni de un cartel (el texto va bajo la repisa, el día de
+  cada barra en su franja, el sello en la esquina libre). Nombres de 32, 33, 39 y 44 letras sin cortes; la tabla de nombres hasta 64 sigue igual.
+- **Medidor del prototipo**, en las 7 vistas de la tercera vuelta y a 320: 0 textos cortados, 0 desbordes, 0 toques menores de 44, 0 tarjetas
+  con falla; profundidad 5 como mucho. Recorrido con toques reales (Playwright en el Chrome de la Mac). **Sin errores en la consola.**
+- Es prototipo: no corrí `lint`/`typecheck`/`test` de la app porque no cambia.
+
+### Riesgos
+
+- En retratos el color tiende a la piel (café, terracota): Emilio sale café. Cuando hay ropa o fondo vivos, gana ese (Ifigenia, Hunik, León).
+- Una foto en blanco y negro toma el respaldo (Carlos, verde): no recuerda a la foto, pero se lee bien.
+- L1 con el respaldo: con nueve colores y el id, varios lugares repiten (aquí tres de cinco salen magenta; con los id reales, otro reparto).
+- La línea corta la primera oración: puede quedar a medias («activo desde…», «Musica: techno…»), y repite las erratas de la ficha.
+- L2 con fotos de Wikimedia con CC BY o CC BY-SA pide el crédito (OL-491): iría en el texto de la publicación, no en la tarjeta.
+
+### Preguntas al founder
+
+1. Lugares: ¿**L1** (el arco con el símbolo SN, sin foto) o **L2** (el arco con su portada cuando la tenga, y L1 cuando no)?
+2. ¿**Con** la línea de la descripción bajo el nombre, o **sin** ella?

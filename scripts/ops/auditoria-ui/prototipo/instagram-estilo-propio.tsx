@@ -40,9 +40,13 @@ export type FichaIG = {
   razon?: string | null;
   /** Segunda vuelta: la línea opcional bajo el nombre, una frase de la descripción (hasta ~90 letras, cortada por palabra). */
   frase?: string | null;
+  /** Tercera vuelta: de dónde sale el color cuando `portada` trae imagen (la foto de perfil del artista o la portada del lugar). */
+  colorDe?: "foto" | "portada";
+  /** Tercera vuelta (lugar L1): sin foto, el arco de adentro va en la tinta y el símbolo SN en el color de la tarjeta. */
+  snEnColor?: boolean;
 };
 
-export type SemanaIG = { id: string; ciudad: string; titulo: string; mes: string; dias: string; eventos: { cuando: string; titulo: string }[]; barras: string[]; carteles?: (Buffer | null)[] };
+export type SemanaIG = { id: string; ciudad: string; titulo: string; mes: string; dias: string; eventos: { cuando: string; titulo: string }[]; barras: string[]; carteles?: (Buffer | null)[]; tope45?: boolean };
 
 /**
  * La frase de la descripción para la línea opcional: la primera oración si cabe en `max` letras; si no, hasta la última palabra que cabe, con «…».
@@ -59,7 +63,7 @@ export function fraseDe(descripcion: string | null | undefined, max = 90): strin
 
 export type Dibujada = { png: Buffer; jpeg: Buffer; ancho: number; alto: number; color: Color; nodos: Nodo[]; recortado: boolean; contrastes: { texto: string; ratio: number }[] };
 export type Nodo = { texto: string; x: number; y: number; ancho: number; alto: number };
-export type Color = { origen: string; deDonde: "portada" | "respaldo"; base: string; banda: string; fondo: string; tinta: string; figuras: string[] };
+export type Color = { origen: string; deDonde: "portada" | "foto" | "respaldo"; base: string; banda: string; fondo: string; tinta: string; figuras: string[] };
 
 // ===== Fuentes, como «Crear cartel»
 
@@ -103,18 +107,18 @@ const tri = (x: number, yb: number, w: number, a: number, fill: string) => `<pol
 
 let idClip = 0;
 /** La foto recortada a una forma (`d` de un path o un círculo); sin foto, el fondo `relleno` con el símbolo SN en su tinta. */
-async function fotoEn(forma: { circulo: [number, number, number] } | { arco: [number, number, number, number] } | { rect: [number, number, number, number] }, foto: Buffer | null, relleno: string): Promise<string> {
+async function fotoEn(forma: { circulo: [number, number, number] } | { arco: [number, number, number, number] } | { rect: [number, number, number, number] }, foto: Buffer | null, relleno: string, colorSN = tintaSobre(relleno), anchoSN = 0.46): Promise<string> {
   const id = `f${++idClip}`;
   const caja = "circulo" in forma ? { x: forma.circulo[0] - forma.circulo[2], y: forma.circulo[1] - forma.circulo[2], w: 2 * forma.circulo[2], h: 2 * forma.circulo[2] } : "arco" in forma ? { x: forma.arco[0], y: forma.arco[1] - forma.arco[3], w: forma.arco[2], h: forma.arco[3] } : { x: forma.rect[0], y: forma.rect[1], w: forma.rect[2], h: forma.rect[3] };
   const figura = "circulo" in forma ? circ(...forma.circulo, "#000") : "arco" in forma ? `<path d="${arcoD(...forma.arco)}"/>` : rect(...forma.rect, "#000");
   if (!foto) {
     // El símbolo SN al centro de la figura (como la imagen sin foto de la app), del ancho de media figura.
-    const ancho = caja.w * 0.46;
+    const ancho = caja.w * anchoSN;
     const s = ancho / CAJA_SN.ancho;
     const alto = CAJA_SN.alto * s;
     const tx = caja.x + (caja.w - ancho) / 2;
     const ty = caja.y + caja.h * ("circulo" in forma ? 0.5 : 0.58) - alto / 2;
-    return `<defs><clipPath id="${id}">${figura}</clipPath></defs><g clip-path="url(#${id})">${rect(caja.x, caja.y, caja.w, caja.h, relleno)}<g transform="translate(${r2(tx)},${r2(ty)}) scale(${s.toFixed(5)})"><path d="${TRAZO_SN}" fill="${tintaSobre(relleno)}"/></g></g>`;
+    return `<defs><clipPath id="${id}">${figura}</clipPath></defs><g clip-path="url(#${id})">${rect(caja.x, caja.y, caja.w, caja.h, relleno)}<g transform="translate(${r2(tx)},${r2(ty)}) scale(${s.toFixed(5)})"><path d="${TRAZO_SN}" fill="${colorSN}"/></g></g>`;
   }
   const w = Math.round(caja.w);
   const h = Math.round(caja.h);
@@ -339,7 +343,9 @@ export async function dibujar(v: Variante, formato: IdFormato, cosa: Cosa): Prom
       // Tres arcos que comparten la base (la puerta), del claro al oscuro, y la foto en el de adentro.
       figs.push(arco(x, repisa, w, u, T.uno));
       figs.push(arco(x + w * 0.09, repisa, w * 0.82, u - w * 0.09, T.dos));
-      figs.push(await fotoEn({ arco: [x + w * 0.18, repisa, w * 0.64, u - w * 0.18] }, cosa.f.foto, T.tres));
+      // Tercera vuelta, L1: sin foto, el arco de adentro en la tinta y el símbolo SN en el color de la tarjeta (el «SN en color»).
+      const l1 = !cosa.f.foto && cosa.f.snEnColor;
+      figs.push(await fotoEn({ arco: [x + w * 0.18, repisa, w * 0.64, u - w * 0.18] }, cosa.f.foto, l1 ? T.acento : T.tres, l1 ? T.fondo : undefined, l1 ? 0.6 : 0.46));
       // El acento: un sol pequeño apoyado en la repisa, del lado libre.
       const libre = selloIzq - hueco - (x + w);
       const sol = Math.min(libre * 0.6, u * 0.22, W - MARGEN - (x + w) - hueco);
@@ -349,8 +355,9 @@ export async function dibujar(v: Variante, formato: IdFormato, cosa: Cosa): Prom
       const cols = [T.dos, T.uno, T.acento];
       const total = Math.min(selloIzq - hueco - MARGEN, util);
       const ancho = (total - 2 * hueco) / 3;
-      const alto = repisa - arriba;
-      const ritmo = cosa.s.carteles ? [0.8, 0.9, 1] : [0.46, 0.72, 1];
+      // Con carteles (tercera vuelta), la barra más alta es la del cartel en 4:5 más su franja: así el cartel casi no se recorta.
+      const alto = cosa.s.tope45 ? Math.min(repisa - arriba, ancho * 1.25 + 58) : repisa - arriba;
+      const ritmo = cosa.s.tope45 ? [0.84, 0.92, 1] : cosa.s.carteles ? [0.8, 0.9, 1] : [0.46, 0.72, 1];
       ritmo.forEach((k, i) => barrasSemana.push({ x: MARGEN + i * (ancho + hueco), y: repisa - alto * k, w: ancho, h: alto * k, col: cols[i], img: cosa.s.carteles?.[i] ?? null }));
     }
   }
@@ -398,7 +405,7 @@ export async function dibujar(v: Variante, formato: IdFormato, cosa: Cosa): Prom
   if (selloFecha) contrastes.push({ texto: "sello (día)", ratio: contraste(NEGRO, "#ffffff") * 0.97 }, { texto: "sello (mes)", ratio: contraste("#6d34c8", "#ffffff") * 0.97 });
   const el = <div style={{ display: "flex", position: "relative", width: W, height: H, overflow: "hidden", backgroundColor: T.fondo, fontFamily: "regular" }}>{capas}</div>;
   const r = await rasterizar(el, f, T.fondo);
-  const color: Color = { origen, deDonde: colores && origen === colores[1] ? "portada" : "respaldo", base: P.base, banda: P.banda, fondo: T.fondo, tinta, figuras: [T.uno, T.dos, T.tres, T.acento] };
+  const color: Color = { origen, deDonde: colores && origen === colores[1] ? (cosa.tipo === "semana" ? "portada" : (cosa.f.colorDe ?? "portada")) : "respaldo", base: P.base, banda: P.banda, fondo: T.fondo, tinta, figuras: [T.uno, T.dos, T.tres, T.acento] };
   return { ...r, ancho: W, alto: H, color, recortado, contrastes };
 }
 

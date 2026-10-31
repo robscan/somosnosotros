@@ -12,7 +12,9 @@
    publicaciones que hagamos desde nuestra cuenta».
    Las tarjetas son imágenes reales (satori y sharp, las cinco instancias de Bricolage, `paleta()` de las portadas del sistema y el pie de «Crear
    cartel»), dibujadas por `scripts/ops/auditoria-ui/prototipo/instagram-estilo-propio.mjs`; aquí van en JPEG de 540 (las PNG de 1080, en
-   `docs/rediseno/capturas-522/`). Las portadas de Inicio son recortes de la maqueta real (respaldo local). */
+   `docs/rediseno/capturas-522/`). Las portadas de Inicio son recortes de la maqueta real (respaldo local).
+   Tercera vuelta (2026-10-31), «Repisa con fotos reales y sin portada»: founder, «vamos a eliminar la imagen de portada en la composición y solo
+   usaremos perfil». Pantallas «3ª · …»: artistas con su foto de perfil, lugares en L1 (símbolo SN) o L2 (portada) y «Esta semana» real. */
 :root { --fondo: #f4f4f1; --tinta: #1a1a1a; --gris: #5f5f5a; --linea: #d9d9d4; --acento: #6d34c8; --blanco: #fff; --radio: 12px; --gutter: 16px; color-scheme: light; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --fondo: #161615; --tinta: #f0efe9; --gris: #b4b3ac; --linea: #3a3a37; --blanco: #222220; --acento: #a888f0; } }
 :root[data-theme="dark"] { --fondo: #161615; --tinta: #f0efe9; --gris: #b4b3ac; --linea: #3a3a37; --blanco: #222220; --acento: #a888f0; }
@@ -103,6 +105,9 @@ body[data-notas="cerradas"] .notas-cuerpo, body[data-notas="cerradas"] .notas-ca
   th { color: var(--gris); font-weight: 600; }
   td.n { text-align: right; font-variant-numeric: tabular-nums; }
   .info, .caso { display: grid; gap: 12px; align-content: start; }
+  .par { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 760px; }
+  .par figure { margin: 0; display: grid; gap: 6px; align-content: start; }
+  .par figcaption { font-size: 13px; font-weight: 600; }
   @media (min-width: 900px) {
     main { max-width: 1180px; margin: 0 auto; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; column-gap: 24px; }
     main > h1, main > p, main > .ancho { grid-column: 1 / -1; }
@@ -113,8 +118,8 @@ body[data-notas="cerradas"] .notas-cuerpo, body[data-notas="cerradas"] .notas-ca
 <script>
 const DATOS = /*__DATOS__*/null;
 
-const LETRAS = { hoy: "Hoy", A: "A", B: "B", C: "C", A2f: "A2", A2s: "A2", A2h: "A2" };
-const NOMBRE_VAR = { hoy: "Las plantillas de hoy", A: "Repisa", B: "Cruce", C: "Papel", A2f: "Con la frase", A2s: "Sin la frase", A2h: "Historia 9:16" };
+const LETRAS = { hoy: "Hoy", A: "A", B: "B", C: "C", A2f: "A2", A2s: "A2", A2h: "A2", A3c: "A3", A3s: "A3", A3h: "A3", A3sem: "A3" };
+const NOMBRE_VAR = { hoy: "Las plantillas de hoy", A: "Repisa", B: "Cruce", C: "Papel", A2f: "Con la frase", A2s: "Sin la frase", A2h: "Historia 9:16", A3c: "Con la línea", A3s: "Sin la línea", A3h: "Historia 9:16", A3sem: "4:5 y 9:16" };
 const t = (clave) => DATOS.tarjetas[clave];
 const img = (src, alt) => `<img class="tarjeta" src="${src}" alt="${alt}" width="540">`;
 
@@ -190,7 +195,64 @@ const PANTALLAS2 = [
   ] },
 ];
 
+/* ===== Tercera vuelta (solo A): Repisa con fotos reales y sin portada ===== */
+const S3 = () => DATOS.tercera;
+const ARTISTAS3 = ["un-leon-marinero", "hunik", "ifigenia-muluk", "kawasound", "eva-d-santos", "emilio-palomino", "carlos-guevara"];
+const LUGARES3 = ["teatro-de-las-artes", "caja-real", "federico-silva", "bajo-ceiba", "guarida-del-coyote"];
+/** La clave de una tarjeta de la tercera vuelta; sin descripción en la ficha solo existe «sin-linea». */
+function clave3(prefijo, modo) {
+  const formato = modo === "h" ? "9x16" : "4x5";
+  const linea = modo === "s" ? "sin-linea" : "con-linea";
+  const k = `${prefijo}-${linea}-${formato}`;
+  return S3().tarjetas[k] ? k : `${prefijo}-sin-linea-${formato}`;
+}
+const deDonde3 = (c) => (c.deDonde === "foto" ? "el más vivo de su foto de perfil" : c.deDonde === "portada" ? "el más vivo de su portada" : "respaldo del sistema, por el id");
+function revision3(claves) {
+  const malas = claves.flatMap((k) => (S3().revision[k] ?? []).map((m) => `${k}: ${m}`));
+  return malas.length ? `<p class="mal ancho">${malas.join("<br>")}</p>` : `<p class="bien ancho">Revisado en las ${claves.length}: ningún texto fuera de su zona, encimado ni cortado; todo el texto a 4,5:1 o más. Ningún texto va encima de una foto o de un cartel.</p>`;
+}
+function artistas3(modo) {
+  const claves = ARTISTAS3.map((c) => clave3(`artista-${c}`, modo));
+  return claves.map((k, i) => {
+    const f = S3().fichas[`artista-${ARTISTAS3[i]}`];
+    const d = S3().tarjetas[k];
+    return `<section class="caso"><h2>${f.nombre} · ${f.que}</h2><p>${f.razon.toUpperCase()}${modo !== "s" && f.frase ? ` · línea: «${f.frase}»` : ""} · color ${d.color.origen} (${deDonde3(d.color)}) → base ${d.color.base}, banda ${d.color.banda}</p>${img(d.src, `Tarjeta de ${f.nombre} con su foto de perfil en el círculo`)}</section>`;
+  }).join("") + revision3(claves);
+}
+function lugares3(modo) {
+  const todas = [];
+  const html = LUGARES3.map((c) => {
+    const f = S3().fichas[`lugar-${c}`];
+    const k1 = clave3(`lugar-L1-${c}`, modo);
+    const k2 = f.portada ? clave3(`lugar-L2-${c}`, modo) : null;
+    todas.push(k1, ...(k2 ? [k2] : []));
+    const d1 = S3().tarjetas[k1];
+    const d2 = k2 ? S3().tarjetas[k2] : null;
+    const sinLinea = modo !== "s" && !f.frase ? " · su ficha no tiene descripción: va sin línea" : "";
+    return `<section class="caso ancho"><h2>${f.nombre} · ${f.que}</h2><p>${f.razon.toUpperCase()}${sinLinea}${f.credito ? ` · foto: ${f.credito}` : ""}</p>
+      <div class="par"><figure>${img(d1.src, `L1: ${f.nombre} con el símbolo SN en el arco`)}<figcaption>L1 · símbolo SN · base ${d1.color.base} (respaldo)</figcaption></figure>
+      <figure>${d2 ? `${img(d2.src, `L2: ${f.nombre} con su portada en el arco`)}<figcaption>L2 · su portada · base ${d2.color.base}</figcaption>` : `<figcaption>L2 · sin portada: se queda como L1</figcaption>`}</figure></div></section>`;
+  }).join("");
+  return html + revision3(todas);
+}
+const PANTALLAS3 = [
+  { id: "s3-artistas", nombre: "3ª · Artistas", estados: [
+    { variante: "A3c", html: () => `<h1>Artistas con su foto de perfil · con la línea</h1><p>Sin portada: la foto de perfil real va dentro del círculo y el color de la tarjeta sale de esa misma foto (si es casi gris, del respaldo del sistema). La razón arriba del nombre; debajo, una frase de su descripción (hasta 90 letras, cortada por palabra).</p>${artistas3("c")}` },
+    { variante: "A3s", html: () => `<h1>Artistas con su foto de perfil · sin la línea</h1><p>Lo mismo sin la frase: el círculo crece lo que deja la línea.</p>${artistas3("s")}` },
+    { variante: "A3h", html: () => `<h1>Artistas · historia 9:16</h1><p>Con la línea. Todo el texto entre lo que tapa Instagram arriba (250) y abajo (340).</p>${artistas3("h")}` },
+  ] },
+  { id: "s3-lugares", nombre: "3ª · Lugares L1 o L2", estados: [
+    { variante: "A3c", html: () => `<h1>Lugares: L1 o L2 · con la línea</h1><p><b>L1</b>: el arco con el símbolo SN en el color de la tarjeta, sin ninguna foto (el color, del respaldo del sistema por su id). <b>L2</b>: el arco con la portada del lugar y el color de ella; sin portada, se queda como L1.</p>${lugares3("c")}` },
+    { variante: "A3s", html: () => `<h1>Lugares: L1 o L2 · sin la línea</h1>${lugares3("s")}` },
+    { variante: "A3h", html: () => `<h1>Lugares: L1 o L2 · historia 9:16</h1>${lugares3("h")}` },
+  ] },
+  { id: "s3-semana", nombre: "3ª · Esta semana", estados: [
+    { variante: "A3sem", html: () => `<h1>«Esta semana» real: del 30 de octubre al 1 de noviembre</h1><p>Tres eventos reales de San Luis Potosí, cada uno con su cartel en su barra (en 4:5, casi sin recorte) y el día en una franja de la tinta al pie. El color, del respaldo del sistema por el id de la semana.</p><section class="caso">${img(S3().tarjetas["semana-4x5"].src, "Portada de «Esta semana» con tres carteles reales")}</section><section class="caso">${img(S3().tarjetas["semana-9x16"].src, "Historia de «Esta semana» con tres carteles reales")}</section>${revision3(["semana-4x5", "semana-9x16"])}` },
+  ] },
+];
+
 const PANTALLAS = [
+  ...PANTALLAS3,
   { id: "artista", nombre: "Artista 4:5", estados: ["hoy", "A", "B", "C"].map((v) => ({ variante: v, html: () => (v === "hoy" ? `<h1>Artista destacado, hoy</h1>${img(DATOS.hoy.artista, "Tarjeta de hoy de Valeria Quiroz")}` : pieza(v, "artista", "4x5", `Artista destacado · ${NOMBRE_VAR[v]}`, "Tarjeta de Valeria Quiroz: su foto en un círculo, su nombre, su cuenta y su próxima fecha")) })) },
   { id: "lugar", nombre: "Lugar 4:5", estados: ["hoy", "A", "B", "C"].map((v) => ({ variante: v, html: () => (v === "hoy" ? `<h1>Lugar destacado, hoy</h1>${img(DATOS.hoy.lugar, "Tarjeta de hoy del museo Leonora Carrington")}` : pieza(v, "lugar", "4x5", `Lugar destacado · ${NOMBRE_VAR[v]}`, "Tarjeta del Teatro de la Paz: su portada en un arco, su nombre, su cuenta y sus eventos de la semana")) })) },
   { id: "semana", nombre: "Esta semana 4:5", estados: ["hoy", "A", "B", "C"].map((v) => ({ variante: v, html: () => (v === "hoy" ? `<h1>Portada de «Esta semana», hoy</h1>${img(DATOS.hoy.semana, "Portada de hoy de «Esta semana»")}` : pieza(v, "semana", "4x5", `Portada de «Esta semana» · ${NOMBRE_VAR[v]}`, "Portada de «Esta semana»: tres barras con los días, el título de la semana y tres eventos")) })) },
@@ -229,6 +291,10 @@ const NOTAS_A2 = `<span class="recomendada">Segunda vuelta</span>
   <h3>Qué cambió</h3><ul><li><b>Fotos reales</b> de fichas reales (Storage público), dentro de la figura: ya no hay siluetas dibujadas.</li><li><b>La razón</b> arriba del nombre, en versalitas: ARTISTA DE LA SEMANA · ARTISTA DESTACADO · LUGAR DE LA SEMANA · LUGAR DESTACADO · ESTA SEMANA EN SAN LUIS POTOSÍ.</li><li><b>La frase</b> opcional bajo el nombre, sacada de la descripción (hasta 90 letras, cortada por palabra), con qué hace o qué es y la ciudad debajo. Con y sin ella, para elegir.</li><li>«Esta semana» lleva <b>los carteles reales</b> de sus tres eventos en las barras.</li></ul>
   <h3>El texto y la foto</h3><p>Ningún texto va encima de una foto ni de un cartel: todo va sobre el color plano, debajo de la línea del título, y el día de cada barra en su franja de la tinta. Todo a 4,5:1 o más (lo mide cada tarjeta).</p>
   <h3>Riesgos</h3><ul><li>Una portada oscura (Foro Sombra) deja el arco casi negro.</li><li>Si la foto de la ficha es un logotipo (IYARI), se ve como logotipo.</li><li>La primera oración larga se corta con «…»: la frase puede quedar a medias.</li></ul>`;
+const NOTAS_A3 = `<span class="recomendada">Tercera vuelta: Repisa con fotos reales y sin portada</span>
+  <h3>Qué cambió</h3><ul><li><b>Sin portada.</b> El artista lleva su <b>foto de perfil</b> en el círculo y el color sale de esa foto. Menos material: basta la foto que casi todas las fichas ya tienen.</li><li><b>El lugar en dos opciones:</b> L1, el arco con el símbolo SN en color, sin foto; L2, el arco con la portada cuando existe.</li><li><b>La razón</b> en versalitas arriba del nombre y la <b>línea</b> opcional bajo él, con y sin ella.</li><li><b>«Esta semana»</b> real (30 de oct al 1 de nov) con sus tres carteles.</li></ul>
+  <h3>El color de la foto</h3><p>La foto se reduce a 16×20 y <code>paletaDePixeles</code> junta sus píxeles por tono (12 cubos y uno de grises) y elige el más vivo de los que pesan más; <code>origenDe</code> lo toma si tiene tono (diferencia entre canales de 28 o más) y si no, el respaldo por el id; <code>paleta()</code> lo lleva a medio tono y a su banda (oscura con crema o clara con negro) y saca los escalones de las figuras. La misma cuenta que Inicio con los carteles.</p>
+  <h3>Riesgos</h3><ul><li>En retratos el color tiende a la piel (café, terracota): Emilio sale café.</li><li>Una foto en blanco y negro toma el respaldo (Carlos, verde): no recuerda a la foto, pero se lee.</li><li>L1 con el respaldo: con nueve colores, varios lugares repiten (aquí, tres de cinco en magenta).</li><li>La línea corta la primera oración con «…»: puede quedar a medias.</li></ul>`;
 const NOTAS_PANTALLA = {
   nombres: `<h3>La regla</h3><p>Ningún nombre se corta hasta 32 letras (tampoco más allá: el de 64 letras cabe en dos renglones a 84 px). Hasta unas 34 letras va en un renglón; los más largos, en dos renglones parejos.</p>`,
   inicio: `<h3>Para comparar</h3><p>Las tonalidades: medios tonos (saturación de 0,32 a 0,7), banda oscura con crema <code>#f4efd6</code> o clara con negro <code>#1a1a1a</code>, y los escalones del mismo color para las figuras (claro, oscuro, más oscuro).</p>`,
@@ -237,7 +303,7 @@ const NOTAS_PANTALLA = {
 /* ===== El armazón ===== */
 const $ = (s) => document.querySelector(s);
 const marco = $("#marco"), sel = $("#selector"), sub = $("#subselector"), notas = $("#notas-cuerpo"), medidor = $("#medidor");
-let pantalla = PANTALLAS.find((p) => p.id === "s2-artistas"), estado = pantalla.estados[0];
+let pantalla = PANTALLAS.find((p) => p.id === "s3-artistas"), estado = pantalla.estados[0];
 function chip(texto, pressed, onClick, extra = {}) {
   const b = document.createElement("button");
   b.type = "button";
@@ -251,14 +317,15 @@ function chip(texto, pressed, onClick, extra = {}) {
 }
 function pintarSelectores() {
   sel.replaceChildren(...PANTALLAS.map((p) => chip(p.nombre, p === pantalla, () => { const v = estado.variante; pantalla = p; estado = p.estados.find((e) => e.variante === v) ?? p.estados.find((e) => e.variante === "A") ?? p.estados[0]; pintarSelectores(); pintar(); })));
-  sub.replaceChildren(...pantalla.estados.map((e) => chip(NOMBRE_VAR[e.variante], e === estado, () => { estado = e; pintarSelectores(); pintar(); }, { variante: LETRAS[e.variante], rec: e.variante === "A" || e.variante === "A2f" })));
+  sub.replaceChildren(...pantalla.estados.map((e) => chip(NOMBRE_VAR[e.variante], e === estado, () => { estado = e; pintarSelectores(); pintar(); }, { variante: LETRAS[e.variante], rec: e.variante === "A" || e.variante === "A2f" || e.variante === "A3c" })));
 }
 function pintar() {
   // textContent y no innerHTML: innerHTML devuelve «>» como «&gt;» y rompe los selectores de hijo.
   const css = $("#base-css").content.textContent;
   marco.srcdoc = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body data-variante="${estado.variante}"><main class="${["artista", "lugar", "semana"].includes(pantalla.id) && estado.variante !== "hoy" ? "pieza" : ""}">${estado.html()}</main></body></html>`;
   const segunda = pantalla.id.startsWith("s2-");
-  notas.innerHTML = `<p><b>${pantalla.nombre}</b> · ${LETRAS[estado.variante]} · ${NOMBRE_VAR[estado.variante]}</p>` + (segunda ? NOTAS_A2 + PREGUNTAS2 : (NOTAS_PANTALLA[pantalla.id] ?? NOTAS[estado.variante] ?? "") + PREGUNTAS);
+  const tercera = pantalla.id.startsWith("s3-");
+  notas.innerHTML = `<p><b>${pantalla.nombre}</b> · ${LETRAS[estado.variante]} · ${NOMBRE_VAR[estado.variante]}</p>` + (tercera ? NOTAS_A3 + PREGUNTAS3 : segunda ? NOTAS_A2 + PREGUNTAS2 : (NOTAS_PANTALLA[pantalla.id] ?? NOTAS[estado.variante] ?? "") + PREGUNTAS);
   marco.addEventListener("load", medir, { once: true });
   try { history.replaceState(null, "", `#${pantalla.id}/${estado.variante}`); } catch {}
 }
@@ -267,6 +334,9 @@ const PREGUNTAS = `<h3>Preguntas al founder</h3><ol>
   <li>Figuras: ¿artista = círculo, lugar = arco y semana = barras? (En Inicio el círculo es el festival; aquí es la persona, como su avatar).</li>
   <li>¿El sello de fecha va también en la tarjeta del lugar cuando tiene eventos (su próximo día), o solo en el artista y en la semana?</li>
   <li>¿«Esta semana» lleva también historia 9:16 (hoy no la tiene), y el evento del día se queda con su cartel tal cual?</li></ol>`;
+const PREGUNTAS3 = `<h3>Preguntas al founder (tercera vuelta)</h3><ol>
+  <li>Lugares: ¿<b>L1</b> (el arco con el símbolo SN, sin foto) o <b>L2</b> (el arco con su portada cuando la tenga, y L1 cuando no)?</li>
+  <li>¿<b>Con</b> la línea de la descripción bajo el nombre, o <b>sin</b> ella?</li></ol>`;
 const PREGUNTAS2 = `<h3>Preguntas al founder (segunda vuelta)</h3><ol>
   <li>¿Con la frase o sin ella? (Recomiendo con ella en artistas y sin ella en lugares, donde la frase suele repetir el tipo).</li>
   <li>¿«Artista de la semana» y «Artista destacado» son dos cosas distintas para ti? Propuesta: «de la semana» cuando tiene fecha esos días; «destacado», cuando no.</li>

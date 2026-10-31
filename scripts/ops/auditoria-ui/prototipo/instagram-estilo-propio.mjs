@@ -6,6 +6,8 @@
 //     (`capturas-509`) y las portadas del sistema de Inicio (`capturas-522/inicio-*.png`, recortadas de la maqueta real) para comparar.
 //
 //   node scripts/ops/auditoria-ui/prototipo/instagram-estilo-propio.mjs
+//   node scripts/ops/auditoria-ui/prototipo/instagram-estilo-propio.mjs --solo-tercera   (dibuja solo la tercera vuelta, `A3-*`, y arma el
+//     prototipo con las tarjetas A/B/C y A2 que ya están en `capturas-522/` y sus medidas, sin volver a dibujarlas)
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -105,7 +107,19 @@ if (process.argv.includes("--colores")) {
 const tarjetas = {};
 const revision = {};
 const soloVariante = process.argv.find((a) => a.startsWith("--solo="))?.slice(7);
-for (const v of ["A", "B", "C"]) {
+const soloTercera = process.argv.includes("--solo-tercera");
+const jpgDe = async (archivo, ancho = 540) => "data:image/jpeg;base64," + (await sharp(archivo).resize({ width: ancho }).jpeg({ quality: 84, chromaSubsampling: "4:4:4" }).toBuffer()).toString("base64");
+if (soloTercera) {
+  // Las tarjetas A/B/C ya dibujadas: su PNG pasa a JPEG de 540 y su color y revisión salen de `medidas.json`.
+  const m = JSON.parse(fs.readFileSync(path.join(PNG, "medidas.json"), "utf8"));
+  for (const v of ["A", "B", "C"])
+    for (const [caso, formato] of QUE) {
+      const clave = `${v}-${caso}-${formato}`;
+      tarjetas[clave] = { src: await jpgDe(path.join(PNG, `${clave}.png`)), color: m.colores[clave] };
+      revision[clave] = m.revision[clave];
+    }
+}
+for (const v of soloTercera ? [] : ["A", "B", "C"]) {
   if (soloVariante && !soloVariante.includes(v)) continue;
   for (const [caso, formato] of QUE) {
     const cosa = caso === "semana" ? { tipo: "semana", s: SEMANA } : { tipo: CASOS[caso].tipo, f: CASOS[caso] };
@@ -123,7 +137,7 @@ fs.rmSync(fotos, { recursive: true, force: true });
 const NOMBRES = ["Ana Paz", "Íñigo Montalvo", "Valeria Quiroz (demo)", "Colectivo Nube de Papel (demo)", "Orquesta Típica de San Luis Potosí", "ORQUESTA MEXICANA DE MÚSICA MAYA", "Colectivo Mamá Wambú Mujeres Mimo", "Compañía Nacional de Danza Folklórica", "Museo del Ferrocarril Jesús García Corona", "Centro de las Artes de San Luis Potosí Centenario", "Museo Federico Silva, Escultura Contemporánea de San Luis Potosí"];
 const nombres = T.medirNombres(NOMBRES);
 for (const n of nombres) console.log(`${String(n.letras).padStart(2)} letras · ${n.renglones} renglón(es) a ${n.tamano} px${n.recortado ? " · CORTADO" : ""} · ${n.nombre}`);
-fs.writeFileSync(path.join(PNG, "medidas.json"), JSON.stringify({ nombres, revision, colores: Object.fromEntries(Object.entries(tarjetas).map(([k, t]) => [k, t.color])) }, null, 1));
+if (!soloTercera) fs.writeFileSync(path.join(PNG, "medidas.json"), JSON.stringify({ nombres, revision, colores: Object.fromEntries(Object.entries(tarjetas).map(([k, t]) => [k, t.color])) }, null, 1));
 
 // 3b. Segunda vuelta (solo A): fichas reales con sus fotos del Storage público (se bajan con fetch y se guardan en una carpeta temporal), la
 // razón de la publicación arriba del nombre y la línea opcional con una frase de la descripción, con y sin ella.
@@ -147,7 +161,15 @@ const guardarA2 = (clave, d, formato) => {
   segunda.revision[clave] = T.revisar(d, formato);
   console.log(`A2-${clave}`, d.color.deDonde, d.color.origen, "→", d.color.base, d.color.banda, "·", segunda.revision[clave].length ? segunda.revision[clave].join(" | ") : "bien");
 };
-if (!process.argv.includes("--sin-segunda")) {
+if (soloTercera) {
+  // La segunda vuelta ya dibujada: sus PNG y `medidas-A2.json`.
+  const m = JSON.parse(fs.readFileSync(path.join(PNG, "medidas-A2.json"), "utf8"));
+  Object.assign(segunda.fichas, m.fichas);
+  for (const clave of Object.keys(m.colores)) {
+    segunda.tarjetas[clave] = { src: await jpgDe(path.join(PNG, `A2-${clave}.png`)), color: m.colores[clave] };
+    segunda.revision[clave] = m.revision[clave];
+  }
+} else if (!process.argv.includes("--sin-segunda")) {
   for (const a of REALES.artistas) {
     const f = { tipo: "artista", id: a.slug, nombre: a.nombre, ceja: [a.disciplina, a.detalle].filter(Boolean).join(" · "), ciudad: a.ciudad, cuenta: a.cuenta, foto: await bajar(a.foto), portada: await bajar(a.portada), proxima: a.proxima ?? null, razon: a.razon, frase: T.fraseDe(a.descripcion) };
     segunda.fichas[a.clave] = { nombre: a.nombre, razon: a.razon, frase: f.frase, letras: [...a.nombre].length };
@@ -169,6 +191,62 @@ if (!process.argv.includes("--sin-segunda")) {
   fs.writeFileSync(path.join(PNG, "medidas-A2.json"), JSON.stringify({ fichas: segunda.fichas, revision: segunda.revision, colores: Object.fromEntries(Object.entries(segunda.tarjetas).map(([k, t]) => [k, t.color])) }, null, 1));
 }
 
+// 3c. Tercera vuelta (solo A, «Repisa» sin portada): el artista con su foto de perfil (el color sale de ella; si es casi gris, el respaldo); el
+// lugar en dos opciones, L1 (el arco con el símbolo SN en color, sin foto: el color, del respaldo por su id) y L2 (el arco con su portada, de la
+// que sale el color; sin portada, cae en L1); «Esta semana» real con sus tres carteles. Cada caso en 4:5 con y sin la línea, y en 9:16 con ella.
+const TERCERA = JSON.parse(fs.readFileSync(path.join(AQUI, "instagram-estilo-propio.tercera.json"), "utf8"));
+const tercera = { tarjetas: {}, revision: {}, fichas: {} };
+const guardarA3 = (clave, d, formato) => {
+  fs.writeFileSync(path.join(PNG, `A3-${clave}.png`), d.png);
+  tercera.tarjetas[clave] = { src: "data:image/jpeg;base64," + d.jpeg.toString("base64"), color: d.color };
+  tercera.revision[clave] = T.revisar(d, formato);
+  console.log(`A3-${clave}`, d.color.deDonde, d.color.origen, "→", d.color.base, d.color.banda, "·", tercera.revision[clave].length ? tercera.revision[clave].join(" | ") : "bien");
+};
+const bajar3 = async (ruta) => {
+  if (!ruta) return null;
+  const archivo = path.join(cache, ruta.replace(/[^a-z0-9.-]+/gi, "_"));
+  if (!fs.existsSync(archivo)) {
+    const r = await fetch(TERCERA.base + ruta);
+    if (!r.ok) throw new Error(`no se pudo bajar ${ruta}: ${r.status}`);
+    fs.writeFileSync(archivo, Buffer.from(await r.arrayBuffer()));
+  }
+  return fs.readFileSync(archivo);
+};
+/** Las tres tarjetas de un caso: 4:5 con la línea, 4:5 sin ella y 9:16 con ella (sin descripción en la ficha, «sin-linea» en los dos formatos). */
+async function tresDe(prefijo, cosa) {
+  const f = cosa.f;
+  if (f.frase) {
+    guardarA3(`${prefijo}-con-linea-4x5`, await T.dibujar("A", "4x5", cosa), "4x5");
+    guardarA3(`${prefijo}-sin-linea-4x5`, await T.dibujar("A", "4x5", { ...cosa, f: { ...f, frase: null } }), "4x5");
+    guardarA3(`${prefijo}-con-linea-9x16`, await T.dibujar("A", "9x16", cosa), "9x16");
+  } else {
+    guardarA3(`${prefijo}-sin-linea-4x5`, await T.dibujar("A", "4x5", cosa), "4x5");
+    guardarA3(`${prefijo}-sin-linea-9x16`, await T.dibujar("A", "9x16", cosa), "9x16");
+  }
+}
+for (const a of TERCERA.artistas) {
+  const foto = await bajar3(a.foto);
+  const f = { tipo: "artista", id: a.clave, nombre: a.nombre, ceja: [a.disciplina, a.detalle].filter(Boolean).join(" · "), ciudad: a.ciudad, cuenta: a.cuenta, foto, portada: foto, colorDe: "foto", proxima: a.proxima ?? null, razon: a.razon, frase: T.fraseDe(a.descripcion) };
+  tercera.fichas[`artista-${a.clave}`] = { nombre: a.nombre, razon: a.razon, frase: f.frase, que: a.que, letras: [...a.nombre].length };
+  await tresDe(`artista-${a.clave}`, { tipo: "artista", f });
+}
+for (const l of TERCERA.lugares) {
+  const img = await bajar3(l.portada);
+  const base = { tipo: "lugar", id: l.clave, nombre: l.nombre, ceja: l.tipo, ciudad: l.ciudad, cuenta: l.cuenta, semana: null, razon: l.razon, frase: T.fraseDe(l.descripcion) };
+  tercera.fichas[`lugar-${l.clave}`] = { nombre: l.nombre, razon: l.razon, frase: base.frase, que: l.que, letras: [...l.nombre].length, portada: !!img, credito: l.credito ?? null };
+  // L1: ninguna imagen; el color, del respaldo del sistema por el id.
+  await tresDe(`lugar-L1-${l.clave}`, { tipo: "lugar", f: { ...base, foto: null, portada: null, snEnColor: true } });
+  // L2: la portada en el arco y el color de ella; sin portada no hay L2 (sería igual a L1).
+  if (img) await tresDe(`lugar-L2-${l.clave}`, { tipo: "lugar", f: { ...base, foto: img, portada: img, colorDe: "portada" } });
+}
+{
+  const sm = TERCERA.semana;
+  const sem = { id: sm.id, ciudad: sm.ciudad, titulo: sm.titulo, mes: "oct", dias: "30–1", barras: sm.eventos.map((e) => e.dia), eventos: sm.eventos.map((e) => ({ cuando: e.cuando, titulo: e.titulo })), carteles: await Promise.all(sm.eventos.map((e) => bajar3(e.cartel))), tope45: true };
+  for (const formato of ["4x5", "9x16"]) guardarA3(`semana-${formato}`, await T.dibujar("A", formato, { tipo: "semana", s: sem }), formato);
+  tercera.fichas.semana = { titulo: sm.titulo, eventos: sm.eventos.map((e) => `${e.cuando} · ${e.titulo}`) };
+}
+fs.writeFileSync(path.join(PNG, "medidas-A3.json"), JSON.stringify({ fichas: tercera.fichas, revision: tercera.revision, colores: Object.fromEntries(Object.entries(tercera.tarjetas).map(([k, t]) => [k, t.color])) }, null, 1));
+
 if (soloVariante) process.exit(0);
 
 // 4. Al prototipo: las tarjetas, las de hoy y las portadas del sistema de Inicio.
@@ -183,6 +261,6 @@ const hoy = {
 const inicio = {};
 for (const a of fs.readdirSync(PNG).filter((x) => x.startsWith("inicio-") && x.endsWith(".png"))) inicio[a.replace(/\.png$/, "")] = await jpg(path.join(PNG, a), 330);
 const plantilla = fs.readFileSync(path.join(AQUI, "instagram-estilo-propio.plantilla.html"), "utf8");
-const datos = JSON.stringify({ tarjetas, revision, nombres, hoy, inicio, segunda }).replace(/</g, "\\u003c");
+const datos = JSON.stringify({ tarjetas, revision, nombres, hoy, inicio, segunda, tercera }).replace(/</g, "\\u003c");
 fs.writeFileSync(HTML, plantilla.replace("/*__DATOS__*/null", datos));
 console.log("prototipo", HTML, Math.round(fs.statSync(HTML).size / 1024), "KB");
