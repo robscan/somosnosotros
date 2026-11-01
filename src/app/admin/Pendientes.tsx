@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { IconoBandera, IconoCalendario, IconoCamara, IconoCartel, IconoChevronDerecha, IconoDestello, IconoDocumento, IconoEstrella, IconoInstagram, IconoOk, IconoPersona, IconoPin } from "@/components/ui/Iconos";
+import EnCamino from "@/components/ui/EnCamino";
 import renglon from "@/components/ui/Renglon.module.css";
 import type { PorRevisar } from "@/lib/ciudadesAdmin";
 import type { PendienteInstagram } from "@/lib/portadaAdmin";
@@ -22,14 +23,16 @@ const ICONO_CORRIDA: Record<PorRevisar["tipo"], typeof IconoPin> = { lugares: Ic
  * ya la haya quitado de la lista (la lista se toma al entrar). Antes, las propuestas de las rutinas por revisar (OL-427, firma de
  * OL-425): un renglón por corrida que lleva a su bandeja, y su cuenta se suma al rótulo. Antes de todo, OL-494 (lo firmó el founder): si Instagram
  * dejó de publicar, su renglón con la causa en rojo, que lleva a Administración › Instagram.
+ * OL-498: `incompleto` si alguna de las otras lecturas (rutinas, showcase, Instagram) falló: entonces no se afirma «Nada pendiente» y se dice que
+ * no se pudo leer todo, con «Intentar de nuevo». El título lleva `data-bloque` (la medición de tiempos sabe así cuándo llegó Pendiente).
  */
-export default function Pendientes({ iniciales, error, porRevisar = [], instagram = null }: { iniciales: PendienteConCuando[]; error: boolean; porRevisar?: PorRevisar[]; instagram?: PendienteInstagram | null }) {
+export default function Pendientes({ iniciales, error, incompleto = false, porRevisar = [], instagram = null }: { iniciales: PendienteConCuando[]; error: boolean; incompleto?: boolean; porRevisar?: PorRevisar[]; instagram?: PendienteInstagram | null }) {
   const [lista] = useState(iniciales);
   const [decididos, setDecididos] = useState<string[]>([]);
   const quedan = lista.length - decididos.length + porRevisar.reduce((t, p) => t + p.n, 0) + (instagram ? 1 : 0);
   return (
     <>
-      <h2 className={styles.grupo}>
+      <h2 className={styles.grupo} data-bloque="pendiente">
         Pendiente{quedan > 0 && <b>{quedan}</b>}
       </h2>
       {instagram && (
@@ -42,6 +45,7 @@ export default function Pendientes({ iniciales, error, porRevisar = [], instagra
               <span>
                 <IconoChevronDerecha />
               </span>
+              <EnCamino className={renglon.enCamino} />
             </Link>
           </li>
         </ul>
@@ -61,6 +65,7 @@ export default function Pendientes({ iniciales, error, porRevisar = [], instagra
                     {p.n}
                     <IconoChevronDerecha />
                   </span>
+                  <EnCamino className={renglon.enCamino} />
                 </Link>
               </li>
             );
@@ -70,7 +75,7 @@ export default function Pendientes({ iniciales, error, porRevisar = [], instagra
       {error ? (
         <Reintentar texto="No pudimos leer lo pendiente." />
       ) : lista.length === 0 ? (
-        porRevisar.length > 0 || instagram ? null : (
+        porRevisar.length > 0 || instagram || incompleto ? null : (
           <p className={styles.nada}>
             <IconoOk width={20} height={20} />
             <b>Nada pendiente</b>
@@ -84,6 +89,7 @@ export default function Pendientes({ iniciales, error, porRevisar = [], instagra
           ))}
         </ul>
       )}
+      {!error && incompleto && <Reintentar texto="No pudimos leer todo lo pendiente." />}
     </>
   );
 }

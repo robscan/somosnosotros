@@ -7,3 +7,37 @@
   align-items: center;
   padding-right: var(--gutter);
 }
+
+/* La espera de la pantalla (OL-498, `loading.tsx`): las mismas medidas en gris. El chip de la ciudad (del alto de un chip), las dos pestañas (una
+   barra del alto de su letra en el renglón de 44 de `ui/Pestanas`, con su mismo aire), el botón de la conexión (redondo, de 44) y la lista con el
+   aire de la columna. */
+.esperaChip {
+  flex: none;
+  width: 40%;
+  height: var(--alto-chip);
+  border-radius: var(--radio-pildora);
+}
+.esperaPestanas {
+  display: flex;
+  gap: var(--espacio-5);
+  padding-inline: var(--gutter);
+}
+.esperaPestana {
+  width: 4em; /* «Semana», «Eventos»: unas cuatro letras de ancho, en la letra de la pestaña */
+  height: 1em;
+  margin-block: calc((var(--toque-min) - var(--letra-sm)) / 2);
+  font-size: var(--letra-sm);
+}
+.esperaBoton {
+  width: var(--control);
+  height: var(--control);
+  border-radius: 50%;
+}
+.esperaLista {
+  padding-inline: var(--gutter);
+}
+@media (min-width: 792px) {
+  .esperaPestanas {
+    justify-content: center;
+  }
+}

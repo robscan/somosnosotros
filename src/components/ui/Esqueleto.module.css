@@ -37,6 +37,22 @@
   margin-top: var(--espacio-2);
 }
 
+/* Varias líneas de meta (`lineas`): una columna de barras en el área de la meta, con el aire de las líneas de verdad (`.frente > small`: 2 px
+   entre líneas y su interlineado). */
+.metasRenglon {
+  grid-area: meta;
+  display: grid;
+  row-gap: calc(var(--letra-lista-meta) * 0.25 + 2px);
+  margin-top: var(--espacio-2);
+}
+.unaMeta {
+  width: 60%;
+  height: var(--letra-lista-meta);
+}
+.unaMeta:nth-child(2n) {
+  width: 45%;
+}
+
 /* Un número de ficha: la misma tarjeta (ui/Kpi) con un icono del tamaño del real y dos barras del alto de su letra. */
 .iconoKpi {
   grid-area: icono;
@@ -57,6 +73,30 @@
 
 .corta {
   width: 60%;
+}
+
+/* Una línea dentro de su texto (`EsqueletoLinea`): en la línea, del alto de la letra de quien la contiene; la línea mide lo que mediría con
+   texto (su interlineado no cambia). El largo lo pone quien la usa. */
+.enLinea {
+  display: inline-block;
+  max-width: 100%;
+  height: 0.8em;
+  border-radius: var(--radio-chico);
+  vertical-align: middle;
+}
+/* Con `muestra`: el texto no se ve (transparente, sin selección) y su fondo gris se dibuja renglón por renglón, donde caería el de verdad. */
+.enTexto {
+  border-radius: var(--radio-chico);
+  color: transparent;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  user-select: none;
+}
+/* El icono de una fila de Ajustes: el cuadro de su columna (`--columna-icono`), donde va el icono de `ui/Iconos` de un renglón `ajuste`. */
+.iconoAjuste {
+  width: var(--columna-icono);
+  height: var(--columna-icono);
+  border-radius: var(--radio-chico);
 }
 
 /* Bloque de texto: unas líneas de párrafo. */

@@ -5,6 +5,7 @@ import Cabecera from "@/components/ui/Cabecera";
 import { Chip, Cuenta } from "@/components/ui/Chip";
 import { IconoCalendario, IconoCartel, IconoDestello, IconoDocumento, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import EnCamino from "@/components/ui/EnCamino";
 import renglon from "@/components/ui/Renglon.module.css";
 import { avanceDe, credito, detalleCorrida, fechaVence, gruposDeCorridas, pildoraCorrida, tituloCorrida, usd, usdCorto, type CorridaPanel, type Pildora, type TipoCorrida } from "@/lib/ciudadesAdmin";
 import { CLAVE_SEMANAL, leerAjusteSemanal, lineaSemanal } from "@/lib/rutinas/ajusteSemanal";
@@ -155,10 +156,12 @@ function GrupoCorridas({ titulo, corridas, nombre, ahora }: { titulo: string; co
               {informe ? (
                 <Link href={`/admin/corridas/${r.id}`} className={renglon.ajuste}>
                   {contenido}
+                  <EnCamino className={renglon.enCamino} />
                 </Link>
               ) : r.propuestas > 0 ? (
                 <Link href={`/admin/ciudades/propuestas/${r.id}`} className={renglon.ajuste}>
                   {contenido}
+                  <EnCamino className={renglon.enCamino} />
                 </Link>
               ) : (
                 <div className={renglon.ajuste}>{contenido}</div>

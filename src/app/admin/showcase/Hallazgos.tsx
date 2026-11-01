@@ -7,6 +7,7 @@ import Hoja from "@/components/ui/Hoja";
 import hojaCss from "@/components/ui/Hoja.module.css";
 import { IconoChevronDerecha, IconoOk } from "@/components/ui/Iconos";
 import Imagen from "@/components/ui/Imagen";
+import EnCamino from "@/components/ui/EnCamino";
 import renglon from "@/components/ui/Renglon.module.css";
 import { SIN_FOTO_REDONDA } from "@/lib/imagen";
 import { anclaArtista, etiquetaTipo, SENALES, sumaValores, type Evidencia, type EvidenciaBreve, type Valores } from "@/lib/showcase";
@@ -250,6 +251,7 @@ export default function Hallazgos({ grupos, hoy, modo, cuando = null }: { grupos
                     {quedan.length > 0 && <b className={s.cuenta}>{quedan.length}</b>}
                     <IconoChevronDerecha />
                   </span>
+                  <EnCamino className={renglon.enCamino} />
                 </Link>
               </li>
             </ul>

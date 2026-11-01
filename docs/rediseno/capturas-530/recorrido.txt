@@ -1,0 +1,10 @@
+✓ Pendiente llegó a los 145 ms con los números y Gestionar aún en espera (Cargando los números) y 11 líneas en gris
+✓ los títulos no se mueven al llegar los números y las líneas
+✓ los renglones miden lo mismo con la línea en gris y con su texto
+✓ la línea de Instagram llegó sola: «@smsnstrsapp · 4 publicadas esta semana · 5 sin material»
+✓ el renglón de Instagram dice «en camino» en cuanto se toca
+✓ Administración › Instagram tiene su propia espera (pestañas y renglones grises)
+✓ al entrar, la espera ya tiene la forma de la portada
+
+Errores de la página:
+consola: Failed to load resource: net::ERR_CONNECTION_REFUSED (http://127.0.0.1:8889/storage/v1/object/public/fotos/demo-carrusel/hist-cartel-2.jpg)

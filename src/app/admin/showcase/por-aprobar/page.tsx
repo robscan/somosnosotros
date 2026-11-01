@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import { IconoBuscar, IconoChevronDerecha, IconoOk } from "@/components/ui/Iconos";
 import plantilla from "@/components/ui/Plantilla.module.css";
+import EnCamino from "@/components/ui/EnCamino";
 import renglon from "@/components/ui/Renglon.module.css";
 import { etiquetaDisciplina } from "@/lib/artistas";
 import { diaLocal } from "@/lib/fechas";
@@ -83,6 +84,7 @@ export default async function PorAprobar() {
                 <span>
                   <IconoChevronDerecha />
                 </span>
+                <EnCamino className={renglon.enCamino} />
               </Link>
             </li>
           </ul>

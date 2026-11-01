@@ -407,7 +407,8 @@ ul.motivos > li:last-child {
 div.quieto {
   cursor: default;
 }
-/* En la portada, las propuestas por revisar van antes de los reclamos y reportes de «Pendiente». */
-.porRevisar + * {
+/* En la portada, las propuestas por revisar van antes de los reclamos y reportes de «Pendiente». El título del bloque siguiente no: deja sus 20
+   de siempre (OL-498: con la portada por bloques, mientras llegan los números, entre los dos hay un marcador de React y el título saltaba 8 px). */
+.porRevisar + :not(h2) {
   margin-top: var(--espacio-3);
 }

@@ -286,6 +286,28 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+/* En camino (OL-498): la fila tocada mientras el servidor responde (`ui/EnCamino` dentro del enlace). Toda la fila se tiñe del fondo suave y el
+   chevron late en el color de acción: el toque responde al instante, también si la pantalla todavía no se había adelantado. El marcador no se ve. */
+.ajuste > .enCamino {
+  display: none;
+}
+.ajuste:has(> .enCamino) {
+  background: var(--fondo-suave);
+}
+.ajuste:has(> .enCamino) > :is(span, svg:not(:first-child)) {
+  color: var(--primario);
+  animation: latido 0.9s ease-in-out infinite;
+}
+@keyframes latido {
+  50% {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ajuste:has(> .enCamino) > :is(span, svg:not(:first-child)) {
+    animation: none;
+  }
+}
 /* Suelta: una fila de palanca en una hoja o en una página, sin tarjeta de filas alrededor. Sin el aire de los lados, que ya lo
    pone quien la aloja. */
 .sola {

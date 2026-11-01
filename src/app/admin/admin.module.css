@@ -313,6 +313,10 @@ a.ficha::after,
   text-align: left;
   cursor: pointer;
 }
+/* Un cuadro mientras llegan los números (OL-498, `NumerosEspera`): el mismo cuadro con sus mismas piezas en gris (`EsqueletoLinea`). */
+.indicadorEspera {
+  cursor: default;
+}
 .indicador[aria-expanded="true"] {
   border-color: var(--primario);
   box-shadow: 0 0 0 3px var(--primario-suave);
