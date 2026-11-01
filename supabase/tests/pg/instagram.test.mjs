@@ -31,10 +31,14 @@ export async function run({ as, check, expectError, query }) {
   const expoUltimo = await evento("IG exposición, último día", hora(-24 * 5), "date_trunc('day', now() at time zone 'America/Mexico_City') at time zone 'America/Mexico_City' + interval '23 hours'", { clase: "exposicion" });
   const taller = await evento("IG taller con sesión", hora(-24 * 3), hora(24 * 3), { clase: "taller" });
   // Un taller lleva de 2 a 31 sesiones, cada una en su día (en la zona del evento): la primera a su inicio (ya pasó) y la última en su día final
-  // (viene).
+  // (viene). La última va una hora antes del fin, salvo cuando esa hora cae en el día anterior (el fin es `now() + 3 días`: entre las 00:00
+  // y la 01:00 de México pasaba, y la base la rechazaba con `sesiones_invalidas`; corregido el 2026-11-01): entonces va justo al fin.
   await query(
     `insert into public.eventos_sesiones (evento_id, fecha, inicio)
-     select e.id, timezone(e.zona, x)::date, x from public.eventos e, unnest(array[e.inicio, e.fin - interval '1 hour']) x where e.id = $1`,
+     select e.id, timezone(e.zona, x)::date, x
+     from public.eventos e,
+       unnest(array[e.inicio, case when timezone(e.zona, e.fin - interval '1 hour')::date = timezone(e.zona, e.fin)::date then e.fin - interval '1 hour' else e.fin end]) x
+     where e.id = $1`,
     [taller],
   );
   await query("insert into public.asistencias (usuario_id, evento_id, estado) values ($1, $3, 'voy'), ($2, $3, 'me_interesa')", [ADMIN, OTRA, manana]);
