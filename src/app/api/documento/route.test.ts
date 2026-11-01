@@ -79,7 +79,7 @@ describe("GET /api/documento (OL-396)", () => {
     expect(pdf.startsWith("%PDF-1.4")).toBe(true);
     expect(pdf).toContain("/MediaBox [0 0 612 792]");
     expect(pdf).toContain("/Width 1275 /Height 1650");
-  });
+  }, 20_000); // OL-396: dibuja el PDF entero (~5 s en el corredor de GitHub); el límite de 5 s lo paró dos veces el 2026-10-31
 
   it("una cuenta ligada o la administración: 200; el informe en A4 y por año", async () => {
     estado.quien = { id: "ligada", rol: "usuario" };
@@ -93,7 +93,7 @@ describe("GET /api/documento (OL-396)", () => {
     estado.quien = { id: "admin-1", rol: "admin" };
     const m = await pedir("que=lugar&id=ache-galeria");
     expect(m.headers.get("content-disposition")).toBe('attachment; filename="informe-ache-galeria-2026-10.pdf"');
-  });
+  }, 20_000); // OL-396: dibuja el PDF entero (~5 s en el corredor de GitHub); el límite de 5 s lo paró dos veces el 2026-10-31
 
   it("quien gestiona pero sin nada pasado: 404", async () => {
     estado.quien = { id: "autor-1", rol: "usuario" };
