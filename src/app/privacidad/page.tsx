@@ -58,7 +58,7 @@ export default function Privacidad() {
           Con las empresas que hacen funcionar el sitio, y solo para eso: Supabase (base de datos y acceso), Vercel (servidor), Resend (correos), Mapbox (mapa y direcciones) y Anthropic (lectura automática del cartel de un evento, solo la imagen que subes).
         </p>
         <p>
-          Para saber cómo se usa la app medimos con Vercel Analytics y Google Analytics qué páginas se ven y acciones sin nombre, como que se publicó un evento o que alguien dijo «Voy». Sin sus cookies y sin identificar a nadie: no se manda tu nombre, tu correo, lo que escribes al buscar ni tu ubicación. A la administración no se le mide.
+          Para saber cómo se usa la app medimos con Vercel Analytics y Google Analytics qué páginas se ven y acciones sin nombre, como que se publicó un evento o que alguien dijo «Voy». Sin sus cookies y sin identificar a nadie: no se manda tu nombre, tu correo, lo que escribes al buscar ni tu ubicación. A la administración no se le miden páginas ni acciones. Con Vercel Speed Insights medimos además cuánto tarda en cargar cada pantalla, también sin cookies y sin identificar a nadie; esa medida sí incluye a la administración.
         </p>
         <p>
           Si eliges entrar con Apple o con Google, ellos confirman quién eres y saben que entraste a {MARCA}; no les mandamos nada más. No vendemos ni cedemos tus datos a nadie más.

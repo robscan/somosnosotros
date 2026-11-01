@@ -46,13 +46,13 @@ const MUESTRA = {
 /**
  * Un renglón de la portada: icono convencional, su nombre, su línea de estado en llano y, si la tiene, su cuenta. El nombre y el enlace se
  * pintan de inmediato; la línea puede llegar después (un `Suspense` con `EsqueletoLinea` del alto de su letra). Al tocarlo, mientras el servidor
- * responde, el renglón lo dice (`EnCamino`). `prefetch={false}` en el de Instagram: su pantalla es la más cara y pasar por encima no debe
- * pedirla (acta del council de OL-497, M8).
+ * responde, el renglón lo dice (`EnCamino`). Todos se adelantan, también Instagram: medido en OL-498, el adelanto de una pantalla dinámica
+ * solo trae su espera (`loading.tsx`), no su lectura cara; sin él, su espera tardaba 0,6 s en aparecer en vez de 0,04 s (OL-499).
  */
-export function RenglonPortada({ href, Icono, titulo, detalle, total, prefetch }: { href: string; Icono: ComponentType<SVGProps<SVGSVGElement>>; titulo: string; detalle?: ReactNode; total?: ReactNode; prefetch?: false }) {
+export function RenglonPortada({ href, Icono, titulo, detalle, total }: { href: string; Icono: ComponentType<SVGProps<SVGSVGElement>>; titulo: string; detalle?: ReactNode; total?: ReactNode }) {
   return (
     <li>
-      <Link href={href} className={renglon.ajuste} prefetch={prefetch}>
+      <Link href={href} className={renglon.ajuste}>
         <Icono width={20} height={20} />
         <b>{titulo}</b>
         {detalle && <small>{detalle}</small>}
@@ -97,7 +97,7 @@ export default function PortadaAdmin({ pendiente, numeros, gestionar, lineas, es
       {/* Difusión: lo que da a conocer a la gente y a los artistas. Instagram dice lo que salió y lo que se queda sin salir por falta de material. */}
       <h2 className={styles.grupo}>Difusión</h2>
       <ul className={renglon.tarjeta}>
-        <RenglonPortada href="/admin/instagram" prefetch={false} Icono={IconoInstagram} titulo="Instagram" detalle={lineas.instagram} />
+        <RenglonPortada href="/admin/instagram" Icono={IconoInstagram} titulo="Instagram" detalle={lineas.instagram} />
         {/* OL-494: presentar artistas a foros, gestores, becas y mecenas es dar a conocer, como Instagram. */}
         <RenglonPortada href="/admin/showcase" Icono={IconoDestello} titulo="Showcase" detalle={lineas.showcase} />
       </ul>
