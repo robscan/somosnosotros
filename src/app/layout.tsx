@@ -17,6 +17,7 @@ import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
 import Sesion, { AccesoAdmin } from "@/components/Sesion";
 import TituloInstalada from "@/components/TituloInstalada";
+import VelocidadVercel from "@/components/VelocidadVercel";
 import { IconoPersona } from "@/components/ui/Iconos";
 import LetreroAppStore from "@/components/LetreroAppStore";
 import { GUION_APP_NATIVA } from "@/lib/appNativa";
@@ -111,6 +112,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AvisoAbierto />
         </Suspense>
         <TituloInstalada />
+        {/* Speed Insights (OL-499): cuánto tarda cada pantalla en los teléfonos, anónimo y sin cookies. Fuera de `MarcaAdmin`: también
+            mide Administración, con la ruta reducida; el resto, con las reglas de Analytics (`VelocidadVercel`). Trae su propio `Suspense`. */}
+        <VelocidadVercel />
         {/* La medición (OL-325) arranca cuando la sesión dice quién mira: `MarcaAdmin` pinta la marca del rol y, solo si no es
             administración, monta la analítica. Mientras tanto no se mide nada; para un admin, nunca (F10 de OL-327). */}
         <Suspense fallback={null}>
