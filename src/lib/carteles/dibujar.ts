@@ -8,13 +8,15 @@ import { ENTRADA_SEGURA, imagenAdmitida, TIEMPO_MAX_FOTO_MS } from "./imagenSegu
 import { FUENTES } from "./medir";
 import { elegirPaleta, hexARgb, type Paleta, type Rgb } from "./paleta";
 import type { Plantilla } from "./plantillas/tipos";
-import { ALTO_PORTADA, arbolDestacado, arbolPortadaSemana, LADO_FOTO as LADO_FOTO_DESTACADO, PALETAS_DESTACADO, type Destacado, type PortadaSemana } from "./plantillas/destacado";
+import { arbolRepisa, arbolRepisaSemana, cajaDeFoto, cajasDeCarteles, type FichaRepisa, type SemanaRepisa } from "./plantillas/repisa";
 import { COLORES_DOCUMENTO, dibujarPaginaDocumento, maquetar } from "./plantillas/documento";
 import { COLORES_TU_ANIO, dibujarTuAnio, FORMATO_TU_ANIO } from "./plantillas/tuAnio";
 import { FORMATOS, type Formato } from "./tokens";
 import type { ReactElement } from "react";
 import type { ResumenTuAnio } from "../tuAnio";
 import type { Documento, FormatoDocumento } from "../documentos";
+import { paletaDePixeles, type Paleta as Paleta4 } from "../coloresCartel";
+import { origenDe, paleta, type PaletaPortada } from "../portadasSistema";
 
 /**
  * Dibujar el cartel en el servidor (OL-324, bitácora 353). Decidido con medidas (spike de la bitácora): satori arma el SVG (2 a 6 ms) y sharp
@@ -325,37 +327,57 @@ export async function dibujarDocumento(p: PedidoDocumento): Promise<ResultadoDoc
   };
 }
 
-// ===== La semana de Instagram (OL-479): la tarjeta de un artista o de un lugar destacado y la portada de «Esta semana», con la misma
-// rasterización. Las imágenes llegan en bytes (la portada y la foto de la ficha, ya bajadas de nuestro almacenamiento); si una no se puede leer,
-// la tarjeta lleva la imagen de relleno con el símbolo SN (`imagenDeRelleno`, ya generada, nunca compuesta aquí).
+// ===== La semana de Instagram: «Repisa» (OL-505, firmada el 2026-11-02 sobre la tercera vuelta de OL-490, bitácora 522). La tarjeta de un
+// artista o de un lugar de la semana y la portada de «Esta semana», con la misma rasterización. Las imágenes llegan en bytes (la foto del
+// artista, la portada del lugar o los carteles, ya bajados de nuestro almacenamiento); aquí se saca su color y se recortan a la medida de su
+// figura. Una imagen que no se puede leer no rompe nada: el artista lleva el símbolo SN en su círculo, el lugar sale como L1 (el arco con el
+// símbolo SN) y la barra de un cartel, el símbolo SN.
 
-export type PedidoDestacado = Omit<Destacado, "portada" | "foto"> & {
-  portada: Buffer | null;
-  foto?: Buffer | null;
+/** De dónde salió el color de la tarjeta: de la foto (o la portada del lugar) o del respaldo del sistema por el id. */
+export type ColorTarjeta = { origen: string; deDonde: "foto" | "respaldo"; base: string; banda: PaletaPortada["banda"]; tinta: string };
+
+export type PedidoDestacado = FichaRepisa & {
+  /** El id de la ficha: elige el color de respaldo (sin foto, o con una foto casi gris). */
+  id: string;
+  /** La foto que va en la figura: la de perfil del artista o la portada del lugar (L2). Sin ella (o ilegible): el símbolo SN (el lugar, L1). */
+  foto: Buffer | null;
   /** El ancho de salida (la vista previa va a 720); sin él, 1080. */
   ancho?: number;
   conNodos?: boolean;
   png?: boolean;
 };
 
-export type ResultadoDestacado = { imagen: Buffer; tipo: "image/jpeg" | "image/png"; ancho: number; alto: number; paleta: Paleta; recortado: boolean; nodos: NodoTexto[] };
+export type ResultadoDestacado = { imagen: Buffer; tipo: "image/jpeg" | "image/png"; ancho: number; alto: number; color: ColorTarjeta; recortado: boolean; nodos: NodoTexto[] };
 
-/** Una imagen a la medida (recortada a lo que importa) como data URL de un JPEG; null si no es una imagen admitida. */
+/** Una imagen a la medida de su caja (recortada a lo que importa) como data URL de un JPEG; null si no es una imagen admitida o no se pudo. */
 async function aDataUrl(imagen: Buffer | null | undefined, ancho: number, alto: number): Promise<string | null> {
-  if (!imagen || !(await imagenAdmitida(imagen))) return null;
+  if (!imagen || ancho < 1 || alto < 1 || !(await imagenAdmitida(imagen))) return null;
   try {
-    const jpeg = await sharp(imagen, ENTRADA_SEGURA).timeout({ seconds: TIEMPO_MAX_FOTO_MS / 1000 }).rotate().resize(ancho, alto, { fit: "cover", position: "attention" }).jpeg({ quality: 86 }).toBuffer();
+    const jpeg = await sharp(imagen, ENTRADA_SEGURA).timeout({ seconds: TIEMPO_MAX_FOTO_MS / 1000 }).rotate().resize(Math.round(ancho), Math.round(alto), { fit: "cover", position: "attention" }).jpeg({ quality: 88 }).toBuffer();
     return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
   } catch {
     return null;
   }
 }
 
-let relleno: Buffer | null = null;
-/** La imagen de relleno de la app (el símbolo SN al centro, `public/sin-foto.png`): la portada o la foto que no se pudo leer. */
-export function imagenDeRelleno(): Buffer {
-  relleno ??= readFileSync(path.join(process.cwd(), "public/sin-foto.png"));
-  return relleno;
+/**
+ * Los colores de una imagen como los guarda la app al subir un cartel (`paletaDePixeles` sobre 16×20, la cuenta de las portadas del sistema de
+ * Inicio): doce cubos de tono y uno de grises; de los tres que más pesan, el de más croma, avivado (`colores[1]`). Null si no se pudo leer.
+ */
+export async function coloresDeBytes(imagen: Buffer): Promise<Paleta4 | null> {
+  try {
+    const { data } = await sharp(imagen, ENTRADA_SEGURA).timeout({ seconds: TIEMPO_MAX_FOTO_MS / 1000 }).rotate().resize(16, 20, { fit: "fill" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    return paletaDePixeles(data);
+  } catch {
+    return null;
+  }
+}
+
+/** El color de la tarjeta: el de la foto si tiene tono (`origenDe`); si es casi gris o no hay foto, el respaldo del sistema por el id. */
+function colorDe(colores: Paleta4 | null, id: string): { P: PaletaPortada; color: ColorTarjeta } {
+  const origen = origenDe(colores, id);
+  const P = paleta(origen);
+  return { P, color: { origen, deDonde: colores && origen === colores[1] ? "foto" : "respaldo", base: P.base, banda: P.banda, tinta: P.tinta } };
 }
 
 async function rasterizar(elemento: ReactElement, f: Formato, fondo: string, o: { ancho?: number; conNodos?: boolean; png?: boolean }): Promise<{ imagen: Buffer; nodos: NodoTexto[]; ancho: number; alto: number }> {
@@ -376,29 +398,37 @@ async function rasterizar(elemento: ReactElement, f: Formato, fondo: string, o: 
   return { imagen, nodos, ancho, alto: Math.round((ancho * f.alto) / f.ancho) };
 }
 
-/** Dibuja la tarjeta de un artista o de un lugar de la semana: la paleta de «Crear cartel» más parecida al tono de su portada. */
+/** Dibuja la tarjeta de un artista (su foto de perfil en el círculo) o de un lugar (L2 con su portada en el arco; L1 sin ella). */
 export async function dibujarDestacado(p: PedidoDestacado): Promise<ResultadoDestacado> {
   const f = FORMATOS[p.formato];
-  const alto = ALTO_PORTADA[p.formato];
-  const portada = (await aDataUrl(p.portada, f.ancho, alto)) ?? (await aDataUrl(imagenDeRelleno(), f.ancho, alto))!;
-  const foto = p.tipo === "artista" ? ((await aDataUrl(p.foto, LADO_FOTO_DESTACADO * 2, LADO_FOTO_DESTACADO * 2)) ?? (await aDataUrl(imagenDeRelleno(), LADO_FOTO_DESTACADO * 2, LADO_FOTO_DESTACADO * 2))) : null;
-  let tono: Rgb | null = null;
-  try {
-    tono = await tonoDominante(Buffer.from(portada.split(",")[1], "base64"));
-  } catch {
-    tono = null;
-  }
-  const paleta = elegirPaleta(PALETAS_DESTACADO, tono);
-  const { elemento, recortado } = arbolDestacado({ ...p, portada, foto }, paleta);
-  const r = await rasterizar(elemento, f, paleta.fondo, p);
-  return { ...r, tipo: p.png ? "image/png" : "image/jpeg", paleta, recortado };
+  const caja = cajaDeFoto(p);
+  const foto = await aDataUrl(p.foto, caja.ancho, caja.alto);
+  // El color sale de la misma imagen que se ve; si no se ve (ilegible o sin ella), del respaldo por el id.
+  const { P, color } = colorDe(foto && p.foto ? await coloresDeBytes(p.foto) : null, p.id);
+  const { elemento, recortado } = arbolRepisa(p, P, foto);
+  const r = await rasterizar(elemento, f, P.base, p);
+  return { ...r, tipo: p.png ? "image/png" : "image/jpeg", color, recortado };
 }
 
-/** Dibuja la portada del carrusel «Esta semana» (papel). */
-export async function dibujarPortadaSemana(p: PortadaSemana & { ancho?: number; conNodos?: boolean; png?: boolean }): Promise<ResultadoDestacado> {
-  const f = FORMATOS["4x5"];
-  const paleta = elegirPaleta(["papel"], null);
-  const { elemento, recortado } = arbolPortadaSemana(p, paleta);
-  const r = await rasterizar(elemento, f, paleta.fondo, p);
-  return { ...r, tipo: p.png ? "image/png" : "image/jpeg", paleta, recortado };
+export type PedidoSemana = Omit<SemanaRepisa, "formato"> & {
+  formato?: SemanaRepisa["formato"];
+  /** El id de la semana (`semana-<ciudad>-<primer día>`): elige el color de respaldo, cada semana otro. */
+  id: string;
+  /** El cartel de cada evento, en el orden de `eventos` (null o ilegible: el símbolo SN en su barra). */
+  carteles: (Buffer | null)[];
+  ancho?: number;
+  conNodos?: boolean;
+  png?: boolean;
+};
+
+/** Dibuja la portada del carrusel «Esta semana»: barras con los carteles reales, en el color de respaldo de la semana. */
+export async function dibujarPortadaSemana(p: PedidoSemana): Promise<ResultadoDestacado> {
+  const s: SemanaRepisa = { ...p, formato: p.formato ?? "4x5" };
+  const f = FORMATOS[s.formato];
+  const cajas = cajasDeCarteles(s);
+  const carteles = await Promise.all(cajas.map((c, i) => aDataUrl(p.carteles[i] ?? null, c.ancho, c.alto)));
+  const { P, color } = colorDe(null, p.id);
+  const { elemento, recortado } = arbolRepisaSemana(s, P, carteles);
+  const r = await rasterizar(elemento, f, P.base, p);
+  return { ...r, tipo: p.png ? "image/png" : "image/jpeg", color, recortado };
 }

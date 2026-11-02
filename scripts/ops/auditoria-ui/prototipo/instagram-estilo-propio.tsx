@@ -227,7 +227,8 @@ export async function dibujar(v: Variante, formato: IdFormato, cosa: Cosa): Prom
   } else if (cosa.f.razon) {
     // Segunda vuelta: la razón en versalitas, el nombre, la frase (si va), qué es y dónde, la cuenta y la fecha o la semana.
     const fi = cosa.f;
-    poner("razon", fi.razon, linea(fi.razon, "media", util, 30, 22, tinta, 5, true), 0);
+    const razon = cosa.f.razon;
+    poner("razon", razon, linea(razon, "media", util, 30, 22, tinta, 5, true), 0);
     poner("nombre", fi.nombre, renglones(nombreAjustado(fi.nombre, util), "condensada-negra", tinta, { interlineado: 0.98 }), 12);
     if (fi.frase) poner("frase", fi.frase, renglones(ajustar(fi.frase, { fuente: "regular", ancho: util, renglones: 2, mayor: 36, menor: 28 }), "regular", tinta, { interlineado: 1.2 }), 18);
     poner("ceja", `${fi.ceja} · ${fi.ciudad}`, linea(`${fi.ceja} · ${fi.ciudad}`, "media", util, 32, 22, tinta), fi.frase ? 20 : 18);
@@ -350,7 +351,7 @@ export async function dibujar(v: Variante, formato: IdFormato, cosa: Cosa): Prom
       const libre = selloIzq - hueco - (x + w);
       const sol = Math.min(libre * 0.6, u * 0.22, W - MARGEN - (x + w) - hueco);
       if (sol > 60) figs.push(circ(x + w + hueco + sol / 2, repisa - sol / 2, sol / 2, T.acento));
-    } else {
+    } else if (cosa.tipo === "semana") {
       // La semana: tres barras que crecen (el ritmo de Inicio), una por día, con su día al pie. Con carteles, cada barra lleva el de su día.
       const cols = [T.dos, T.uno, T.acento];
       const total = Math.min(selloIzq - hueco - MARGEN, util);

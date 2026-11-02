@@ -5,6 +5,7 @@ import { dibujarDestacado, dibujarPortadaSemana } from "../carteles/dibujar";
 import { configPublica } from "../config";
 import { diaConMes, diaLocal, horaCorta, localAIso } from "../fechas";
 import { cejaArtista, cejaLugar, proximaEnTarjeta, textoArtista, textoLugar, textoSemana, tituloSemana, type ArtistaDestacado, type LugarDestacado, type Proxima } from "./destacado";
+import { selloDeFecha } from "../tarjetaInicio";
 import { bajarCartel, encajarCartel } from "./imagen";
 import { lunesDe } from "./semana";
 import { conCreditoDeFoto, usuarioDeInstagram } from "./texto";
@@ -119,36 +120,45 @@ export async function cargarFicha(db: SupabaseClient, tipo: "artista" | "lugar",
 }
 
 /**
- * OL-488: ¿tiene la ficha el material que la tarjeta puede dibujar? La foto y la portada del artista, la portada del lugar, en el Storage de la
- * app (lo único que `bajarCartel` deja bajar; otra cosa saldría con la imagen de relleno). La base pide lo mismo (`instagram_material_propio`).
+ * OL-488 y OL-505: ¿tiene la ficha el material que la tarjeta («Repisa») necesita? El artista, su foto de perfil en el Storage de la app (lo único
+ * que `bajarCartel` deja bajar; sin ella saldría el símbolo SN en su círculo); la portada ya no se pide. El lugar no necesita nada: con su
+ * portada sale L2 (la portada en el arco) y sin ella, L1 (el arco con el símbolo SN). La base pide lo mismo (`instagram_material_propio`).
  */
 export function fichaConMaterial(f: Pick<FichaParaPublicar, "tipo" | "foto" | "portada">, supabaseUrl = configPublica().supabaseUrl): boolean {
-  return cartelDescargable(f.portada, supabaseUrl) && (f.tipo === "lugar" || cartelDescargable(f.foto, supabaseUrl));
+  return f.tipo === "lugar" || cartelDescargable(f.foto, supabaseUrl);
 }
 
-/** El texto que arma el sistema; sin la cuenta si la administración la quitó (`quitadas`): sin mención ni «Foto: @cuenta». Con crédito de la
- *  portada (OL-491), su línea «Foto: …» lo dice. */
-export function textoDeFicha(f: FichaParaPublicar, ahora: Date, quitadas: readonly string[] = []): string {
+/** El texto que arma el sistema; sin la cuenta si la administración la quitó (`quitadas`): sin mención ni «Foto: @cuenta». El crédito de la
+ *  portada (OL-491) va solo en el lugar que la lleva en su tarjeta (L2): su línea «Foto: …» lo dice. El artista sale con su foto de perfil, sin
+ *  la portada: su crédito es el de siempre («Foto: @cuenta»). */
+export function textoDeFicha(f: FichaParaPublicar, ahora: Date, quitadas: readonly string[] = [], supabaseUrl = configPublica().supabaseUrl): string {
   const sinCuenta = !!f.cuenta && quitadas.includes(f.cuenta);
   const datos = sinCuenta ? { ...f.datos, redes: [] } : f.datos;
   const texto = f.tipo === "artista" ? textoArtista(datos as ArtistaDestacado, ahora) : textoLugar(datos as LugarDestacado, ahora);
-  return f.portada ? conCreditoDeFoto(texto, f.portadaCredito) : texto;
+  return f.tipo === "lugar" && cartelDescargable(f.portada, supabaseUrl) ? conCreditoDeFoto(texto, f.portadaCredito) : texto;
 }
 
-/** La tarjeta de la ficha en JPEG (1080, o el ancho de la vista previa). Si la portada o la foto no se pueden bajar, la imagen de relleno. */
+/** La razón de la publicación, en versalitas arriba del nombre. */
+export const RAZON = { artista: "Artista de la semana", lugar: "Lugar de la semana" } as const;
+
+/**
+ * La tarjeta de la ficha en JPEG (1080, o el ancho de la vista previa), con «Repisa» (OL-505): el artista con su foto de perfil en el círculo; el
+ * lugar con su portada en el arco (L2) o, si no tiene o no se puede bajar, el arco con el símbolo SN (L1).
+ */
 export async function dibujarFicha(f: FichaParaPublicar, formato: "4x5" | "9x16", ahora: Date, ancho?: number): Promise<Buffer> {
-  const [portada, foto] = await Promise.all([bajarCartel(f.portada), f.tipo === "artista" ? bajarCartel(f.foto) : Promise.resolve(null)]);
+  const imagen = await bajarCartel(f.tipo === "artista" ? f.foto : f.portada);
   const n = f.semana.length;
   const r = await dibujarDestacado({
     tipo: f.tipo,
+    id: f.id,
     formato,
-    portada: portada?.bytes ?? null,
-    foto: foto?.bytes ?? null,
+    foto: imagen?.bytes ?? null,
     nombre: f.nombre,
+    razon: RAZON[f.tipo],
     ceja: f.ceja,
     ciudad: f.ciudad,
     cuenta: f.cuenta,
-    proxima: f.proxima ? proximaEnTarjeta(f.proxima, ahora) : null,
+    proxima: f.proxima ? { ...selloDeFecha({ inicio: f.proxima.inicio, fin: null, zona: f.proxima.zona }, false, ahora), texto: proximaEnTarjeta(f.proxima, ahora) } : null,
     semana: f.tipo === "lugar" && n ? `Esta semana: ${n === 1 ? "1 evento" : `${n} eventos`}` : null,
     ancho,
   });
@@ -161,6 +171,8 @@ export type SemanaParaPublicar = {
   ciudad: string;
   ciudadSlug: string;
   titulo: string;
+  /** El primer día de sus eventos (AAAA-MM-DD): con la ciudad, el id del color de su portada (cada semana otro). */
+  desde?: string;
   eventos: { id: string; slug: string | null; titulo: string; inicio: string; zona: string; imagen: string | null; lugar: string | null; lugarRedes: unknown }[];
   ubicacion: { id: string; nombre: string } | null;
 };
@@ -179,6 +191,7 @@ export async function cargarSemana(db: SupabaseClient, ids: readonly string[], a
     ciudad,
     ciudadSlug,
     titulo: tituloSemana(dias[0], dias.at(-1)!, zona, ahora),
+    desde: dias[0],
     eventos: filas.map((e) => ({ id: e.id, slug: e.slug, titulo: e.titulo, inicio: e.inicio, zona: e.zona, imagen: e.imagen, lugar: uno(e.lugar)?.nombre ?? e.sitio_texto, lugarRedes: uno(e.lugar)?.redes ?? [] })),
     ubicacion: await ubicacionDe(db, ciudadSlug, null, ciudad),
   };
@@ -186,15 +199,27 @@ export async function cargarSemana(db: SupabaseClient, ids: readonly string[], a
 
 export const textoDeSemana = (s: SemanaParaPublicar, ahora: Date): string => textoSemana({ ciudad: s.ciudad, eventos: s.eventos.map((e) => ({ titulo: e.titulo, inicio: e.inicio, zona: e.zona, lugar: e.lugar, lugarRedes: e.lugarRedes })) }, ahora);
 
-/** La portada del carrusel en JPEG. */
-export async function dibujarPortadaDeSemana(s: SemanaParaPublicar, ahora: Date, ancho?: number): Promise<Buffer> {
+/** El día corto de un evento: «Vie 30». */
+const diaCortoDe = (e: { inicio: string; zona: string }, ahora: Date) => {
+  const dia = diaConMes(e.inicio, ahora, e.zona).replace(/ de .*$/, "");
+  return `${dia[0].toLocaleUpperCase("es-MX")}${dia.slice(1)}`;
+};
+
+/**
+ * La portada del carrusel en JPEG, con «Repisa» (OL-505): las barras con los carteles reales de sus tres primeros eventos (los que no se pueden
+ * bajar, con el símbolo SN), «Esta semana en <ciudad>», el título y los tres eventos con su día, su hora y su lugar.
+ */
+export async function dibujarPortadaDeSemana(s: SemanaParaPublicar, ahora: Date, ancho?: number, formato: "4x5" | "9x16" = "4x5"): Promise<Buffer> {
+  const tres = s.eventos.slice(0, 3);
+  const carteles = await Promise.all(tres.map(async (e) => (await bajarCartel(e.imagen))?.bytes ?? null));
   const r = await dibujarPortadaSemana({
+    id: `semana-${s.ciudadSlug || s.ciudad}-${s.desde ?? diaLocal(new Date(tres[0]?.inicio ?? ahora), tres[0]?.zona)}`,
+    formato,
     ciudad: s.ciudad,
     titulo: s.titulo,
-    eventos: s.eventos.map((e) => {
-      const dia = diaConMes(e.inicio, ahora, e.zona).replace(/ de .*$/, "");
-      return { cuando: `${dia[0].toLocaleUpperCase("es-MX")}${dia.slice(1)} · ${horaCorta(e.inicio, e.zona)}`, titulo: e.titulo };
-    }),
+    eventos: tres.map((e) => ({ cuando: [diaCortoDe(e, ahora), horaCorta(e.inicio, e.zona), e.lugar].filter(Boolean).join(" · "), titulo: e.titulo })),
+    dias: tres.map((e) => diaCortoDe(e, ahora)),
+    carteles,
     ancho,
   });
   return r.imagen;
