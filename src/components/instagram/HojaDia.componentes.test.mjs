@@ -125,6 +125,8 @@ after(async () => {
 const DIAS = {
   artista: ARTISTA,
   publicado: { ...ARTISTA, estado: 'publicado', abierto: false, aviso: null, titulo: 'Lun 5 · 7:00 pm · Artista', publicado: { instagram: 'https://www.instagram.com/p/A/', facebook: 'https://www.facebook.com/1/posts/2', historia: 'https://www.instagram.com/stories/x/1/', cuando: 'lun 5 de oct, 7:00 pm', sinCoautor: true, fallo: null }, medida: { visitas: 31, van: 3 } },
+  // OL-504: un artista con portada de Wikimedia y su crédito (OL-491): la vista previa del texto dice lo mismo que la publicación.
+  credito: { ...ARTISTA, contenido: { ...ARTISTA.contenido, credito: 'Pablo Pérez · CC BY-SA 4.0 (https://commons.wikimedia.org/wiki/File:Nube.jpg)' } },
   descanso: { ...ARTISTA, tipo: 'descanso', titulo: 'Dom 18 · Descanso', nombre: 'Sin publicación', por: null, estado: 'descanso', abierto: false, hora: null, contenido: { tipo: 'descanso' }, aviso: null },
 };
 
@@ -233,6 +235,27 @@ test("quitar la etiqueta cambia el texto; «Publicar ahora» la manda sin ella, 
   const q = await qa(p);
   assert.deepEqual(q.acciones.find((a) => a[0] === "publicarDiaAhora"), ["publicarDiaAhora", ARTISTA.id, { texto: null, quitadas: ["nubedepapel"], facebook: true }]);
   assert.equal(q.cerrada, 1);
+});
+
+test("OL-504: con crédito de la portada, la vista previa dice «Foto: autor · licencia» como la publicación; sin la cuenta, el crédito sigue", async (t) => {
+  const p = await abrir(t, "credito");
+  // El valor que lleva el campo (cerrado, su `input` oculto) y lo que enseña su renglón.
+  const campo = () => hoja(p).locator('[name="texto"]').first().inputValue();
+  const resumen = () => texto(hoja(p).getByRole("button", { name: "Texto de la publicación" }));
+  const conCuenta = await campo();
+  assert.match(conCuenta, /^Foto: Pablo Pérez · CC BY-SA 4\.0 \(https:\/\/commons\.wikimedia\.org\/wiki\/File:Nube\.jpg\)$/m);
+  assert.doesNotMatch(conCuenta, /^Foto: @nubedepapel$/m, "el crédito sustituye a «Foto: @cuenta»");
+  assert.match(conCuenta, /@nubedepapel/, "la cuenta sigue mencionada");
+  await tocar(p, hoja(p).getByRole("button", { name: "Quitar @nubedepapel" }));
+  await hoja(p).getByRole("button", { name: "Volver a etiquetar" }).waitFor();
+  const sinCuenta = await campo();
+  assert.doesNotMatch(sinCuenta, /@nubedepapel/);
+  assert.match(sinCuenta, /^Foto: Pablo Pérez · CC BY-SA 4\.0 /m, "sin la cuenta, el crédito va igual");
+  assert.match(await resumen(), /Foto: Pablo Pérez · CC BY-SA 4\.0/);
+  // El texto del sistema no se manda (`texto: null`): el trabajador lo arma con `textoDeFicha`, que lleva el mismo crédito.
+  await tocar(p, hoja(p).getByRole("button", { name: "Publicar ahora" }));
+  await p.getByRole("dialog").waitFor({ state: "detached" });
+  assert.deepEqual((await qa(p)).acciones.find((a) => a[0] === "publicarDiaAhora"), ["publicarDiaAhora", ARTISTA.id, { texto: null, quitadas: ["nubedepapel"], facebook: true }]);
 });
 
 test("lo que se cambió en un día programado se guarda al cerrar; sin cambios, no", async (t) => {

@@ -29,7 +29,7 @@ import {
   type PreparadoDia,
 } from "@/app/admin/instagram/accionesSemana";
 import { textoArtista, textoLugar } from "@/lib/instagram/destacado";
-import { armarTexto, CUENTA_INSTAGRAM, etiquetasDeLaFoto, TOPE_CARACTERES } from "@/lib/instagram/texto";
+import { armarTexto, conCreditoDeFoto, CUENTA_INSTAGRAM, etiquetasDeLaFoto, TOPE_CARACTERES } from "@/lib/instagram/texto";
 import { horaDeReloj } from "@/lib/fechas";
 import { REFRESCO_MS } from "@/lib/redes/reglas";
 import propia from "./HojaInstagram.module.css";
@@ -99,13 +99,14 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
   const c = listo?.contenido;
   const cuenta = c && (c.tipo === "artista" || c.tipo === "lugar") ? c.cuenta : null;
   const ahora = listo ? new Date(listo.ahora) : null;
-  // El texto que arma el sistema (el mismo código que el trabajador), con lo que se quitó; lo escrito a mano manda.
+  // El texto que arma el sistema (el mismo código que el trabajador, `textoDeFicha`), con lo que se quitó y el crédito de la portada (OL-504);
+  // lo escrito a mano manda.
   const armado = !c || !ahora
     ? ""
     : c.tipo === "artista"
-      ? textoArtista(cuenta && q.includes(cuenta) ? { ...c.datos, redes: [] } : c.datos, ahora)
+      ? conCreditoDeFoto(textoArtista(cuenta && q.includes(cuenta) ? { ...c.datos, redes: [] } : c.datos, ahora), c.credito)
       : c.tipo === "lugar"
-        ? textoLugar(cuenta && q.includes(cuenta) ? { ...c.datos, redes: [] } : c.datos, ahora)
+        ? conCreditoDeFoto(textoLugar(cuenta && q.includes(cuenta) ? { ...c.datos, redes: [] } : c.datos, ahora), c.credito)
         : c.tipo === "evento"
           ? armarTexto(c.evento, ahora, q)
           : c.tipo === "semana"
