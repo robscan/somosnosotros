@@ -1,0 +1,153 @@
+{
+ "_nota": "OL-490, segunda vuelta (bitácora 522): fichas reales leídas de las páginas públicas de somosnosotros.org el 2026-10-29 (nombre, disciplina, descripción, cuenta y las URL públicas del Storage). Las imágenes se bajan con fetch al correr el guion; nada de .env. Las fechas de «Esta semana» son las del respaldo local (ilustrativas).",
+ "base": "https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/",
+ "artistas": [
+  {
+   "clave": "leon",
+   "slug": "un-leon-marinero",
+   "nombre": "Un León Marinero",
+   "disciplina": "Música",
+   "detalle": "Folk y canción de autor",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "unleonmarinero",
+   "razon": "Artista de la semana",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/un-leon-marinero.jpg",
+   "portada": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/un-leon-marinero-portada.jpg?v=3",
+   "proxima": {
+    "mes": "nov",
+    "dia": "7",
+    "texto": "Sáb 7 de nov, 7:00 pm · Casa Motis"
+   },
+   "descripcion": "Proyecto solista de folk y canción de autor con raíces en San Luis Potosí, activo desde 2019; navega entre la canción de autor y el rock contemplativo. Su canción «Lluvias de Mayo» sonó en la serie «Como Agua Para Chocolate» de HBO Max y en 2026 estrenó una nueva versión junto a Carlos Rivera."
+  },
+  {
+   "clave": "yanel",
+   "slug": "yanel-villarreal",
+   "nombre": "Yanel Villarreal",
+   "disciplina": "Artes visuales",
+   "detalle": "Pintura y clases de arte",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "yanel_villarreal",
+   "razon": "Artista destacado",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/yanel-villarreal.jpg",
+   "portada": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/yanel-villarreal-portada-2026-10-27.jpg",
+   "descripcion": "Artista y diseñadora potosina. En su espacio creativo da clases de pintura a niñas, niños y adultos, y organiza talleres abiertos como «Dulce tertulia · Arte & Café» en el Museo Francisco Cossío."
+  },
+  {
+   "clave": "above",
+   "slug": "above-the-blue",
+   "nombre": "Above The Blue",
+   "disciplina": "Música",
+   "detalle": "Rock y metal alternativo",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "abovetblue",
+   "razon": "Artista destacado",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/above-the-blue.jpg",
+   "portada": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/above-the-blue-portada.jpg",
+   "descripcion": "Banda mexicana de rock y metal alternativo del sello Blegh Label; su sencillo más reciente es «Destino sin camino»."
+  },
+  {
+   "clave": "iyari",
+   "slug": "iyari-teatro-de-la-vida",
+   "nombre": "IYARI, teatro de la vida",
+   "disciplina": "Teatro",
+   "detalle": null,
+   "ciudad": "San Luis Potosí",
+   "cuenta": "iyari.teatrodelavida",
+   "razon": "Artista de la semana",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/iyari-teatro-de-la-vida-807a359c824a.jpg",
+   "portada": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/iyari-teatro-de-la-vida-portada-07d5828d5e37.jpg",
+   "proxima": {
+    "mes": "oct",
+    "dia": "30",
+    "texto": "Vie 30 de oct, 8:00 pm · Foro Sombra"
+   },
+   "descripcion": "Compañía potosina que confía en la potencia del teatro como productor de vida. Su unipersonal «Cantares», escrito, dirigido y actuado por Sayuri Navarro, ganó el Premio Nacional de Dramaturgia Emilio Carballido."
+  },
+  {
+   "clave": "carlos",
+   "slug": "carlos-alejandro-guevara-requena",
+   "nombre": "Carlos Alejandro Guevara Requena",
+   "disciplina": "Cine",
+   "detalle": null,
+   "ciudad": "San Luis Potosí",
+   "cuenta": "carlos.guevara2",
+   "razon": "Artista de la semana",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/carlos-alejandro-guevara-requena-76b44c8ccf2f.jpg",
+   "portada": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/carlos-alejandro-guevara-requena-portada-e5cd574f5454.jpg",
+   "descripcion": "Estudió artes en la Escuela Estatal de Artes Plásticas de San Luis Potosí. Se ha especializado en la fotografía, la producción, dirección y edición de cortometraje documental."
+  }
+ ],
+ "lugares": [
+  {
+   "clave": "leonora",
+   "slug": "museo-leonora-carrington",
+   "nombre": "Museo Leonora Carrington",
+   "tipo": "Museo",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "museoleonoracarrington",
+   "razon": "Lugar de la semana",
+   "portada": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/museo-leonora-carrington.jpg",
+   "descripcion": "Museo dentro del Centro de las Artes (antigua penitenciaría) dedicado a Leonora Carrington: escultura, joyería, gráfica y objetos personales."
+  },
+  {
+   "clave": "maravilla",
+   "slug": "el-maravilla-cafe",
+   "nombre": "El Maravilla Café",
+   "tipo": "Café, bar o restaurante",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "elmaravillacafe",
+   "razon": "Lugar de la semana",
+   "portada": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/el-maravilla-cafe-portada.jpg",
+   "descripcion": "Café en el Barrio de San Miguelito, a un costado de la iglesia, con talleres para todas las edades (Talleres Wonder) y exposiciones colectivas."
+  },
+  {
+   "clave": "sombra",
+   "slug": "foro-sombra",
+   "nombre": "Foro Sombra",
+   "tipo": "Foro",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "forosombra",
+   "razon": "Lugar destacado",
+   "semana": "Esta semana: 1 evento",
+   "portada": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/foro-sombra-portada-e42ed0db62a0.jpg",
+   "descripcion": "Foro escénico independiente: una caja negra con piso de madera, parrilla de iluminación y aforo para 110 personas. Programa teatro, danza, música, muestras escénicas y musicales."
+  },
+  {
+   "clave": "silva",
+   "slug": "museo-federico-silva-escultura-contemporanea",
+   "nombre": "Museo Federico Silva Escultura Contemporánea",
+   "tipo": "Museo",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "museo_federico_silva",
+   "razon": "Lugar destacado",
+   "portada": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/museo-federico-silva-escultura-contemporanea.jpg",
+   "descripcion": "Museo dedicado a la escultura contemporánea y a la obra de Federico Silva, frente al Jardín de San Juan de Dios."
+  }
+ ],
+ "semana": {
+  "id": "semana-san-luis-potosi-2026-11-06",
+  "ciudad": "San Luis Potosí",
+  "titulo": "Del viernes 6 al domingo 8 de noviembre",
+  "eventos": [
+   {
+    "dia": "Vie 6",
+    "cuando": "Vie 6 · 12:00 pm",
+    "titulo": "Master Class - 9° Festival de Cine UASLP",
+    "cartel": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-ef64ac00-4e74-431e-88d1-b6c9e8763d1d.jpg"
+   },
+   {
+    "dia": "Sáb 7",
+    "cuando": "Sáb 7 · 5:00 pm",
+    "titulo": "Leonora in the morning light",
+    "cartel": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-022918fa-d969-47a3-8d3d-c9083da2f895.jpg"
+   },
+   {
+    "dia": "Dom 8",
+    "cuando": "Dom 8 · 7:00 pm",
+    "titulo": "OCA",
+    "cartel": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-f9e3ca5b-f7b0-4e5d-b697-e3b0a86aa714.jpeg"
+   }
+  ]
+ }
+}
