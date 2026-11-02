@@ -1600,7 +1600,7 @@ El founder, el 2 de noviembre: «Haz por favor un relevo de gestor. Revisa el es
 
 **El relevo entero está en `docs/bitacora/2026/11/532-relevo-gestor-viii.md`:** lo pendiente en orden (rotar la llave de Supabase con el founder presente; el prototipo de «publicar sin recargar» con los estados que pidió el council; (d), (e) y (f) de OL-497; medir desde el iPhone con Speed Insights; Repisa en pausa; decisiones del founder; chicos) y lo aprendido (medir con la identidad real, migraciones, `publicar.sh` y la CI, prototipo antes que código, agentes con archivos disjuntos). Herramientas privadas del gestor en `privado/gestor/herramientas-2026-10-20/` (encargos, `migraciones/aplicar.mjs`, `publicar.sh`, `resolver_ol.py`).
 
-**Arranque del VIII:** pendiente de anotar por la sesión nueva (sesión, modelo, hora).
+**Arranque del VIII:** «Gestor de cambios VIII», sesión `local_de64d008-65c2-4461-9fff-6d9796d69f5e` (Fable 5.1, arrancada desde la sesión del VII), 2026-11-02 a las 14:20 (hora de San Luis Potosí, 20:20 UTC). Comprobado al arrancar: `main` local = `origin/main` = `3d0875a1` (#625, solo documentos; Vercel no lo despliega a propósito), producción en `252aaa8f` (#622) y respondiendo 200; checkout limpio, cero árboles de trabajo; en origin solo `instagram-estilo-propio` (PR #611 borrador EN PAUSA) e `instagram-estilo-propio-v2` (Repisa, sin PR); la llave pública de Supabase sigue siendo JWT legado (`alg` HS256 en su cabecera: pendiente 1 del relevo). Registro 62 en la rama `gestor-registro-62`. Siguientes libres: OL-500 y bitácora 533.
 
 ## Jornada del VII · 2026-10-19
 
