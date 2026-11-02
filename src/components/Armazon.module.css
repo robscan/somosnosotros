@@ -28,6 +28,13 @@
   container-type: inline-size; /* `--gutter` se mide sobre lo que la pantalla ocupa: con el carril, el ancho menos el carril */
 }
 
+/* Una ficha (lugar, artista) entra deslizándose desde la derecha (ui/EntradaFicha): arranca «cerrada», un ancho entero fuera de la vista, y
+   eso daba a la página desplazamiento a lo ancho (a 1280, 2472 de 1280) mientras entraba (OL-504). La pantalla lo recorta a lo ancho; `clip`
+   no la vuelve contenedor de desplazamiento, así que lo pegado (sticky) sigue pegándose a la ventana y lo fijo no cambia. */
+.armazon[data-vista="ficha"] > .pantalla {
+  overflow-x: clip;
+}
+
 /* Raíz: en el teléfono la barra de la app se ve y, al bajar, sube hasta dejar solo la franja de la hora. */
 .armazon[data-vista="raiz"] {
   --barra-flujo: calc(var(--alto-barra) + var(--tope));

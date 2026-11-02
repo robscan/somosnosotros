@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Publicar sin recargar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+/* Prototipo OL-502 (bitácora 535): publicar en Instagram sin recargar la pantalla. Pieza (c) del plan de carga (OL-497) con las condiciones del
+   council del 31 de octubre (acta `docs/council/COUNCIL_carga-rendimiento_2026-10-31.md`, M7 y condición 10). Decisiones ya tomadas por el
+   founder («acepto tus recomendaciones», 31 de octubre): la tarjeta se queda en su sitio y cambia sola (sin velo, sin recargar); sondeo de
+   `estadosTrabajos` solo mientras haya algo en camino; «Ver» abre la publicación en Instagram.
+
+   Sobre la pantalla REAL (regla de OL-409): la lista de Eventos de Administración › Instagram y la hoja «Publicar en Instagram» se guardaron con
+   `scripts/ops/auditoria-ui/maqueta-pantalla.mjs` (la app compilada contra el respaldo local, cuenta de administración inventada, reloj fijo del
+   mié 7 de oct de 2026) y van enteras dentro de este archivo; el prototipo las carga en el marco y SOLO toca el renglón del evento que se
+   publica, con las clases de producción: `ui/Renglon` (frente, envuelve, el hueco de acción), `ui/Girando` (el anillo de «Publicando…»),
+   `ui/BotonIcono` (control de 44, como el botón de Facebook de «Ya en Instagram») y el verde de `SemanaInstagram/hecho`. Lo nuevo va en
+   `pr-…` (cinco reglas). `window.prototipo` sirve a las capturas. */
+:root {
+  --fondo: #ffffff; --texto: #1a1a1a;
+  --pg-fondo: #e6e4de; --pg-panel: #fbfaf7; --pg-texto: #1a1a1a; --pg-suave: #5e5b54; --pg-borde: #d3d0c8; --pg-acento: #6d34c8; --pg-acento-texto: #ffffff;
+  --pg-velo: rgba(20, 18, 14, 0.4); --pg-sombra-chica: 0 1px 3px rgba(0, 0, 0, 0.16); --pg-ok: #1f6f43; --pg-mal: #b3261e;
+  --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px;
+  --radio: 8px; --radio-grande: 12px; --radio-hoja: 24px; --radio-pildora: 999px; --toque-min: 44px;
+  --letra-2xs: 0.75rem; --letra-xs: 0.875rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --duracion: 200ms; --curva: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ancho-tel: 390px; --alto-tel: 844px;
+}
+* { box-sizing: border-box; }
+html { font: 400 var(--letra-md) / 1.4 var(--fuente); font-variation-settings: "wdth" 80; color: var(--pg-texto); background: var(--pg-fondo); -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+button { font: inherit; font-variation-settings: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* La escena: el teléfono; desde 760, el teléfono y la hoja de notas al lado. */
+.escena { display: grid; gap: var(--espacio-4); padding: var(--espacio-4); min-height: 100dvh; align-content: start; }
+.columna { display: grid; gap: var(--espacio-2); justify-items: center; align-content: start; min-width: 0; }
+.selector { display: flex; flex-wrap: wrap; gap: var(--espacio-1); justify-content: center; max-width: 560px; }
+.selector button { min-height: 36px; padding: 0 12px; border-radius: var(--radio-pildora); background: var(--pg-panel); color: var(--pg-suave); font-size: var(--letra-xs); font-weight: 700; }
+.selector button[aria-pressed="true"] { background: var(--pg-acento); color: var(--pg-acento-texto); }
+.selector button.reproducir { box-shadow: inset 0 0 0 1px var(--pg-borde); background: transparent; }
+.etiqueta-tel { margin: 0; max-width: var(--ancho-tel); color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; text-align: center; min-height: 2.6em; }
+.etiqueta-tel b { color: var(--pg-texto); }
+.caja-tel { width: min(100%, var(--ancho-tel)); }
+.tel { display: block; width: var(--ancho-tel); max-width: 100%; height: var(--alto-tel); border: 0; border-radius: 28px; background: var(--fondo); box-shadow: var(--sombra-flotante); }
+@media (min-width: 760px) { .escena { grid-template-columns: minmax(0, 1fr) 420px; align-items: start; } }
+
+/* La hoja de notas. */
+.fab { position: fixed; right: var(--espacio-4); bottom: calc(var(--espacio-4) + env(safe-area-inset-bottom, 0px)); z-index: 40; display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: 48px; padding: 0 var(--espacio-4); border-radius: var(--radio-pildora); background: var(--pg-texto); color: var(--pg-panel); font-weight: 700; box-shadow: var(--sombra-flotante); }
+.velo { position: fixed; inset: 0; z-index: 50; background: var(--pg-velo); opacity: 0; pointer-events: none; transition: opacity var(--duracion) var(--curva); }
+.velo.visible { opacity: 1; pointer-events: auto; }
+.hoja { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: grid; grid-template-rows: auto auto minmax(0, 1fr); max-height: min(78%, 720px); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; background: var(--pg-panel); box-shadow: var(--sombra-flotante); transform: translateY(100%); visibility: hidden; transition: transform 240ms var(--curva), visibility 0s 240ms; }
+.hoja.abierta { transform: none; visibility: visible; transition: transform 240ms var(--curva), visibility 0s; }
+.asa { justify-self: center; width: 36px; height: 4px; margin-top: var(--espacio-2); border-radius: 2px; background: var(--pg-borde); }
+.hoja-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--espacio-2); padding: var(--espacio-2) var(--espacio-2) var(--espacio-2) var(--espacio-4); }
+.hoja-cab h1 { margin: 0; font-size: var(--letra-xl); font-weight: 800; font-variation-settings: "wdth" 75; line-height: 1.1; }
+.hoja-cab p { margin: 2px 0 0; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.3; }
+.cerrar { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border-radius: 50%; }
+.hoja-cuerpo { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--espacio-4) calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px)); }
+.bloque { padding-top: var(--espacio-4); }
+.bloque h2 { margin: 0 0 var(--espacio-1); font-size: var(--letra-lg); font-weight: 800; font-variation-settings: "wdth" 75; }
+.bloque > p { margin: 0 0 var(--espacio-2); color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.4; }
+.notas { margin: 0; padding-left: 1.1em; color: var(--pg-suave); font-size: var(--letra-xs); line-height: 1.4; }
+.notas li + li { margin-top: var(--espacio-1); }
+.notas b { color: var(--pg-texto); }
+.notas code { font-size: 0.95em; }
+.estado-actual { padding: var(--espacio-2) var(--espacio-3); border-radius: var(--radio); background: var(--pg-fondo); font-size: var(--letra-xs); line-height: 1.4; }
+.estado-actual b { display: block; color: var(--pg-texto); }
+@media (min-width: 760px) {
+  .hoja { position: sticky; top: var(--espacio-4); left: auto; right: auto; bottom: auto; z-index: auto; align-self: start; height: calc(100dvh - 2 * var(--espacio-4)); max-height: none; border-radius: var(--radio-grande); transform: none; visibility: visible; transition: none; }
+  .asa, .cerrar, .fab, .velo { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .hoja, .hoja.abierta, .velo { transition: none; } }
+</style>
+</head>
+<body>
+<main class="escena" id="escena">
+  <section class="columna" aria-label="La pantalla">
+    <div class="selector" role="group" aria-label="Estado" id="selector"></div>
+    <p class="etiqueta-tel" id="etiqueta"></p>
+    <div class="caja-tel" id="caja-tel"><iframe class="tel" id="tel" title="Administración › Instagram (maqueta real)"></iframe></div>
+  </section>
+
+  <aside class="hoja" id="hoja" aria-labelledby="hoja-titulo">
+    <span class="asa" aria-hidden="true"></span>
+    <header class="hoja-cab">
+      <div>
+        <h1 id="hoja-titulo" tabindex="-1">Publicar sin recargar</h1>
+        <p>Administración › Instagram · 2 de noviembre · OL-502 · sobre la pantalla real</p>
+      </div>
+      <button class="cerrar" id="cerrar-hoja" type="button" aria-label="Cerrar las notas"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </header>
+    <div class="hoja-cuerpo" id="hoja-cuerpo">
+      <div class="estado-actual" id="estado-actual" aria-live="polite"></div>
+
+      <section class="bloque" aria-labelledby="t-que">
+        <h2 id="t-que">Qué cambia</h2>
+        <p>Hoy, al tocar «Publicar», la hoja se cierra, la pantalla se recarga entera dos veces (45 consultas cada una), no pasa nada visible durante medio segundo y, al terminar, el evento salta al grupo «Ya en Instagram», fuera de la vista (bitácora 529, parte D). Con esto:</p>
+        <ul class="notas">
+          <li><b>La tarjeta se queda donde estaba</b> y su última línea cuenta lo que pasa: «Publicando…» en menos de 0,1 s tras el toque, «Reintentando…» si la cola repite, «Publicado» en verde con «Ver», o «No se publicó: …» en rojo.</li>
+          <li><b>Nada se mueve ni se recarga</b> mientras la persona mira: ni la lista, ni el scroll, ni el contador del grupo. El evento aparece en «Ya en Instagram» la próxima vez que la pantalla se pida al servidor (otra pestaña, otra ciudad, Atrás pasado el minuto).</li>
+          <li><b>«Ver»</b> abre la publicación en Instagram, fuera de la app, en el hueco de acción del renglón (el mismo sitio que el botón de Facebook en «Ya en Instagram»): nunca un enlace dentro del enlace.</li>
+          <li><b>El espejo a Facebook</b> es su propia línea, como hoy: «Facebook: publicando…» y luego «Facebook: publicado».</li>
+        </ul>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-handoff">
+        <h2 id="t-handoff">Para el código (handoff)</h2>
+        <ul class="notas">
+          <li><b>Dueño del estado:</b> <code>ListaInstagram</code> guarda <code>trabajos: Record&lt;eventoId, EstadoTrabajo&gt;</code>, sembrado con lo que ya trae el servidor (<code>enCamino</code>) y con la respuesta de <code>publicarEnInstagram</code> / <code>publicarEnFacebook</code> (<code>{ ok, id }</code>). La hoja le avisa con <code>onPublicado(id)</code> en vez de pedir <code>router.refresh()</code>.</li>
+          <li><b>Sondeo:</b> <code>useAlDia</code> pregunta <code>estadosTrabajos(ids)</code> cada 2 s (hoy 5) solo mientras haya algo en camino, y en vez de refrescar entrega el estado nuevo al dueño; al volver a la app pregunta una vez por los ids que recuerda (sessionStorage, 10 min) y solo refresca si no hay nada en camino y la lista tiene más de 5 min.</li>
+          <li><b>Los <code>router.refresh()</code> que quedan:</b> el de <code>aFacebook</code> en la lista (sale: la línea de Facebook la pone el estado), el de <code>onPublicado</code> de la hoja (sale), el de <code>useAlDia</code> al terminar un trabajo (sale) y al volver a la app (se queda con la condición de arriba). <code>HojaDia</code> y <code>HojaSugerencia</code> son de la pestaña Semana: no se tocan en esta pieza.</li>
+          <li><b>Contador del grupo:</b> «Para publicar · 11» cuenta renglones y no cambia mientras la tarjeta siga ahí; la línea gris de arriba («12 eventos … · 1 ya en Instagram») tampoco. Cambian cuando la lista se vuelve a pedir.</li>
+          <li><b><code>ui/Renglon</code></b> gana la prop <code>estado?: "en-camino" | "reintentando" | "hecho" | "fallido"</code>: solo tiñe la última línea (violeta con anillo, verde con palomita, rojo) y pone <code>role="status"</code> en ella; no cambia el fondo (no reutiliza <code>--primario-suave</code>, que ya significa «elegido») y manda sobre pulsado y hover.</li>
+          <li><b><code>ui/Hecho</code></b> (la palomita verde) gana la variante con texto y enlace para «Publicado · Ver», reutilizada en la hoja al reabrirla.</li>
+          <li><b>Atrás dentro del minuto</b> (<code>staleTimes.dynamic: 60</code>): la lista llega de la caché con el evento aún en «Para publicar»; el dueño del estado reconcilia con sessionStorage + <code>estadosTrabajos</code> y la tarjeta vuelve a decir «Publicado · Ver» sin saltar. Pasado el minuto, el servidor ya lo manda en «Ya en Instagram».</li>
+          <li><b>Criterio de aceptación</b> (parte D de <code>medir-tiempos.mjs</code>): mismo nodo y mismo <code>top</code> del renglón antes y después; señal &lt; 100 ms tras el toque; 0 peticiones RSC de refresco al publicar; «Publicado» &lt; 2 s después de <code>terminado_en</code>; toques reales en la app instalada del simulador; capturas 390×844 de cada estado, también con letra grande.</li>
+        </ul>
+      </section>
+
+      <section class="bloque" aria-labelledby="t-preguntas">
+        <h2 id="t-preguntas">Por confirmar</h2>
+        <ul class="notas">
+          <li>Si falla, la tarjeta dice el motivo y tocarla abre la hoja con «Publicar otra vez» (como hoy). ¿O quieres un botón «Reintentar» en el hueco de acción?</li>
+          <li>«Publicado · hace un momento» en vez de la hora exacta mientras la tarjeta siga en su sitio; en «Ya en Instagram» va como hoy («Publicación · Hoy, 11:52 am»).</li>
+        </ul>
+      </section>
+    </div>
+  </aside>
+  <div class="velo" id="velo" aria-hidden="true"></div>
+  <button class="fab" id="fab" type="button" aria-controls="hoja"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Notas</button>
+</main>
+/*@MAQUETAS*/
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const MAQ = JSON.parse($('maquetas').textContent);
+  const tel = $('tel');
+  const EVENTO = '/eventos/delirium-pollum-clown-y-pantomima-con-pimpolina';
+  const TITULO = 'Delirium Pollum, clown y pantomima con Pimpolina';
+  const PALOMITA = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const ABRIR = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8"/><path d="M19 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4"/></svg>';
+  // Lo nuevo, con prefijo: la línea en verde con palomita, la línea en rojo, y el hueco de acción como enlace.
+  const CSS_NUEVO = `
+    .pr-hecho { display: inline-flex; align-items: flex-start; gap: var(--espacio-2); color: var(--ok); font-weight: 600; }
+    .pr-hecho > svg { width: 1em; height: 1em; margin-top: 0.2em; }
+    .pr-fallo { color: var(--error); font-weight: 600; }
+    a.pr-ver { display: inline-grid; place-items: center; color: var(--primario); }
+    .pr-quieto ._9jOBxa_anillo { animation: none; }
+  `;
+
+  // Cómo se pinta el renglón en cada estado: las líneas de abajo (cuándo y dónde se quedan) y el hueco de acción.
+  const lineaGirando = (texto) => `<span class="XUODnW_envuelve" role="status"><span class="_9jOBxa_girando"><span class="_9jOBxa_anillo" aria-hidden="true"></span><span>${texto}</span></span></span>`;
+  const lineaHecho = (texto) => `<span class="XUODnW_envuelve" role="status"><span class="pr-hecho">${PALOMITA}<span>${texto}</span></span></span>`;
+  const lineaFallo = (texto) => `<span class="XUODnW_envuelve pr-fallo" role="status">${texto}</span>`;
+  const lineaGris = (texto) => `<span class="XUODnW_envuelve">${texto}</span>`;
+  const ver = `<a class="fBn7Pa_boton fBn7Pa_control pr-ver" href="https://www.instagram.com/p/DQx2k9mPz1a/" target="_blank" rel="noopener noreferrer" aria-label="Ver en Instagram: ${TITULO}">${ABRIR}</a>`;
+
+  const ESTADOS = [
+    { id: 'reposo', boton: 'Antes', pantalla: 'lista', etiqueta: '<b>Antes.</b> La lista de hoy; el evento es el sexto de «Para publicar».',
+      nota: 'La maqueta tal cual la sirve la app: nada tocado.' },
+    { id: 'hoja', boton: 'La hoja', pantalla: 'hoja', etiqueta: '<b>La hoja.</b> «Publicar» como hoy: se cierra sola en cuanto el servidor acepta el trabajo.',
+      nota: 'La hoja no cambia en esta pieza. Al tocar «Publicar» dice «Publicando…» mientras el servidor responde (menos de 0,5 s) y se cierra; la lista toma el relevo abajo.' },
+    { id: 'en-camino', boton: 'Publicando', pantalla: 'lista', lineas: [lineaGirando('Publicando…')], etiqueta: '<b>0,1 s después del toque.</b> La hoja se fue; la tarjeta no se movió y dice «Publicando…».',
+      nota: 'La última línea cambia en el mismo renglón, con el anillo de ui/Girando (el mismo de hoy). El scroll, el contador y los demás renglones siguen donde estaban. Se anuncia (role=status).' },
+    { id: 'reintentando', boton: 'Reintentando', pantalla: 'lista', lineas: [lineaGirando('Reintentando…')], etiqueta: '<b>La cola repite.</b> Un fallo pasajero: «Reintentando…» en el mismo sitio.',
+      nota: 'Igual que hoy en la frase (OL-488); lo nuevo es que llega por el sondeo cada 2 s sin recargar la lista.' },
+    { id: 'publicado', boton: 'Publicado', pantalla: 'lista', lineas: [lineaHecho('Publicado · hace un momento')], accion: ver, etiqueta: '<b>Publicado.</b> Verde con palomita, y «Ver» a la derecha abre la publicación en Instagram.',
+      nota: 'El verde es el de lo ya decidido (--ok, como la Semana), no el violeta de acción. «Ver» va en el hueco de acción de ui/Renglon (44 × 44, hermano del enlace), como el botón de Facebook de «Ya en Instagram». La tarjeta sigue en «Para publicar · 11» hasta que la lista se vuelva a pedir.' },
+    { id: 'facebook', boton: 'Con Facebook', pantalla: 'lista', lineas: [lineaHecho('Publicado · hace un momento'), lineaGirando('Facebook: publicando…')], accion: ver, etiqueta: '<b>Con espejo a Facebook.</b> Instagram ya está; Facebook va en su propia línea.',
+      nota: 'Dos trabajos, dos líneas (como hoy en «Ya en Instagram»). El sondeo sigue mientras el de Facebook esté en camino.' },
+    { id: 'facebook-ok', boton: 'Facebook listo', pantalla: 'lista', lineas: [lineaHecho('Publicado · hace un momento'), lineaGris('Facebook: publicado')], accion: ver, etiqueta: '<b>Los dos publicados.</b> Se acabó el sondeo; nada más cambia hasta salir de la pantalla.',
+      nota: 'La línea de Facebook queda en gris, con las palabras de hoy.' },
+    { id: 'fallido', boton: 'No se publicó', pantalla: 'lista', lineas: [lineaFallo('No se publicó: Instagram no aceptó la imagen')], etiqueta: '<b>No se publicó.</b> El motivo en rojo, en el mismo sitio; tocar la tarjeta abre la hoja con «Publicar otra vez».',
+      nota: 'La frase es la de hoy (lineaDeTrabajo); solo cambia que llega sin recargar y que la tarjeta no se mueve. Sin botón nuevo: la hoja ya sabe reintentar.' },
+    { id: 'atras-cache', boton: 'Atrás < 1 min', pantalla: 'lista', lineas: [lineaHecho('Publicado · hace un momento')], accion: ver, etiqueta: '<b>Al volver con Atrás antes del minuto.</b> La lista llega de la caché, pero la tarjeta vuelve a decir «Publicado · Ver».',
+      nota: 'Con staleTimes.dynamic = 60 la pantalla cacheada traería el evento en «Para publicar» con su línea vieja. El dueño del estado recuerda los trabajos de esta sesión (sessionStorage) y pregunta una vez por ellos: la tarjeta queda como se dejó, sin saltar.' },
+    { id: 'atras-fresco', boton: 'Atrás > 1 min', pantalla: 'lista', fresco: true, etiqueta: '<b>Al volver pasado el minuto.</b> El servidor ya lo manda en «Ya en Instagram», con las palabras de hoy.',
+      nota: 'Ahora sí cambian los contadores: «Para publicar · 10», «Ya en Instagram · 2» y la línea gris. Es la pantalla de siempre; nadie la vio moverse.' },
+    { id: 'letra', boton: 'Letra grande', pantalla: 'lista', lineas: [lineaHecho('Publicado · hace un momento')], accion: ver, letra: true, etiqueta: '<b>Letra al doble.</b> La línea envuelve y «Ver» sigue en su hueco sin montarse.',
+      nota: 'Las líneas usan la clase envuelve de ui/Renglon: se parten en dos sin cortarse. El tope de la app es 2× (--letra-tope).' },
+    { id: 'quieto', boton: 'Sin movimiento', pantalla: 'lista', lineas: [lineaGirando('Publicando…')], quieto: true, etiqueta: '<b>Con «reducir movimiento».</b> El anillo no gira: queda abierto, y la palabra sigue diciendo que algo pasa.',
+      nota: 'Hoy ui/Girando gira despacio (2,4 s); la propuesta es que con reducir movimiento no gire. role=status lo anuncia igual.' },
+  ];
+
+  const selector = $('selector');
+  for (const e of ESTADOS) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = e.boton; b.dataset.id = e.id; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => ir(e.id)); selector.appendChild(b);
+  }
+  const play = document.createElement('button'); play.type = 'button'; play.className = 'reproducir'; play.textContent = '▶ Reproducir'; play.addEventListener('click', reproducir); selector.appendChild(play);
+
+  let actual = null; let scrollGuardado = null; let cargaLista = null;
+  function ir(id) {
+    const e = ESTADOS.find((x) => x.id === id); if (!e) return;
+    actual = e;
+    for (const b of selector.querySelectorAll('button[data-id]')) b.setAttribute('aria-pressed', String(b.dataset.id === id));
+    $('etiqueta').innerHTML = e.etiqueta;
+    $('estado-actual').innerHTML = `<b>${e.boton}</b>${e.nota}`;
+    try { localStorage.setItem('pr-estado', id); } catch {}
+    cargaLista = new Promise((listo) => {
+      tel.onload = () => { pintar(tel.contentDocument, e); listo(); };
+      tel.srcdoc = MAQ[e.pantalla];
+    });
+    return cargaLista;
+  }
+
+  function pintar(doc, e) {
+    const estilo = doc.createElement('style'); estilo.textContent = CSS_NUEVO; doc.head.appendChild(estilo);
+    if (e.letra) doc.documentElement.style.fontSize = '200%';
+    if (e.quieto) doc.documentElement.classList.add('pr-quieto');
+    if (e.pantalla !== 'lista') return;
+    const frente = doc.querySelector(`a.XUODnW_frente[href="${EVENTO}"]`);
+    const li = frente?.closest('li');
+    if (!li) return;
+    const small = frente.querySelector('small');
+    const lineas = [...small.querySelectorAll('span')];
+    if (e.fresco) {
+      // La pantalla como la manda el servidor pasado el minuto: el evento en «Ya en Instagram», los contadores al día.
+      lineas[2].outerHTML = lineaGris('Publicación · Hoy, 11:52 am') + lineaGris('Facebook: publicado');
+      const secciones = [...doc.querySelectorAll('main > section')];
+      const ya = secciones.find((s) => /Ya en Instagram/.test(s.querySelector('h2')?.textContent ?? ''));
+      const para = secciones.find((s) => /Para publicar/.test(s.querySelector('h2')?.textContent ?? ''));
+      ya.querySelector('ul').prepend(li);
+      ya.querySelector('h2').innerHTML = 'Ya en Instagram<span>· 2</span>';
+      para.querySelector('h2').innerHTML = 'Para publicar<span>· 10</span>';
+      const conteo = [...doc.querySelectorAll('p.XOpm9W_conteo')].find((p) => /ya en Instagram/.test(p.textContent));
+      if (conteo) conteo.textContent = '12 eventos en los próximos 7 días · 2 ya en Instagram';
+    } else if (e.lineas) {
+      lineas[2].outerHTML = e.lineas.join('');
+      if (e.accion) li.insertAdjacentHTML('beforeend', e.accion);
+    }
+    // El scroll no cambia entre estados: el renglón queda en el mismo sitio (criterio: mismo nodo, mismo top).
+    if (scrollGuardado == null) {
+      const top = li.getBoundingClientRect().top + doc.documentElement.scrollTop;
+      scrollGuardado = Math.max(0, Math.round(top - 300));
+    }
+    doc.documentElement.scrollTop = e.fresco || e.letra ? 0 : scrollGuardado;
+    if (e.fresco || e.letra) li.scrollIntoView({ block: 'center' });
+  }
+
+  const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function reproducir() {
+    await ir('reposo'); await espera(900);
+    await ir('hoja'); await espera(1400);
+    await ir('en-camino'); await espera(2200);
+    await ir('publicado');
+  }
+
+  const abrir = (si) => { $('hoja').classList.toggle('abierta', si); $('velo').classList.toggle('visible', si); if (si) $('hoja-titulo').focus(); };
+  $('fab').addEventListener('click', () => abrir(true));
+  $('cerrar-hoja').addEventListener('click', () => abrir(false));
+  $('velo').addEventListener('click', () => abrir(false));
+
+  window.prototipo = {
+    estados: () => ESTADOS.map((e) => e.id),
+    ir: (id) => ir(id),
+    listo: () => cargaLista ?? Promise.resolve(),
+    actual: () => actual?.id ?? null,
+  };
+  let inicial = 'reposo';
+  try { inicial = localStorage.getItem('pr-estado') || inicial; } catch {}
+  ir(ESTADOS.some((e) => e.id === inicial) ? inicial : 'reposo');
+})();
+</script>
+</body>
+</html>

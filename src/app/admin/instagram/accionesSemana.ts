@@ -37,8 +37,9 @@ type Supabase = NonNullable<Awaited<ReturnType<typeof sesionAdmin>>>;
 
 /** Lo que la hoja enseña según qué sale ese día. */
 export type ContenidoDia =
-  | { tipo: "artista"; datos: ArtistaDestacado; cuenta: string | null }
-  | { tipo: "lugar"; datos: LugarDestacado; cuenta: string | null }
+  // `credito`: el de la portada (OL-491), solo si hay portada (como `textoDeFicha`): la vista previa del texto lo dice igual que la publicación (OL-504).
+  | { tipo: "artista"; datos: ArtistaDestacado; cuenta: string | null; credito?: string | null }
+  | { tipo: "lugar"; datos: LugarDestacado; cuenta: string | null; credito?: string | null }
   | { tipo: "evento"; eventoId: string; evento: EventoIg; conCartel: boolean }
   | { tipo: "semana"; texto: string; imagenes: number }
   | { tipo: "descanso" };
@@ -124,7 +125,8 @@ export async function prepararDia(id: string): Promise<PreparadoDia> {
     slug = f.slug;
     grupo = f.grupo;
     ubicacion = f.ubicacion ? { nombre: f.ubicacion.nombre } : null;
-    contenido = d.tipo === "artista" ? { tipo: "artista", datos: f.datos as ArtistaDestacado, cuenta } : { tipo: "lugar", datos: f.datos as LugarDestacado, cuenta };
+    const credito = f.portada ? (f.portadaCredito ?? null) : null;
+    contenido = d.tipo === "artista" ? { tipo: "artista", datos: f.datos as ArtistaDestacado, cuenta, credito } : { tipo: "lugar", datos: f.datos as LugarDestacado, cuenta, credito };
   } else if (d.tipo === "evento" && d.evento_id) {
     const h = await cargarParaHoja(s, d.evento_id, ahora);
     if (!h) return { ok: false, mensaje: "Ese evento ya no existe." };

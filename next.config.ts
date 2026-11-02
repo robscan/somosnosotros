@@ -19,6 +19,8 @@ const CABECERAS = [
 // cosas: Google la lee siempre, esté donde esté el <title>. No sustituye el `robots` de cada página, lo respalda.
 const NOINDEX = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
 const LOGOTIPO_EN_CACHE = [{ key: "Cache-Control", value: "public, max-age=86400" }];
+// El service worker y su página de respaldo (OL-501): siempre la versión de hoy. El SW guarda su propia copia del respaldo (`sn-respaldo-v1`).
+const SIN_CACHE = [{ key: "Cache-Control", value: "no-store" }];
 
 /**
  * Copiado de `node_modules/next/dist/shared/lib/router/utils/html-bots.js` (Next 16.4.3, patrón revisado sin cambios desde 16.3.8, OL-483), más Googlebot: Next 16
@@ -88,6 +90,8 @@ const nextConfig: NextConfig = {
       // barra sale sin él hasta que el servidor contesta. Un día en la caché: un logotipo nuevo llega a más tardar al día siguiente.
       { source: "/logotipo.svg", headers: LOGOTIPO_EN_CACHE },
       { source: "/logotipo-chico.svg", headers: LOGOTIPO_EN_CACHE },
+      { source: "/sw.js", headers: SIN_CACHE },
+      { source: "/sin-conexion.html", headers: [...SIN_CACHE, ...NOINDEX] },
     ];
   },
 };
