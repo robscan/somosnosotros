@@ -10,6 +10,10 @@ import { fileURLToPath } from "node:url";
  * lo que ya pasó esta semana, los bordes de la ventana en zonas de −11 y +14 horas, lugares privados u ocultos, quien dijo que no, lo publicado
  * hace 1 y 7 meses, el pedido de la semana, quién la lleva y más de 100 (el tope). Todo dentro de una transacción que se deshace al final: no
  * deja datos ni el esquema de prueba para las pruebas que siguen.
+ *
+ * OL-505 (bitácora 538, migración 20261029320000): el artista solo necesita su foto (la portada pasa a `otros`, como opcional) y el lugar ya no se
+ * queda fuera por material. La de antes se copia con esa misma regla (`conReglaOL505`, cuatro cambios de texto comprobados): así la comparación
+ * sigue probando que la rápida dice lo mismo que la lenta, ya con la regla nueva.
  */
 const ADMIN = randomUUID();
 const GESTORA = randomUUID();
@@ -23,6 +27,21 @@ const AJENA = "https://otra-pagina.test/portada.jpg";
 const LARGA = "Una descripción bastante larga para la prueba de falta de material: la ficha tiene que decir algo de sí misma, al menos ciento veinte letras.";
 
 const MIGRACION_ANTES = fileURLToPath(new URL("../../migrations/20261029240000_instagram_material.sql", import.meta.url));
+
+/** La de antes con la regla de OL-505: en `falta` solo la foto del artista; la portada que falte, a `otros`; el lugar, sin falta. */
+function conReglaOL505(sql) {
+  const cambios = [
+    [",\n        case when coalesce(btrim(a.portada), '') = '' then 'portada' when not public.instagram_material_propio(a.portada) then 'portada_ajena' end\n      ], null) as falta", "\n      ], null) as falta"],
+    ["then 'instagram' end\n      ], null) as otros", "then 'instagram' end,\n        case when not public.instagram_material_propio(a.portada) then 'portada' end\n      ], null) as otros"],
+    ["array_remove(array[case when coalesce(btrim(l.portada), '') = '' then 'portada' when not public.instagram_material_propio(l.portada) then 'portada_ajena' end], null)", "'{}'::text[]"],
+    ["array_remove(array[case when char_length(coalesce(l.descripcion, '')) < 120 then 'descripcion' end], null)", "array_remove(array[case when char_length(coalesce(l.descripcion, '')) < 120 then 'descripcion' end, case when not public.instagram_material_propio(l.portada) then 'portada' end], null)"],
+  ];
+  for (const [de, a] of cambios) {
+    if (sql.split(de).length !== 2) throw new Error(`conReglaOL505: no encontré una vez «${de.slice(0, 60)}…»`);
+    sql = sql.replace(de, a);
+  }
+  return sql;
+}
 
 export async function run({ check, query }) {
   const uno = async (sql, valores) => (await query(sql, valores)).rows[0];
@@ -38,7 +57,7 @@ export async function run({ check, query }) {
   await query("begin");
   try {
     // La de antes, tal cual, en un esquema de prueba.
-    const antes = readFileSync(MIGRACION_ANTES, "utf8").match(/create function public\.instagram_falta_material\(p_ciudad text, p_desde date\)[\s\S]*?\$\$;/)[0];
+    const antes = conReglaOL505(readFileSync(MIGRACION_ANTES, "utf8").match(/create function public\.instagram_falta_material\(p_ciudad text, p_desde date\)[\s\S]*?\$\$;/)[0]);
     await query("create schema prueba_498");
     await query(antes.replace("create function public.instagram_falta_material(", "create function prueba_498.falta_antes("));
 
@@ -49,7 +68,7 @@ export async function run({ check, query }) {
     const ig = (u) => JSON.stringify([{ url: `https://www.instagram.com/${u}` }]);
     const artista = async (nombre, o = {}) =>
       (await servicio("insert into public.artistas (nombre, disciplina, ciudad, foto, portada, descripcion, redes, visible, creado_por) values ($1, 'musica', $2, $3, $4, $5, $6, $7, $8) returning id",
-        [nombre, o.ciudad ?? C.nombre, o.foto === undefined ? `${FOTOS}f.jpg` : o.foto, o.portada === undefined ? null : o.portada, o.corta ? "corta" : LARGA, o.sinIg ? "[]" : ig(nombre.toLowerCase().replace(/[^a-z]/g, "")), o.visible ?? true, o.autor ?? null])).id;
+        [nombre, o.ciudad ?? C.nombre, o.foto === undefined ? null : o.foto, o.portada === undefined ? null : o.portada, o.corta ? "corta" : LARGA, o.sinIg ? "[]" : ig(nombre.toLowerCase().replace(/[^a-z]/g, "")), o.visible ?? true, o.autor ?? null])).id;
     const lugar = async (nombre, o = {}) =>
       (await servicio("insert into public.lugares (nombre, tipo, lat, lng, ciudad, portada, descripcion, redes, zona, privado, visible) values ($1, 'foro', 22.15, -100.97, $2, $3, $4, '[]', $5, $6, $7) returning id",
         [nombre, o.ciudad ?? C.nombre, o.portada === undefined ? null : o.portada, o.corta ? "corta" : LARGA, o.zona ?? MX, o.privado ?? false, o.visible ?? true])).id;
@@ -111,7 +130,9 @@ export async function run({ check, query }) {
     const A_PRIMERO_OTRA = await artista("Rapida Primero En Otra");
     const A_DE_OTRA = await artista("Rapida De Otra", { ciudad: OTRA.nombre });
     const A_AJENA = await artista("Rapida Portada Ajena", { portada: AJENA, foto: AJENA });
-    const A_COMPLETA = await artista("Rapida Completa", { portada: `${FOTOS}p.jpg` });
+    const A_COMPLETA = await artista("Rapida Completa", { foto: `${FOTOS}f.jpg`, portada: `${FOTOS}p.jpg` });
+    // OL-505: con su foto y sin portada ya no le falta nada.
+    const A_SOLO_FOTO = await artista("Rapida Solo Foto", { foto: `${FOTOS}f.jpg` });
     const A_OCULTA = await artista("Rapida Oculta", { visible: false });
     const A_FUERA = await artista("Rapida Dijo Que No");
     const A_PUB_RECIENTE = await artista("Rapida Publicada Hace Un Mes");
@@ -128,7 +149,7 @@ export async function run({ check, query }) {
     await actua(E_C2, A_PRIMERO_OTRA);
     await actua(E_OTRA, A_DE_OTRA); // su primera fecha es en Otra y su ficha también: en C no sale aunque luego toque en C
     await actua(E_C2, A_DE_OTRA);
-    for (const a of [A_AJENA, A_COMPLETA, A_OCULTA, A_FUERA, A_PUB_RECIENTE, A_PUB_VIEJA, A_PEDIDA]) await actua(E_SIN, a);
+    for (const a of [A_AJENA, A_COMPLETA, A_SOLO_FOTO, A_OCULTA, A_FUERA, A_PUB_RECIENTE, A_PUB_VIEJA, A_PEDIDA]) await actua(E_SIN, a);
     for (const e of [E_OCULTO, E_CANC, E_BORR, E_RET]) await actua(e, A_SOLO_MALOS);
     await actua(E_AYER, A_AYER);
     await actua(E_HOY_LUEGO, A_AYER);
@@ -183,16 +204,16 @@ export async function run({ check, query }) {
     const n = await leer("nueva", C.slug, siguiente);
     const de = (id) => n.find((f) => f.id === id);
     check(n.length === 100, "el tope sigue en 100", n.length);
-    check(de(A_SIN)?.proxima_titulo === "Rapida En C" && de(A_SIN).falta.join() === "portada", "la primera fecha y lo que falta", de(A_SIN));
-    check(de(A_NADA)?.falta.join() === "foto,portada" && de(A_NADA).otros.join() === "descripcion,instagram", "de otra ciudad con fecha aquí: sale, con todo lo que le falta", de(A_NADA));
+    check(de(A_SIN)?.proxima_titulo === "Rapida En C" && de(A_SIN).falta.join() === "foto" && de(A_SIN).otros.join() === "portada", "la primera fecha y lo que falta (la foto; la portada, opcional)", de(A_SIN));
+    check(de(A_NADA)?.falta.join() === "foto" && de(A_NADA).otros.join() === "descripcion,instagram,portada", "de otra ciudad con fecha aquí: sale, con todo lo que le falta", de(A_NADA));
     check(de(A_PRIMERO_OTRA)?.proxima_titulo === "Rapida En Otra", "de aquí con su primera fecha en otra ciudad: sale, con esa fecha", de(A_PRIMERO_OTRA));
     check(!de(A_DE_OTRA), "de otra ciudad con su primera fecha en otra: no sale aunque luego toque aquí");
-    check(de(A_AJENA)?.falta.join() === "foto_ajena,portada_ajena", "foto y portada de otra página", de(A_AJENA));
+    check(de(A_AJENA)?.falta.join() === "foto_ajena" && de(A_AJENA).otros.join() === "portada", "foto de otra página (la portada ajena, opcional)", de(A_AJENA));
+    check(!de(A_SOLO_FOTO), "OL-505: con su foto y sin portada ya no sale en «Falta material»");
     check(!de(A_COMPLETA) && !de(A_OCULTA) && !de(A_FUERA) && !de(A_PUB_RECIENTE), "ni completa, ni oculta, ni la que dijo que no, ni la publicada hace un mes");
     check(!!de(A_PUB_VIEJA), "la publicada hace siete meses, sí");
     check(!de(A_SOLO_MALOS), "eventos ocultos, cancelados, en borrador o retirados no cuentan como fecha");
-    check(de(L_SIN)?.tipo === "lugar" && de(L_SIN).pedido_en !== null, "el lugar sin portada, con su pedido de la semana", de(L_SIN));
-    check(de(L_AJENA)?.falta.join() === "portada_ajena" && de(L_AJENA).otros.join() === "descripcion", "el lugar con la portada de otra página", de(L_AJENA));
+    check(!n.some((f) => f.tipo === "lugar"), "OL-505: ningún lugar se queda fuera por material (sin portada sale L1), ni el que no tiene portada ni el de la portada ajena");
     check(!de(L_PRIV) && !de(L_OCULTO), "ni el lugar privado ni el oculto");
     check(de(A_PEDIDA)?.pedido_en !== null && de(A_PEDIDA).lleva.join() === GESTORA && de(A_PEDIDA).lleva_nombre !== undefined, "pedida esta semana; la lleva su autora (la cuenta de la administración no cuenta)", de(A_PEDIDA));
     const kiri = (await uno("select inicio::text as t from public.eventos where id = $1", [BK.dentroIni])).t;

@@ -34,7 +34,7 @@ const NO_SE_PUDO: Hecho = {
  * navegar: nada se apila en el historial):
  *   · la lista: quién tiene fecha y se quedó fuera, qué le falta, su próxima fecha y quién lleva la ficha;
  *   · la ficha: «Pedírselo» (si alguien la lleva: le llega el aviso en la app y en su teléfono, una vez por semana) y «Subir yo»;
- *   · subir: solo los huecos que faltan (la foto y la portada del artista, la portada del lugar), con la espera de subida de toda la app (OL-353;
+ *   · subir: solo los huecos que faltan (desde OL-505, la foto del artista: la portada ya no es obligatoria), con la espera de subida de toda la app (OL-353;
  *     el teléfono reduce la imagen antes, OL-352) y «Guardar». Al guardar vuelve a la lista, ya sin esa ficha (y la semana la toma).
  */
 export default function HojaMaterial({
@@ -253,7 +253,7 @@ export default function HojaMaterial({
         ) : f.lleva ? (
           <p className={hoja.nota}>
             La lleva {f.lleva}. Con «Pedírselo» le llega un aviso en la app y en
-            su teléfono: «Completa tu portada y te presentamos en Instagram».
+            su teléfono: «Completa tu foto y te presentamos en Instagram».
             Abre la edición de su ficha.
           </p>
         ) : (
@@ -285,8 +285,8 @@ export default function HojaMaterial({
   return (
     <Hoja etiqueta="Falta material" titulo="Falta material" onCerrar={cerrar}>
       <p className={hoja.nota}>
-        Lo que se presenta en Instagram es lo que está en la app: con su foto y
-        su portada, cada ficha entra sola a la semana.
+        Lo que se presenta en Instagram es lo que está en la app: con su foto,
+        cada artista entra solo a la semana. La portada es opcional.
       </p>
       {guardadas.length > 0 && (
         <p className={`${admin.hecho} ${styles.hecho}`} role="status">
@@ -326,7 +326,7 @@ export default function HojaMaterial({
         </ul>
       ) : (
         <p className={hoja.nota}>
-          Ya nadie con fecha se queda fuera por falta de foto o portada.
+          Ya nadie con fecha se queda fuera por falta de foto.
         </p>
       )}
     </Hoja>

@@ -21,6 +21,7 @@ import {
   nombreDelDia,
   queFalta,
   rangoDeLaSemana,
+  otrosDeLaFalta,
   resumenDeLaFalta,
   resumenSemana,
   salePara,
@@ -110,7 +111,8 @@ export type Sugerencia = {
   ahora: boolean;
 };
 
-/** OL-488: una ficha con fecha que se quedó fuera de la semana por falta de foto o portada (una fila de `instagram_falta_material`). */
+/** OL-488: una ficha con fecha que se quedó fuera de la semana por falta de foto (una fila de `instagram_falta_material`; desde OL-505 solo
+ *  artistas: el lugar sin portada sale con el símbolo SN). */
 export type FichaSinMaterial = {
   tipo: "artista" | "lugar";
   id: string;
@@ -118,9 +120,9 @@ export type FichaSinMaterial = {
   nombre: string;
   foto: string | null;
   falta: string[];
-  /** «Falta la portada», «Su portada es de otra página: hay que subirla a la app». */
+  /** «Falta la foto», «Su foto es de otra página: hay que subirla a la app». */
   queFalta: string;
-  /** Lo demás que le faltaría para entrar: «También le falta la descripción para entrar». */
+  /** Lo demás que le faltaría para entrar y la portada opcional: «También le falta la descripción para entrar. La portada es opcional». */
   otros: string | null;
   /** «Próxima fecha: vie 9 · Concierto en Aether». */
   proxima: string | null;
@@ -329,7 +331,7 @@ export async function leerFalta(supabase: ClienteServidor, ciudad: string, lunes
     foto: f.foto,
     falta: f.falta,
     queFalta: queFalta(f.falta),
-    otros: f.otros?.length ? `También le falta ${f.otros.map((o) => (o === "descripcion" ? "la descripción" : "su Instagram")).join(" y ")} para entrar` : null,
+    otros: otrosDeLaFalta(f.otros),
     proxima: f.proxima_inicio ? `Próxima fecha: ${dia(f.proxima_inicio, f.proxima_zona ?? zona)}${f.proxima_titulo ? ` · ${f.proxima_titulo}` : ""}` : null,
     lleva: f.lleva?.length ? (f.lleva_nombre ?? "").trim().split(/\s+/)[0] || "una cuenta" : null,
     puedePedir: !!f.lleva?.length && !f.pedido_en,
@@ -440,7 +442,7 @@ async function armadaEn(supabase: ClienteServidor, ciudad: string, lunes: string
 /**
  * Resumen para la portada de Administración: «Semana: 4 de 6 programadas · la que viene, armada el mié 7» (o «· la que viene se arma el
  * miércoles», OL-487: así la administración sabe que no tiene que entrar) y, OL-488, «· 3 sin material» si hay fichas con fecha que se quedan
- * fuera por falta de foto o portada. Null si no hay nada que decir o no se pudo leer.
+ * fuera por falta de foto. Null si no hay nada que decir o no se pudo leer.
  */
 export async function resumenDeLaPortada(supabase: ClienteServidor, ciudad: string | null, ahora = new Date()): Promise<string | null> {
   if (!ciudad) return null;
@@ -454,7 +456,7 @@ export async function resumenDeLaPortada(supabase: ClienteServidor, ciudad: stri
     partes.push(`${listos} de ${vivos.length} ${vivos.length === 1 ? "programada" : "programadas"}`);
   }
   if (viene !== undefined) partes.push(lineaDeLaQueViene(viene, ahora, zona));
-  // OL-488: cuántas fichas con fecha se quedan fuera de esta semana por falta de foto o portada.
+  // OL-488: cuántas fichas con fecha se quedan fuera de esta semana por falta de foto (OL-505: solo artistas).
   const sinMaterial = !falta.error && Array.isArray(falta.data) ? falta.data.length : 0;
   if (sinMaterial) partes.push(`${sinMaterial} sin material`);
   return partes.length ? `Semana: ${partes.join(" · ")}` : null;

@@ -217,8 +217,8 @@ export async function candidatosDia(id: string): Promise<Candidatos> {
   const ocupados = todos.filter((c) => c.ocupado_en && !mios(c)).slice(0, 3);
   const nota =
     tipo === "artista"
-      ? `Van primero quienes tienen fecha en los próximos 30 días y luego los de ${(await s.from("ciudades").select("nombre").eq("slug", d.ciudad).maybeSingle<{ nombre: string }>()).data?.nombre ?? "la ciudad"}. Solo fichas completas (foto, portada, descripción e Instagram), nadie que haya salido en los últimos 6 meses ni que haya dicho que no.`
-      : "Van primero los lugares con eventos esa semana y luego los de la ciudad. Solo fichas completas (portada y descripción), nadie que haya salido en los últimos 6 meses ni que haya dicho que no.";
+      ? `Van primero quienes tienen fecha en los próximos 30 días y luego los de ${(await s.from("ciudades").select("nombre").eq("slug", d.ciudad).maybeSingle<{ nombre: string }>()).data?.nombre ?? "la ciudad"}. Solo fichas completas (foto, descripción e Instagram), nadie que haya salido en los últimos 6 meses ni que haya dicho que no.`
+      : "Van primero los lugares con eventos esa semana y luego los de la ciudad. Solo fichas con descripción (sin portada salen con el símbolo SN), nadie que haya salido en los últimos 6 meses ni que haya dicho que no.";
   const fuera = ocupados.length ? `${ocupados.map((c) => `${c.nombre} ya va el ${diaConMes(`${c.ocupado_en}T18:00:00Z`, ahora, zona).replace(/ de \S+$/, "")}`).join("; ")}.` : null;
   return { ok: true, titulo, nota, lista: libres.map((c) => ({ id: c.id, nombre: c.nombre, foto: tipo === "artista" ? c.foto : c.portada, linea: lineaCandidato(c, ahora), redonda: tipo === "artista", href: `/${tipo === "artista" ? "artistas" : "lugares"}/${c.slug}` })), fuera };
 }
@@ -230,7 +230,7 @@ const frase = (e: { code?: string; message?: string } | null): Hecho =>
   e?.code === "55000"
     ? { ok: false, mensaje: "Ese día ya salió en Instagram (o se está publicando): ya no se cambia." }
     : e?.code === "22023" && /material/.test(e.message ?? "")
-      ? { ok: false, mensaje: "A esa ficha le falta su foto o su portada: súbela o pídesela en «Falta material»." }
+      ? { ok: false, mensaje: "A esa ficha le falta su foto: súbela o pídesela en «Falta material»." }
       : e?.code === "22023"
         ? { ok: false, mensaje: "Eso no se puede poner ese día." }
         : NO_SE_PUDO;
@@ -392,7 +392,7 @@ export async function programarSugerencia(ciudad: string, fecha: string, ahora: 
 
 /**
  * El aviso de «Pedírselo» a quien lleva la ficha, con la forma de los avisos de la app (OL-480): el título es el nombre de la ficha y la razón va
- * debajo («Completa tu portada y te presentamos en Instagram»); abre la edición de su ficha.
+ * debajo («Completa tu foto y te presentamos en Instagram»); abre la edición de su ficha.
  */
 function avisoDeMaterial(nombre: string, falta: readonly string[], ficha: string, id: string) {
   return { titulo: recortar(nombre, LARGO_TITULO), cuerpo: recortar(razonDelPedido(falta), LARGO_CUERPO), url: `${ficha}/editar`, tag: `material-${id}` };
@@ -416,6 +416,7 @@ export async function pedirMaterial(tipo: "artista" | "lugar", id: string, lunes
   const destinos = Array.isArray(para) ? (para as string[]) : [];
   if (f && admin && destinos.length) {
     const url = configPublica().supabaseUrl;
+    // OL-505: lo que se pide es la foto; la portada que también falte va como sugerencia en el aviso.
     const falta = [...(tipo === "artista" && !cartelDescargable(f.foto ?? null, url) ? ["foto"] : []), ...(!cartelDescargable(f.portada, url) ? ["portada"] : [])];
     const aviso = avisoDeMaterial(f.nombre, falta, `/${tipo === "artista" ? "artistas" : "lugares"}/${f.slug}`, id);
     after(() => Promise.all(destinos.map((u) => avisarAlTelefono(admin, u, aviso))).then(() => undefined));

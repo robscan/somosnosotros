@@ -74,7 +74,8 @@ export async function run({ as, check, expectError, query }) {
     await as("anon", null, () => expectError(() => query("select * from public.instagram_candidatos('x', 'artista', current_date)"), "42501", "un visitante no la llama"));
     const lugares = await candidatos(ADMIN, "lugar");
     const l1 = lugares.find((c) => c.id === L1);
-    check(!!l1 && !lugares.some((c) => c.id === L2), "un lugar con portada y descripción entra aunque no tenga Instagram; sin portada, no", lugares.map((c) => c.nombre));
+    // OL-505 (Repisa): el lugar sin portada también entra (su tarjeta sale L1, el arco con el símbolo SN).
+    check(!!l1 && lugares.some((c) => c.id === L2), "un lugar con descripción entra aunque no tenga Instagram, con portada o sin ella", lugares.map((c) => c.nombre));
     check(l1?.eventos_semana === 2, "el lugar dice cuántos eventos tiene esa semana", l1);
     await query("update public.instagram_publicaciones set creado_en = now() - interval '7 months' where id = $1", [pubA]);
     check((await candidatos(ADMIN, "artista")).some((c) => c.id === A3), "salió hace más de 6 meses: vuelve a entrar");
