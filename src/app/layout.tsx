@@ -13,6 +13,7 @@ import AnalyticsGoogle from "@/components/AnalyticsGoogle";
 import AnalyticsVercel from "@/components/AnalyticsVercel";
 import MarcaAdmin from "@/components/MarcaAdmin";
 import MedirInstalacion from "@/components/MedirInstalacion";
+import MedirCargaFallida from "@/components/MedirCargaFallida";
 import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
 import Sesion, { AccesoAdmin } from "@/components/Sesion";
@@ -126,6 +127,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 cookies, solo para las vistas (las acciones van por el servidor). Sin el identificador no se carga nada de Google. */}
             <AnalyticsGoogle id={process.env.NEXT_PUBLIC_GA_ID} produccion={process.env.VERCEL_ENV === "production"} />
             <MedirInstalacion />
+            {/* Si la vez anterior la app no cargó («No se pudo cargar» del service worker, OL-501), se cuenta ahora. */}
+            <MedirCargaFallida />
           </MarcaAdmin>
         </Suspense>
       </body>
