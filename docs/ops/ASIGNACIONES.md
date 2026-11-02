@@ -1592,6 +1592,16 @@ El founder cerró la semana del VI (12 al 19 de octubre) con un pedido: «revisa
 
 **Arranque del VII (2026-10-19, 13:25):** sesión `local_d8912ad1-2dff-4f1b-a792-ab5829b8eb1a`, modelo Fable 5.1; siguientes libres OL-415 y bitácora 447.
 
+## Relevo del gestor VIII (2026-11-02)
+
+El founder, el 2 de noviembre: «Haz por favor un relevo de gestor. Revisa el estatus en local. Luego analiza los ajustes que acabo de hacer con créditos en la nube. Haz un pull sano. Pon al día todas las ramas, o sea, poda y termina en main. Después de eso dame estatus con el nuevo gestor y vamos a seguir avanzando con lo que quedó pendiente.» «Gestor de cambios VII» (sesión `local_d8912ad1-2dff-4f1b-a792-ab5829b8eb1a`, Fable 5.1, del 19 de octubre al 2 de noviembre) deja este relevo y no toma trabajo nuevo.
+
+**Estado:** `main` en `252aaa8f` (#622), producción desplegada, un PR abierto (#611, Repisa EN PAUSA) y dos ramas remotas de Repisa conservadas a propósito; cero árboles de trabajo; 11 ramas remotas y 32 locales ya unidas o huérfanas borradas. Todo lo del 29 de octubre al 1 de noviembre está en producción (bitácoras 509 a 531, PR #599 a #624; registros 60 y 61 arriba). **Siguientes libres: OL-500 y bitácora 533.**
+
+**El relevo entero está en `docs/bitacora/2026/11/532-relevo-gestor-viii.md`:** lo pendiente en orden (rotar la llave de Supabase con el founder presente; el prototipo de «publicar sin recargar» con los estados que pidió el council; (d), (e) y (f) de OL-497; medir desde el iPhone con Speed Insights; Repisa en pausa; decisiones del founder; chicos) y lo aprendido (medir con la identidad real, migraciones, `publicar.sh` y la CI, prototipo antes que código, agentes con archivos disjuntos). Herramientas privadas del gestor en `privado/gestor/herramientas-2026-10-20/` (encargos, `migraciones/aplicar.mjs`, `publicar.sh`, `resolver_ol.py`).
+
+**Arranque del VIII:** pendiente de anotar por la sesión nueva (sesión, modelo, hora).
+
 ## Jornada del VII · 2026-10-19
 
 - **13:25–14:30 · Arranque y plan.** El founder contestó la revisión de la semana: «Adelante, tomo tus recomendaciones» (cancelar antes de que pase con prototipo, «actividades», banner fuera del Inicio vacío, Oaxaca y luego CDMX) y cambió la hora a **«7:00 pm»** en toda la app («19:00 hrs era confuso», se lo dijo un usuario). Sumó siete comentarios (mini reproductor, boletín de correo encendido por omisión, compartir en redes, hora de las notificaciones, «Invitar a tus amigos» en el perfil para Codex, SEO/becas/blog, revisar pospuestos) con «identifica y no dupliques». Plan completo, duplicados identificados, datos reales de las notificaciones y decisiones pendientes en la **bitácora 449**. Lanzados: **OL-415** higiene (agente Opus, `higiene-revision-446`, bitácora 447) y **OL-416** «Invitar a tus amigos» en Mi perfil (Codex por el buzón, `invitar-desde-perfil`, bitácora 448). **Siguientes libres: OL-417 y bitácora 450.**
