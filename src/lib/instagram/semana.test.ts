@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarSemana, cuandoDelDia, diaIso, diasDe, enlaceDeLaBio, estadoDelDia, lineaCandidato, lineaDelAviso, lineaDeLaQueViene, lineaDelPasado, lunesDe, lunesDeLaSemana, motivoDe, NADIE_ARTISTA, nadieConMaterial, queFalta, rangoDeLaSemana, razonDelPedido, resumenDeLaFalta, resumenSemana, salePara, SIN_CARTEL_DIA, sugerirDia, tocaArmarLaQueViene, type Candidato, type EventoCandidato } from "./semana";
+import { armarSemana, cuandoDelDia, diaIso, diasDe, enlaceDeLaBio, estadoDelDia, lineaCandidato, lineaDelAviso, lineaDeLaQueViene, lineaDelPasado, lunesDe, lunesDeLaSemana, motivoDe, NADIE_ARTISTA, nadieConMaterial, otrosDeLaFalta, queFalta, rangoDeLaSemana, razonDelPedido, resumenDeLaFalta, resumenSemana, salePara, SIN_CARTEL_DIA, sugerirDia, tocaArmarLaQueViene, type Candidato, type EventoCandidato } from "./semana";
 
 const ZONA = "America/Mexico_City";
 // Miércoles 7 de octubre de 2026, 10:00 en San Luis Potosí.
@@ -193,10 +193,18 @@ describe("OL-488: solo con material, y la sugerencia de un día sin publicación
     expect(queFalta(["foto", "portada"])).toBe("Falta la foto y la portada");
     expect(queFalta(["portada_ajena"])).toBe("Su portada es de otra página: hay que subirla a la app");
     expect(queFalta(["foto", "portada_ajena"])).toBe("Falta la foto; su portada es de otra página: hay que subirla a la app");
-    expect(resumenDeLaFalta(3, 2)).toBe("3 artistas y 2 lugares con fecha se quedaron fuera por falta de foto o portada");
-    expect(resumenDeLaFalta(1, 0)).toBe("1 artista con fecha se quedó fuera por falta de foto o portada");
+    expect(queFalta(["foto"])).toBe("Falta la foto");
+    expect(queFalta(["foto_ajena"])).toBe("Su foto es de otra página: hay que subirla a la app");
+    expect(resumenDeLaFalta(3, 0)).toBe("3 artistas con fecha se quedaron fuera por falta de foto");
+    expect(resumenDeLaFalta(1, 0)).toBe("1 artista con fecha se quedó fuera por falta de foto");
     expect(resumenDeLaFalta(0, 0)).toBeNull();
-    expect(razonDelPedido(["portada"])).toBe("Completa tu portada y te presentamos en Instagram");
-    expect(razonDelPedido(["foto", "portada_ajena"])).toBe("Completa tu foto y tu portada y te presentamos en Instagram");
+    // OL-505: lo obligatorio es la foto; la portada, si también falta, se sugiere.
+    expect(razonDelPedido(["foto"])).toBe("Completa tu foto y te presentamos en Instagram");
+    expect(razonDelPedido(["foto", "portada"])).toBe("Completa tu foto y te presentamos en Instagram. La portada es opcional");
+    expect(otrosDeLaFalta(["descripcion", "instagram", "portada"])).toBe("También le falta la descripción y su Instagram para entrar. La portada es opcional");
+    expect(otrosDeLaFalta(["portada"])).toBe("La portada es opcional");
+    expect(otrosDeLaFalta(["descripcion"])).toBe("También le falta la descripción para entrar");
+    expect(otrosDeLaFalta([])).toBeNull();
+    expect(otrosDeLaFalta(null)).toBeNull();
   });
 });

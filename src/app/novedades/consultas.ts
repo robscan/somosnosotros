@@ -73,7 +73,8 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
     const f = a ?? uno(p.lugar);
     if (!f) continue;
     const sigue = p.falta.filter((x) => !cartelDescargable(x === "foto" ? (a?.foto ?? null) : f.portada, configPublica().supabaseUrl));
-    if (!sigue.length) continue;
+    // OL-505: lo obligatorio es la foto del artista; la portada es una sugerencia. En cuanto llega la foto (o si era un lugar), sale de la lista.
+    if (!a || !sigue.includes("foto")) continue;
     const ruta = `/${a ? "artistas" : "lugares"}/${f.slug}/editar`;
     lista.push({ clave: `material-${p.id}`, tipo: "material", que: razonDelPedido(sigue), eventoId: "", titulo: f.nombre, cuando: "Toca para completar tu ficha", inicio: p.creado_en, fecha: p.creado_en, nueva: esNueva(p.creado_en, vistasEn), href: ruta });
   }

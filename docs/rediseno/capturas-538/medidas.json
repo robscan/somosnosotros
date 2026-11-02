@@ -1,0 +1,242 @@
+{
+ "artista-un-leon-marinero-4x5": {
+  "color": {
+   "origen": "#3e7096",
+   "deDonde": "foto",
+   "base": "#3a698d",
+   "banda": "oscura",
+   "tinta": "#f4efd6"
+  },
+  "mal": [],
+  "contraste": 5.07,
+  "textos": [
+   "nov",
+   "7",
+   "ARTISTA DE LA SEMANA",
+   "Un León Marinero",
+   "Música · Folk y canción de autor · San Luis Potosí",
+   "@unleonmarinero",
+   "Próxima fecha: Sáb 7 de nov, 7:00 pm · Monterrey",
+   "somosnosotrxs.org"
+  ]
+ },
+ "artista-un-leon-marinero-9x16": {
+  "color": {
+   "origen": "#3e7096",
+   "deDonde": "foto",
+   "base": "#3a698d",
+   "banda": "oscura",
+   "tinta": "#f4efd6"
+  },
+  "mal": [],
+  "contraste": 5.07,
+  "textos": [
+   "nov",
+   "7",
+   "ARTISTA DE LA SEMANA",
+   "Un León Marinero",
+   "Música · Folk y canción de autor · San Luis Potosí",
+   "@unleonmarinero",
+   "Próxima fecha: Sáb 7 de nov, 7:00 pm · Monterrey",
+   "somosnosotrxs.org"
+  ]
+ },
+ "artista-emilio-palomino-4x5": {
+  "color": {
+   "origen": "#a67a60",
+   "deDonde": "foto",
+   "base": "#845c44",
+   "banda": "oscura",
+   "tinta": "#f4efd6"
+  },
+  "mal": [],
+  "contraste": 5.05,
+  "textos": [
+   "ARTISTA DE LA SEMANA",
+   "Emilio Manuel",
+   "Palomino Santibáñez",
+   "Letras · Letras y fotografía · San Luis Potosí",
+   "@emiliopalomino__",
+   "somosnosotrxs.org"
+  ]
+ },
+ "artista-emilio-palomino-9x16": {
+  "color": {
+   "origen": "#a67a60",
+   "deDonde": "foto",
+   "base": "#845c44",
+   "banda": "oscura",
+   "tinta": "#f4efd6"
+  },
+  "mal": [],
+  "contraste": 5.05,
+  "textos": [
+   "ARTISTA DE LA SEMANA",
+   "Emilio Manuel",
+   "Palomino Santibáñez",
+   "Letras · Letras y fotografía · San Luis Potosí",
+   "@emiliopalomino__",
+   "somosnosotrxs.org"
+  ]
+ },
+ "artista-carlos-guevara-4x5": {
+  "color": {
+   "origen": "#c6f68d",
+   "deDonde": "respaldo",
+   "base": "#467014",
+   "banda": "oscura",
+   "tinta": "#f4efd6"
+  },
+  "mal": [],
+  "contraste": 5.06,
+  "textos": [
+   "ARTISTA DE LA SEMANA",
+   "Carlos Alejandro Guevara Requena",
+   "Cine · San Luis Potosí",
+   "@carlos.guevara2",
+   "somosnosotrxs.org"
+  ]
+ },
+ "artista-carlos-guevara-9x16": {
+  "color": {
+   "origen": "#c6f68d",
+   "deDonde": "respaldo",
+   "base": "#467014",
+   "banda": "oscura",
+   "tinta": "#f4efd6"
+  },
+  "mal": [],
+  "contraste": 5.06,
+  "textos": [
+   "ARTISTA DE LA SEMANA",
+   "Carlos Alejandro Guevara Requena",
+   "Cine · San Luis Potosí",
+   "@carlos.guevara2",
+   "somosnosotrxs.org"
+  ]
+ },
+ "lugar-L2-bajo-ceiba-4x5": {
+  "color": {
+   "origen": "#8e9157",
+   "deDonde": "foto",
+   "base": "#969a4f",
+   "banda": "clara",
+   "tinta": "#1a1a1a"
+  },
+  "mal": [],
+  "contraste": 5.83,
+  "textos": [
+   "LUGAR DE LA SEMANA",
+   "Bajo Ceiba",
+   "Foro · San Luis Potosí",
+   "@bajoceiba_salas",
+   "somosnosotrxs.org"
+  ]
+ },
+ "lugar-L2-bajo-ceiba-9x16": {
+  "color": {
+   "origen": "#8e9157",
+   "deDonde": "foto",
+   "base": "#969a4f",
+   "banda": "clara",
+   "tinta": "#1a1a1a"
+  },
+  "mal": [],
+  "contraste": 5.83,
+  "textos": [
+   "LUGAR DE LA SEMANA",
+   "Bajo Ceiba",
+   "Foro · San Luis Potosí",
+   "@bajoceiba_salas",
+   "somosnosotrxs.org"
+  ]
+ },
+ "lugar-L1-guarida-del-coyote-4x5": {
+  "color": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "tinta": "#f4efd6"
+  },
+  "mal": [],
+  "contraste": 5.22,
+  "textos": [
+   "LUGAR DE LA SEMANA",
+   "La Guarida del Coyote",
+   "Foro · San Luis Potosí",
+   "somosnosotrxs.org"
+  ]
+ },
+ "lugar-L1-guarida-del-coyote-9x16": {
+  "color": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "tinta": "#f4efd6"
+  },
+  "mal": [],
+  "contraste": 5.22,
+  "textos": [
+   "LUGAR DE LA SEMANA",
+   "La Guarida del Coyote",
+   "Foro · San Luis Potosí",
+   "somosnosotrxs.org"
+  ]
+ },
+ "semana-4x5": {
+  "color": {
+   "origen": "#2d3fd6",
+   "deDonde": "respaldo",
+   "base": "#2637c4",
+   "banda": "oscura",
+   "tinta": "#f4efd6"
+  },
+  "mal": [],
+  "contraste": 7.49,
+  "textos": [
+   "VIE 30",
+   "SÁB 31",
+   "DOM 1",
+   "ESTA SEMANA EN SAN LUIS POTOSÍ",
+   "Del viernes 30 de octubre",
+   "al domingo 1 de noviembre",
+   "VIE 30 · 5:30 pm · AURORA CO-LAB",
+   "Cultura Mística",
+   "SÁB 31 · 5:00 pm · MUSEO FRANCISCO COSSÍO",
+   "Merk Local edición Catrinas: concurso al mejor disfraz",
+   "de catrina y catrín",
+   "DOM 1 · 8:00 pm · PARQUE TANGAMANGA II",
+   "Los Auténticos Decadentes y Los Caligaris",
+   "somosnosotrxs.org"
+  ]
+ },
+ "semana-9x16": {
+  "color": {
+   "origen": "#2d3fd6",
+   "deDonde": "respaldo",
+   "base": "#2637c4",
+   "banda": "oscura",
+   "tinta": "#f4efd6"
+  },
+  "mal": [],
+  "contraste": 7.49,
+  "textos": [
+   "VIE 30",
+   "SÁB 31",
+   "DOM 1",
+   "ESTA SEMANA EN SAN LUIS POTOSÍ",
+   "Del viernes 30 de octubre",
+   "al domingo 1 de noviembre",
+   "VIE 30 · 5:30 pm · AURORA CO-LAB",
+   "Cultura Mística",
+   "SÁB 31 · 5:00 pm · MUSEO FRANCISCO COSSÍO",
+   "Merk Local edición Catrinas: concurso al mejor disfraz",
+   "de catrina y catrín",
+   "DOM 1 · 8:00 pm · PARQUE TANGAMANGA II",
+   "Los Auténticos Decadentes y Los Caligaris",
+   "somosnosotrxs.org"
+  ]
+ }
+}

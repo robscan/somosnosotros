@@ -266,7 +266,8 @@ export function lineaDelPasado(fecha: string, porQue: "sin-armar" | "nadie" | "q
 /** Lo que le falta a una ficha (las claves de `instagram_falta_material`). */
 export type Falta = "foto" | "portada" | "foto_ajena" | "portada_ajena";
 
-/** OL-488: «Falta la portada», «Falta la foto y la portada», «Su portada es de otra página: hay que subirla a la app». */
+/** OL-488: «Falta la foto», «Su foto es de otra página: hay que subirla a la app» (desde OL-505 solo falta la foto del artista; las claves de la
+ *  portada se siguen diciendo por si llegan de un pedido viejo). */
 export function queFalta(falta: readonly string[]): string {
   const sin = (["foto", "portada"] as const).filter((x) => falta.includes(x));
   const ajenas = (["foto", "portada"] as const).filter((x) => falta.includes(`${x}_ajena`));
@@ -279,22 +280,35 @@ export function queFalta(falta: readonly string[]): string {
   return partes.join("; ") || "Le falta material";
 }
 
-/** OL-488: el resumen del renglón «Falta material»: «3 artistas y 2 lugares con fecha se quedaron fuera por falta de foto o portada». */
+/** OL-488 y OL-505: el resumen del renglón «Falta material»: «3 artistas con fecha se quedaron fuera por falta de foto» (los lugares ya no se
+ *  quedan fuera por material; si llegara alguno, se cuenta igual). */
 export function resumenDeLaFalta(artistas: number, lugares: number): string | null {
   if (!artistas && !lugares) return null;
   const a = artistas ? `${artistas} ${artistas === 1 ? "artista" : "artistas"}` : null;
   const l = lugares ? `${lugares} ${lugares === 1 ? "lugar" : "lugares"}` : null;
   const uno = artistas + lugares === 1;
-  return `${[a, l].filter(Boolean).join(" y ")} con fecha ${uno ? "se quedó" : "se quedaron"} fuera por falta de foto o portada`;
+  return `${[a, l].filter(Boolean).join(" y ")} con fecha ${uno ? "se quedó" : "se quedaron"} fuera por falta de foto`;
 }
 
 /**
- * OL-488: la razón del aviso de «Pedírselo» (el título es el nombre de la ficha): «Completa tu portada y te presentamos en Instagram». Lenguaje
- * llano e incluyente: «te presentamos», no «serás publicado».
+ * OL-505: lo demás que dice «Falta material» de una ficha (`otros` de `instagram_falta_material`): lo que también le falta para entrar («También
+ * le falta la descripción y su Instagram para entrar») y la portada, que ya no es obligatoria («La portada es opcional»). Null si no hay nada.
+ */
+export function otrosDeLaFalta(otros: readonly string[] | null | undefined): string | null {
+  const nombre: Record<string, string> = { descripcion: "la descripción", instagram: "su Instagram" };
+  const obligatorios = (otros ?? []).filter((o) => o in nombre).map((o) => nombre[o]);
+  const partes = [obligatorios.length ? `También le falta ${obligatorios.join(" y ")} para entrar` : null, otros?.includes("portada") ? "La portada es opcional" : null];
+  return partes.filter(Boolean).join(". ") || null;
+}
+
+/**
+ * OL-488 y OL-505: la razón del aviso de «Pedírselo» (el título es el nombre de la ficha): «Completa tu foto y te presentamos en Instagram». Lo
+ * obligatorio es la foto; si también le falta la portada, se sugiere («La portada es opcional»). Lenguaje llano e incluyente: «te presentamos»,
+ * no «serás publicado».
  */
 export function razonDelPedido(falta: readonly string[]): string {
-  const que = (["foto", "portada"] as const).filter((x) => falta.includes(x) || falta.includes(`${x}_ajena`));
-  return `Completa ${(que.length ? que : ["portada"]).map((x) => `tu ${x}`).join(" y ")} y te presentamos en Instagram`;
+  const portada = falta.includes("portada") || falta.includes("portada_ajena");
+  return `Completa tu foto y te presentamos en Instagram${portada ? ". La portada es opcional" : ""}`;
 }
 
 /** Cómo va un día, para el renglón y la hoja. */

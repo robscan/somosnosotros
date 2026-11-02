@@ -6,6 +6,9 @@ import { randomUUID } from "node:crypto";
  * fecha y sin portada no sale; con foto y portada, sí), «Cambiar» sin material, «Falta material» (`instagram_falta_material`: qué falta, su
  * próxima fecha y quién lleva la ficha), «Pedírselo» (`instagram_pedir_material`: una vez por ficha y semana, cada quien lee lo suyo), «Programar»
  * y «Publicar ahora» un día sin publicación (`instagram_semana_programar`) y los permisos.
+ *
+ * OL-505 (bitácora 538, migración 20261029320000, «Repisa»): el artista solo necesita su foto propia (la portada ya no: va en `otros`, como
+ * opcional) y el lugar no necesita material (sin portada sale L1). Ver también `instagram-material-solo-foto.test.mjs`.
  */
 const ADMIN = randomUUID();
 const OTRA = randomUUID();
@@ -31,13 +34,14 @@ export async function run({ as, check, expectError, query }) {
     (await servicio("insert into public.lugares (nombre, tipo, lat, lng, ciudad, portada, descripcion, redes) values ($1, 'foro', 22.15, -100.97, $2, $3, $4, '[]') returning id", [nombre, NOMBRE_CIUDAD, portada, LARGA])).rows[0].id;
   const COMPLETA = await artista("Material Completa");
   const SIN_PORTADA = await artista("Material Sin Portada", { portada: null, autor: GESTORA });
-  const AJENO = await artista("Material Portada Ajena", { portada: AJENA });
-  const SIN_FECHA = await artista("Material Sin Fecha", { portada: null });
+  const AJENO = await artista("Material Foto Ajena", { foto: AJENA });
+  const SIN_FECHA = await artista("Material Sin Fecha", { foto: null, portada: null });
   const DE_NADIE = await artista("Material De Nadie", { foto: null, portada: null });
+  const SIN_FOTO = await artista("Material Sin Foto", { foto: null, portada: null, autor: GESTORA });
   const L_OK = await lugar("Foro Material Completo", `${FOTOS}l.jpg`);
   const L_SIN = await lugar("Foro Material Sin Portada", null);
-  // La cuenta que lleva el artista sin portada (cuenta ligada además de la autora).
-  await query("insert into public.artistas_cuentas (artista_id, perfil_id) values ($1, $2)", [SIN_PORTADA, OTRA]);
+  // La cuenta que lleva el artista sin foto (cuenta ligada además de la autora).
+  await query("insert into public.artistas_cuentas (artista_id, perfil_id) values ($1, $2)", [SIN_FOTO, OTRA]);
 
   const hoy = (await uno("select (now() at time zone $1)::date::text as d", [MX])).d;
   const lunes = (await uno("select date_trunc('week', $1::date)::date::text as d", [hoy])).d;
@@ -50,7 +54,7 @@ export async function run({ as, check, expectError, query }) {
     (await uno("insert into public.eventos (lugar_id, titulo, inicio, ciudad, creado_por, imagen) values ($1, $2, $3::timestamptz, $4, $5, $6) returning id", [lugarId, titulo, await enMx(fecha, "20:00"), NOMBRE_CIUDAD, OTRA, imagen])).id;
   const E1 = await evento("Concierto Material", L_OK, `${FOTOS}c1.jpg`);
   const E2 = await evento("Concierto Material Sin Cartel", L_SIN, null);
-  for (const a of [COMPLETA, SIN_PORTADA, AJENO, DE_NADIE]) await query("insert into public.eventos_artistas (evento_id, artista_id) values ($1, $2)", [E1, a]);
+  for (const a of [COMPLETA, SIN_PORTADA, AJENO, DE_NADIE, SIN_FOTO]) await query("insert into public.eventos_artistas (evento_id, artista_id) values ($1, $2)", [E1, a]);
 
   const rpc = (sujeto, sql, valores) => as("authenticated", sujeto, async () => (await query(sql, valores)).rows);
   const ids = async (tipo) => (await rpc(ADMIN, "select id from public.instagram_candidatos($1, $2, $3::date)", [CIUDAD, tipo, lunes])).map((x) => x.id);
@@ -63,55 +67,58 @@ export async function run({ as, check, expectError, query }) {
     check((await propio(null)) === false && (await propio("")) === false && (await propio("   ")) === false, "vacío no es material");
     check((await propio(`${FOTOS}../x.jpg`)) === false, "una ruta que se sale del bucket, no");
 
-    // --- 2. Quién entra: un artista con fecha y sin portada no sale; con foto y portada, sí.
+    // --- 2. Quién entra (OL-505): el artista con su foto propia, con o sin portada; el lugar, con o sin portada.
     const artistas = await ids("artista");
     check(artistas.includes(COMPLETA), "el artista con fecha, foto y portada entra", artistas);
-    check(!artistas.includes(SIN_PORTADA), "el artista con fecha y sin portada no sale");
-    check(!artistas.includes(AJENO), "con la portada de otra página (la tarjeta saldría con el relleno), tampoco");
-    check(!artistas.includes(DE_NADIE), "sin foto ni portada, tampoco");
+    check(artistas.includes(SIN_PORTADA), "OL-505: con foto y sin portada, también entra");
+    check(!artistas.includes(AJENO), "con la foto de otra página (la tarjeta saldría sin ella), no");
+    check(!artistas.includes(DE_NADIE) && !artistas.includes(SIN_FOTO), "sin foto, tampoco");
     const lugares = await ids("lugar");
-    check(lugares.includes(L_OK) && !lugares.includes(L_SIN), "el lugar con portada entra; sin portada, no", lugares);
+    check(lugares.includes(L_OK) && lugares.includes(L_SIN), "OL-505: el lugar entra con portada (L2) y sin ella (L1)", lugares);
 
     // --- 3. «Falta material»: los que tienen fecha y se quedan fuera, con qué falta y quién lleva la ficha.
     const falta = await rpc(ADMIN, "select tipo, id, nombre, falta, otros, proxima_titulo, lleva, lleva_nombre, pedido_en from public.instagram_falta_material($1, $2::date)", [CIUDAD, lunes]);
     const de = (id) => falta.find((f) => f.id === id);
-    check(de(SIN_PORTADA)?.falta.join() === "portada" && de(SIN_PORTADA).proxima_titulo === "Concierto Material", "el artista sin portada, con lo que le falta y su próxima fecha", de(SIN_PORTADA));
-    check(de(AJENO)?.falta.join() === "portada_ajena", "la portada de otra página se dice aparte (hay que subirla a la app)", de(AJENO));
-    check(de(DE_NADIE)?.falta.join() === "foto,portada" && de(DE_NADIE).lleva.length === 0, "sin foto ni portada y sin nadie que lo lleve", de(DE_NADIE));
-    check(de(L_SIN)?.tipo === "lugar" && de(L_SIN).falta.join() === "portada", "el lugar sin portada con fecha", de(L_SIN));
-    check(!de(COMPLETA) && !de(L_OK), "los completos no salen en «Falta material»");
+    check(de(SIN_FOTO)?.falta.join() === "foto" && de(SIN_FOTO).otros.includes("portada") && de(SIN_FOTO).proxima_titulo === "Concierto Material", "el artista sin foto, con lo que le falta (la portada, opcional) y su próxima fecha", de(SIN_FOTO));
+    check(de(AJENO)?.falta.join() === "foto_ajena", "la foto de otra página se dice aparte (hay que subirla a la app)", de(AJENO));
+    check(de(DE_NADIE)?.falta.join() === "foto" && de(DE_NADIE).lleva.length === 0, "sin foto y sin nadie que lo lleve", de(DE_NADIE));
+    check(!de(L_SIN) && !falta.some((f) => f.tipo === "lugar"), "OL-505: ningún lugar se queda fuera por material");
+    check(!de(COMPLETA) && !de(SIN_PORTADA) && !de(L_OK), "los que tienen su foto no salen en «Falta material»");
     check(!de(SIN_FECHA), "sin fecha en los próximos 30 días, tampoco (lo que se promociona es lo que viene)");
-    const lleva = de(SIN_PORTADA)?.lleva ?? [];
+    const lleva = de(SIN_FOTO)?.lleva ?? [];
     check(lleva.length === 2 && lleva.includes(OTRA) && lleva.includes(GESTORA), "lo llevan la cuenta ligada y su autora", lleva);
     check((await rpc(OTRA, "select * from public.instagram_falta_material($1, $2::date)", [CIUDAD, lunes])).length === 0, "una cuenta cualquiera no ve «Falta material»");
-    const adminAutor = await artista("Material Del Admin", { portada: null, autor: ADMIN });
+    const adminAutor = await artista("Material Del Admin", { foto: null, portada: null, autor: ADMIN });
     await query("insert into public.eventos_artistas (evento_id, artista_id) values ($1, $2)", [E1, adminAutor]);
     const delAdmin = (await rpc(ADMIN, "select lleva from public.instagram_falta_material($1, $2::date) where id = $3", [CIUDAD, lunes, adminAutor]))[0];
     check(delAdmin?.lleva.length === 0, "lo que dio de alta la administración no cuenta como «lo lleva alguien»", delAdmin);
 
     // --- 4. «Pedírselo»: una vez por ficha y semana; cada quien lee lo suyo.
-    const para = (await rpc(ADMIN, "select public.instagram_pedir_material('artista', $1, $2::date) as p", [SIN_PORTADA, lunes]))[0].p;
+    const para = (await rpc(ADMIN, "select public.instagram_pedir_material('artista', $1, $2::date) as p", [SIN_FOTO, lunes]))[0].p;
     check(para.length === 2 && para.includes(OTRA) && para.includes(GESTORA), "devuelve a quién avisar", para);
-    await as("authenticated", ADMIN, () => expectError(() => query("select public.instagram_pedir_material('artista', $1, $2::date)", [SIN_PORTADA, lunes]), "23505", "la misma semana no se pide dos veces"));
+    await as("authenticated", ADMIN, () => expectError(() => query("select public.instagram_pedir_material('artista', $1, $2::date)", [SIN_FOTO, lunes]), "23505", "la misma semana no se pide dos veces"));
+    await query("insert into public.artistas_cuentas (artista_id, perfil_id) values ($1, $2)", [SIN_PORTADA, OTRA]);
+    await as("authenticated", ADMIN, () => expectError(() => query("select public.instagram_pedir_material('artista', $1, $2::date)", [SIN_PORTADA, lunes]), "22023", "OL-505: con su foto ya tiene su material, aunque le falte la portada"));
+    await as("authenticated", ADMIN, () => expectError(() => query("select public.instagram_pedir_material('lugar', $1, $2::date)", [L_SIN, lunes]), "22023", "OL-505: a un lugar ya no se le pide material"));
     await as("authenticated", ADMIN, () => expectError(() => query("select public.instagram_pedir_material('artista', $1, $2::date)", [DE_NADIE, lunes]), "P0002", "si nadie lleva la ficha no hay a quién pedírselo"));
     await as("authenticated", ADMIN, () => expectError(() => query("select public.instagram_pedir_material('artista', $1, $2::date)", [COMPLETA, lunes]), "22023", "a quien ya tiene su material no se le pide"));
     await as("authenticated", OTRA, () => expectError(() => query("select public.instagram_pedir_material('artista', $1, $2::date)", [AJENO, lunes]), "42501", "una cuenta cualquiera no pide material"));
     const suyos = await rpc(OTRA, "select artista_id, falta, semana::text from public.instagram_material_pedidos");
-    check(suyos.length === 1 && suyos[0].artista_id === SIN_PORTADA && suyos[0].falta.join() === "portada" && suyos[0].semana === lunes, "quien lleva la ficha ve su pedido (su aviso en Novedades)", suyos);
+    check(suyos.length === 1 && suyos[0].artista_id === SIN_FOTO && suyos[0].falta.join() === "foto,portada" && suyos[0].semana === lunes, "quien lleva la ficha ve su pedido (la foto y, como sugerencia, la portada)", suyos);
     const tercera = randomUUID();
     await query("insert into auth.users (id, email) values ($1, 'material-tercera@local.test')", [tercera]);
     check((await rpc(tercera, "select 1 from public.instagram_material_pedidos")).length === 0, "nadie más lo ve");
     check((await rpc(ADMIN, "select 1 from public.instagram_material_pedidos")).length === 2, "la administración ve los dos (uno por persona)");
     await as("authenticated", OTRA, () => expectError(() => query("insert into public.instagram_material_pedidos (artista_id, semana, usuario_id, falta) values ($1, $2::date, $3, '{portada}')", [AJENO, lunes, OTRA]), "42501", "nadie lo escribe a mano"));
-    const yaPedido = (await rpc(ADMIN, "select pedido_en from public.instagram_falta_material($1, $2::date) where id = $3", [CIUDAD, lunes, SIN_PORTADA]))[0];
+    const yaPedido = (await rpc(ADMIN, "select pedido_en from public.instagram_falta_material($1, $2::date) where id = $3", [CIUDAD, lunes, SIN_FOTO]))[0];
     check(!!yaPedido?.pedido_en, "«Falta material» dice que ya se le pidió esta semana", yaPedido);
     const siguiente = (await uno("select ($1::date + 7)::text as d", [lunes])).d;
-    check((await rpc(ADMIN, "select public.instagram_pedir_material('artista', $1, $2::date) as p", [SIN_PORTADA, siguiente]))[0].p.length === 2, "la semana siguiente se puede volver a pedir");
+    check((await rpc(ADMIN, "select public.instagram_pedir_material('artista', $1, $2::date) as p", [SIN_FOTO, siguiente]))[0].p.length === 2, "la semana siguiente se puede volver a pedir");
 
-    // --- 5. Con su portada (la sube quien la lleva o la administración) entra y sale de «Falta material».
-    await servicio("update public.artistas set portada = $2 where id = $1", [SIN_PORTADA, `${FOTOS}nueva.jpg`]);
-    check((await ids("artista")).includes(SIN_PORTADA), "con portada y foto, ya entra");
-    check(!(await rpc(ADMIN, "select id from public.instagram_falta_material($1, $2::date)", [CIUDAD, lunes])).some((f) => f.id === SIN_PORTADA), "y ya no falta");
+    // --- 5. Con su foto (la sube quien la lleva o la administración) entra y sale de «Falta material», sin portada.
+    await servicio("update public.artistas set foto = $2 where id = $1", [SIN_FOTO, `${FOTOS}nueva.jpg`]);
+    check((await ids("artista")).includes(SIN_FOTO), "con su foto (sin portada), ya entra");
+    check(!(await rpc(ADMIN, "select id from public.instagram_falta_material($1, $2::date)", [CIUDAD, lunes])).some((f) => f.id === SIN_FOTO), "y ya no falta");
 
     // --- 6. «Cambiar» no pone a quien no tiene material.
     const libre = await dia((await isodow(await dia(1))) === 7 ? 2 : 1);
@@ -130,15 +137,15 @@ export async function run({ as, check, expectError, query }) {
     await falla({ fecha: domingo, tipo: "lugar", hora: "19:00", lugar_id: L_OK }, false, "22023", "el domingo sigue descansando");
     await falla({ fecha: await dia(-1), tipo: "lugar", hora: "19:00", lugar_id: L_OK }, true, "22023", "un día que ya pasó no se publica");
     await falla({ fecha: futuro, tipo: "lugar", hora: "19:00", lugar_id: L_OK }, true, "22023", "«Publicar ahora» solo lo de hoy");
-    await falla({ fecha: futuro, tipo: "lugar", hora: "19:00", lugar_id: L_SIN }, false, "22023", "un lugar sin portada no se programa");
-    await falla({ fecha: futuro, tipo: "artista", hora: "19:00", artista_id: AJENO }, false, "22023", "un artista con la portada de otra página, tampoco");
+    await falla({ fecha: futuro, tipo: "artista", hora: "19:00", artista_id: AJENO }, false, "22023", "un artista con la foto de otra página no se programa");
     await falla({ fecha: futuro, tipo: "evento", hora: "09:00", evento_id: E2 }, false, "22023", "un evento sin cartel, tampoco");
     await falla({ fecha: futuro, tipo: "semana", hora: "09:00", eventos: [E1, E2] }, false, "22023", "«Esta semana» con un evento sin cartel, tampoco");
     await falla({ fecha: futuro, tipo: "lugar", hora: "19:00", lugar_id: L_OK }, false, "42501", "una cuenta cualquiera no programa", OTRA);
-    const t1 = (await programar(ADMIN, { fecha: futuro, tipo: "lugar", hora: "19:00", lugar_id: L_OK, motivo: "Lugar con 1 evento esta semana." }, false))[0].t;
+    // OL-505: un lugar sin portada ya se programa (su tarjeta sale L1).
+    const t1 = (await programar(ADMIN, { fecha: futuro, tipo: "lugar", hora: "19:00", lugar_id: L_SIN, motivo: "Lugar con 1 evento esta semana." }, false))[0].t;
     const tr1 = await uno("select estado, siguiente_en, lugar_id, pedido_por from public.redes_trabajos where id = $1", [t1]);
     const sale = await enMx(futuro, "19:00");
-    check(tr1?.estado === "en_cola" && new Date(tr1.siguiente_en).getTime() === new Date(sale).getTime() && tr1.lugar_id === L_OK && tr1.pedido_por === ADMIN, "«Programar»: el día queda en la cola a su hora, a nombre de quien lo programó", tr1);
+    check(tr1?.estado === "en_cola" && new Date(tr1.siguiente_en).getTime() === new Date(sale).getTime() && tr1.lugar_id === L_SIN && tr1.pedido_por === ADMIN, "«Programar»: el día queda en la cola a su hora, a nombre de quien lo programó (un lugar sin portada)", tr1);
     const c1 = await uno("select tipo, estado, trabajo_id, motivo from public.instagram_semana where ciudad = $1 and fecha = $2", [CIUDAD, futuro]);
     check(c1.tipo === "lugar" && c1.estado === "programado" && c1.trabajo_id === t1 && c1.motivo === "Lugar con 1 evento esta semana.", "y el día queda guardado como programado", c1);
     await falla({ fecha: futuro, tipo: "lugar", hora: "19:00", lugar_id: L_OK }, false, "23505", "un día que ya tiene su publicación no se pisa");
@@ -146,9 +153,9 @@ export async function run({ as, check, expectError, query }) {
     let otro = (await uno("select ($1::date + 1)::text as d", [futuro])).d;
     while ((await isodow(otro)) === 7 || otro === libre) otro = (await uno("select ($1::date + 1)::text as d", [otro])).d;
     await rpc(ADMIN, "select public.instagram_semana_guardar($1, $2) as n", [CIUDAD, JSON.stringify([{ fecha: otro, tipo: "descanso", motivo: "No hay lugares con la ficha completa por salir." }])]);
-    const t2 = (await programar(ADMIN, { fecha: otro, tipo: "artista", hora: "19:00", artista_id: SIN_PORTADA, motivo: "Artista con fecha." }, false))[0].t;
+    const t2 = (await programar(ADMIN, { fecha: otro, tipo: "artista", hora: "19:00", artista_id: SIN_FOTO, motivo: "Artista con fecha." }, false))[0].t;
     const c2 = await uno("select tipo, estado, artista_id, hora::text, trabajo_id from public.instagram_semana where ciudad = $1 and fecha = $2", [CIUDAD, otro]);
-    check(c2.tipo === "artista" && c2.estado === "programado" && c2.artista_id === SIN_PORTADA && c2.hora === "19:00:00" && c2.trabajo_id === t2, "el día que descansaba sin material pasa a la sugerencia (el artista que ya subió su portada)", c2);
+    check(c2.tipo === "artista" && c2.estado === "programado" && c2.artista_id === SIN_FOTO && c2.hora === "19:00:00" && c2.trabajo_id === t2, "el día que descansaba sin material pasa a la sugerencia (el artista que ya subió su foto)", c2);
     if (hoyEsDomingo) {
       await falla({ fecha: hoy, tipo: "lugar", hora: "00:00", lugar_id: L_OK }, true, "22023", "hoy es domingo: descansa (también con «Publicar ahora»)");
     } else {
@@ -159,7 +166,7 @@ export async function run({ as, check, expectError, query }) {
     }
   } finally {
     await query("delete from public.instagram_semana where ciudad = $1", [CIUDAD]);
-    await query("delete from public.redes_trabajos where lugar_id = $1 or artista_id = any($2::uuid[]) or evento_id = $3", [L_OK, [COMPLETA, SIN_PORTADA], E1]);
+    await query("delete from public.redes_trabajos where lugar_id = any($1::uuid[]) or artista_id = any($2::uuid[]) or evento_id = $3", [[L_OK, L_SIN], [COMPLETA, SIN_PORTADA, SIN_FOTO], E1]);
   }
 
   // --- 8. Las funciones: definer, search_path vacío, sin visitantes; las internas, sin cuentas.

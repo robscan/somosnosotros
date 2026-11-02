@@ -1,0 +1,830 @@
+{
+ "fichas": {
+  "artista-un-leon-marinero": {
+   "nombre": "Un León Marinero",
+   "razon": "Artista de la semana",
+   "frase": "Proyecto solista de folk y canción de autor con raíces en San Luis Potosí, activo desde…",
+   "que": "frío: el azul del cielo de su foto · con fecha",
+   "letras": 16
+  },
+  "artista-hunik": {
+   "nombre": "Hunik",
+   "razon": "Artista destacado",
+   "frase": "Uriel Hunik, DJ y productor de música electrónica de San Luis Potosí, Musica: techno…",
+   "que": "frío: el turquesa de su foto",
+   "letras": 5
+  },
+  "artista-ifigenia-muluk": {
+   "nombre": "Ifigenia Muluk",
+   "razon": "Artista destacado",
+   "frase": "Artista inter/transdisciplinaria independiente con 25 años de trayectoria.",
+   "que": "cálido: el rojo de su blusa · sin cuenta de Instagram",
+   "letras": 14
+  },
+  "artista-kawasound": {
+   "nombre": "Kawasound",
+   "razon": "Artista de la semana",
+   "frase": "Jorge «Kawasound» Martínez, selector y sound system de dancehall y reggae de San Luis…",
+   "que": "cálido: el rojo oscuro de su foto",
+   "letras": 9
+  },
+  "artista-eva-d-santos": {
+   "nombre": "Eva D Santos",
+   "razon": "Artista destacado",
+   "frase": "Eva D Santos, selectora y promotora de San Luis Potosí: pone música con vinilos de…",
+   "que": "claro: el olivo de su foto lleva texto negro",
+   "letras": 12
+  },
+  "artista-emilio-palomino": {
+   "nombre": "Emilio Manuel Palomino Santibáñez",
+   "razon": "Artista de la semana",
+   "frase": "Emilio Palomino (1997), escritor mexicano con más de una treintena de publicaciones…",
+   "que": "nombre de 33 letras · el color de la piel (café)",
+   "letras": 33
+  },
+  "artista-carlos-guevara": {
+   "nombre": "Carlos Alejandro Guevara Requena",
+   "razon": "Artista destacado",
+   "frase": "Estudió artes en la Escuela Estatal de Artes Plásticas de San Luis Potosí.",
+   "que": "nombre de 32 letras · foto en blanco y negro: toma el respaldo",
+   "letras": 32
+  },
+  "lugar-teatro-de-las-artes": {
+   "nombre": "Teatro de las Artes",
+   "razon": "Lugar destacado",
+   "frase": null,
+   "que": "verde de su portada · Ciudad de México · sin descripción ni cuenta",
+   "letras": 19,
+   "portada": true,
+   "credito": "Gobierno CDMX · CC0"
+  },
+  "lugar-caja-real": {
+   "nombre": "Centro Cultural Universitario Caja Real",
+   "razon": "Lugar de la semana",
+   "frase": "Recinto de la UASLP en el edificio histórico de la Caja Real, en el Centro.",
+   "que": "cálido: la cantera de su portada · nombre de 39 letras",
+   "letras": 39,
+   "portada": true,
+   "credito": null
+  },
+  "lugar-federico-silva": {
+   "nombre": "Museo Federico Silva Escultura Contemporánea",
+   "razon": "Lugar destacado",
+   "frase": "Museo dedicado a la escultura contemporánea y a la obra de Federico Silva, frente al…",
+   "que": "frío: el cielo de su portada · nombre de 44 letras",
+   "letras": 44,
+   "portada": true,
+   "credito": null
+  },
+  "lugar-bajo-ceiba": {
+   "nombre": "Bajo Ceiba",
+   "razon": "Lugar de la semana",
+   "frase": "Salas de ensayo para música, danza, teatro y artes en el Centro Histórico, con un foro…",
+   "que": "claro: el olivo de su portada lleva texto negro",
+   "letras": 10,
+   "portada": true,
+   "credito": null
+  },
+  "lugar-guarida-del-coyote": {
+   "nombre": "La Guarida del Coyote",
+   "razon": "Lugar destacado",
+   "frase": "Proyecto Coyote nace en 1998.",
+   "que": "sin portada: L2 cae en L1 · sin cuenta de Instagram",
+   "letras": 21,
+   "portada": false,
+   "credito": null
+  },
+  "semana": {
+   "titulo": "Del viernes 30 de octubre al domingo 1 de noviembre",
+   "eventos": [
+    "Vie 30 · 5:30 pm · Aurora Co-Lab · Cultura Mística",
+    "Sáb 31 · 5:00 pm · Museo Francisco Cossío · Merk Local edición Catrinas: concurso al mejor disfraz de catrina y catrín",
+    "Dom 1 · 8:00 pm · Parque Tangamanga II · Los Auténticos Decadentes y Los Caligaris"
+   ]
+  }
+ },
+ "revision": {
+  "artista-un-leon-marinero-con-linea-4x5": [],
+  "artista-un-leon-marinero-sin-linea-4x5": [],
+  "artista-un-leon-marinero-con-linea-9x16": [],
+  "artista-hunik-con-linea-4x5": [],
+  "artista-hunik-sin-linea-4x5": [],
+  "artista-hunik-con-linea-9x16": [],
+  "artista-ifigenia-muluk-con-linea-4x5": [],
+  "artista-ifigenia-muluk-sin-linea-4x5": [],
+  "artista-ifigenia-muluk-con-linea-9x16": [],
+  "artista-kawasound-con-linea-4x5": [],
+  "artista-kawasound-sin-linea-4x5": [],
+  "artista-kawasound-con-linea-9x16": [],
+  "artista-eva-d-santos-con-linea-4x5": [],
+  "artista-eva-d-santos-sin-linea-4x5": [],
+  "artista-eva-d-santos-con-linea-9x16": [],
+  "artista-emilio-palomino-con-linea-4x5": [],
+  "artista-emilio-palomino-sin-linea-4x5": [],
+  "artista-emilio-palomino-con-linea-9x16": [],
+  "artista-carlos-guevara-con-linea-4x5": [],
+  "artista-carlos-guevara-sin-linea-4x5": [],
+  "artista-carlos-guevara-con-linea-9x16": [],
+  "lugar-L1-teatro-de-las-artes-sin-linea-4x5": [],
+  "lugar-L1-teatro-de-las-artes-sin-linea-9x16": [],
+  "lugar-L2-teatro-de-las-artes-sin-linea-4x5": [],
+  "lugar-L2-teatro-de-las-artes-sin-linea-9x16": [],
+  "lugar-L1-caja-real-con-linea-4x5": [],
+  "lugar-L1-caja-real-sin-linea-4x5": [],
+  "lugar-L1-caja-real-con-linea-9x16": [],
+  "lugar-L2-caja-real-con-linea-4x5": [],
+  "lugar-L2-caja-real-sin-linea-4x5": [],
+  "lugar-L2-caja-real-con-linea-9x16": [],
+  "lugar-L1-federico-silva-con-linea-4x5": [],
+  "lugar-L1-federico-silva-sin-linea-4x5": [],
+  "lugar-L1-federico-silva-con-linea-9x16": [],
+  "lugar-L2-federico-silva-con-linea-4x5": [],
+  "lugar-L2-federico-silva-sin-linea-4x5": [],
+  "lugar-L2-federico-silva-con-linea-9x16": [],
+  "lugar-L1-bajo-ceiba-con-linea-4x5": [],
+  "lugar-L1-bajo-ceiba-sin-linea-4x5": [],
+  "lugar-L1-bajo-ceiba-con-linea-9x16": [],
+  "lugar-L2-bajo-ceiba-con-linea-4x5": [],
+  "lugar-L2-bajo-ceiba-sin-linea-4x5": [],
+  "lugar-L2-bajo-ceiba-con-linea-9x16": [],
+  "lugar-L1-guarida-del-coyote-con-linea-4x5": [],
+  "lugar-L1-guarida-del-coyote-sin-linea-4x5": [],
+  "lugar-L1-guarida-del-coyote-con-linea-9x16": [],
+  "semana-4x5": [],
+  "semana-9x16": []
+ },
+ "colores": {
+  "artista-un-leon-marinero-con-linea-4x5": {
+   "origen": "#3e7096",
+   "deDonde": "foto",
+   "base": "#3a698d",
+   "banda": "oscura",
+   "fondo": "#3a698d",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7997a6",
+    "#2a4c66",
+    "#1d3547",
+    "#f4efd6"
+   ]
+  },
+  "artista-un-leon-marinero-sin-linea-4x5": {
+   "origen": "#3e7096",
+   "deDonde": "foto",
+   "base": "#3a698d",
+   "banda": "oscura",
+   "fondo": "#3a698d",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7997a6",
+    "#2a4c66",
+    "#1d3547",
+    "#f4efd6"
+   ]
+  },
+  "artista-un-leon-marinero-con-linea-9x16": {
+   "origen": "#3e7096",
+   "deDonde": "foto",
+   "base": "#3a698d",
+   "banda": "oscura",
+   "fondo": "#3a698d",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7997a6",
+    "#2a4c66",
+    "#1d3547",
+    "#f4efd6"
+   ]
+  },
+  "artista-hunik-con-linea-4x5": {
+   "origen": "#007c89",
+   "deDonde": "foto",
+   "base": "#156f78",
+   "banda": "oscura",
+   "fondo": "#156f78",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#619b98",
+    "#0f5056",
+    "#0b383c",
+    "#f4efd6"
+   ]
+  },
+  "artista-hunik-sin-linea-4x5": {
+   "origen": "#007c89",
+   "deDonde": "foto",
+   "base": "#156f78",
+   "banda": "oscura",
+   "fondo": "#156f78",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#619b98",
+    "#0f5056",
+    "#0b383c",
+    "#f4efd6"
+   ]
+  },
+  "artista-hunik-con-linea-9x16": {
+   "origen": "#007c89",
+   "deDonde": "foto",
+   "base": "#156f78",
+   "banda": "oscura",
+   "fondo": "#156f78",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#619b98",
+    "#0f5056",
+    "#0b383c",
+    "#f4efd6"
+   ]
+  },
+  "artista-ifigenia-muluk-con-linea-4x5": {
+   "origen": "#8f0f38",
+   "deDonde": "foto",
+   "base": "#86183b",
+   "banda": "oscura",
+   "fondo": "#86183b",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#ab6170",
+    "#60112a",
+    "#430c1e",
+    "#f4efd6"
+   ]
+  },
+  "artista-ifigenia-muluk-sin-linea-4x5": {
+   "origen": "#8f0f38",
+   "deDonde": "foto",
+   "base": "#86183b",
+   "banda": "oscura",
+   "fondo": "#86183b",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#ab6170",
+    "#60112a",
+    "#430c1e",
+    "#f4efd6"
+   ]
+  },
+  "artista-ifigenia-muluk-con-linea-9x16": {
+   "origen": "#8f0f38",
+   "deDonde": "foto",
+   "base": "#86183b",
+   "banda": "oscura",
+   "fondo": "#86183b",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#ab6170",
+    "#60112a",
+    "#430c1e",
+    "#f4efd6"
+   ]
+  },
+  "artista-kawasound-con-linea-4x5": {
+   "origen": "#3f180d",
+   "deDonde": "foto",
+   "base": "#7f301a",
+   "banda": "oscura",
+   "fondo": "#7f301a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a7715a",
+    "#5b2313",
+    "#40180d",
+    "#f4efd6"
+   ]
+  },
+  "artista-kawasound-sin-linea-4x5": {
+   "origen": "#3f180d",
+   "deDonde": "foto",
+   "base": "#7f301a",
+   "banda": "oscura",
+   "fondo": "#7f301a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a7715a",
+    "#5b2313",
+    "#40180d",
+    "#f4efd6"
+   ]
+  },
+  "artista-kawasound-con-linea-9x16": {
+   "origen": "#3f180d",
+   "deDonde": "foto",
+   "base": "#7f301a",
+   "banda": "oscura",
+   "fondo": "#7f301a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#a7715a",
+    "#5b2313",
+    "#40180d",
+    "#f4efd6"
+   ]
+  },
+  "artista-eva-d-santos-con-linea-4x5": {
+   "origen": "#bfba6b",
+   "deDonde": "foto",
+   "base": "#beb969",
+   "banda": "clara",
+   "fondo": "#beb969",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#d9d4a0",
+    "#949052",
+    "#6e6b3d",
+    "#1a1a1a"
+   ]
+  },
+  "artista-eva-d-santos-sin-linea-4x5": {
+   "origen": "#bfba6b",
+   "deDonde": "foto",
+   "base": "#beb969",
+   "banda": "clara",
+   "fondo": "#beb969",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#d9d4a0",
+    "#949052",
+    "#6e6b3d",
+    "#1a1a1a"
+   ]
+  },
+  "artista-eva-d-santos-con-linea-9x16": {
+   "origen": "#bfba6b",
+   "deDonde": "foto",
+   "base": "#beb969",
+   "banda": "clara",
+   "fondo": "#beb969",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#d9d4a0",
+    "#949052",
+    "#6e6b3d",
+    "#1a1a1a"
+   ]
+  },
+  "artista-emilio-palomino-con-linea-4x5": {
+   "origen": "#a67a60",
+   "deDonde": "foto",
+   "base": "#845c44",
+   "banda": "oscura",
+   "fondo": "#845c44",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#aa8e76",
+    "#5f4231",
+    "#422e22",
+    "#f4efd6"
+   ]
+  },
+  "artista-emilio-palomino-sin-linea-4x5": {
+   "origen": "#a67a60",
+   "deDonde": "foto",
+   "base": "#845c44",
+   "banda": "oscura",
+   "fondo": "#845c44",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#aa8e76",
+    "#5f4231",
+    "#422e22",
+    "#f4efd6"
+   ]
+  },
+  "artista-emilio-palomino-con-linea-9x16": {
+   "origen": "#a67a60",
+   "deDonde": "foto",
+   "base": "#845c44",
+   "banda": "oscura",
+   "fondo": "#845c44",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#aa8e76",
+    "#5f4231",
+    "#422e22",
+    "#f4efd6"
+   ]
+  },
+  "artista-carlos-guevara-con-linea-4x5": {
+   "origen": "#c6f68d",
+   "deDonde": "respaldo",
+   "base": "#467014",
+   "banda": "oscura",
+   "fondo": "#467014",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#819b56",
+    "#32510e",
+    "#23380a",
+    "#f4efd6"
+   ]
+  },
+  "artista-carlos-guevara-sin-linea-4x5": {
+   "origen": "#c6f68d",
+   "deDonde": "respaldo",
+   "base": "#467014",
+   "banda": "oscura",
+   "fondo": "#467014",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#819b56",
+    "#32510e",
+    "#23380a",
+    "#f4efd6"
+   ]
+  },
+  "artista-carlos-guevara-con-linea-9x16": {
+   "origen": "#c6f68d",
+   "deDonde": "respaldo",
+   "base": "#467014",
+   "banda": "oscura",
+   "fondo": "#467014",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#819b56",
+    "#32510e",
+    "#23380a",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-teatro-de-las-artes-sin-linea-4x5": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#a04d1c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#bd845b",
+    "#733714",
+    "#50270e",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-teatro-de-las-artes-sin-linea-9x16": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#a04d1c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#bd845b",
+    "#733714",
+    "#50270e",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L2-teatro-de-las-artes-sin-linea-4x5": {
+   "origen": "#284f3a",
+   "deDonde": "portada",
+   "base": "#33664b",
+   "banda": "oscura",
+   "fondo": "#33664b",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#75957a",
+    "#254936",
+    "#1a3326",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L2-teatro-de-las-artes-sin-linea-9x16": {
+   "origen": "#284f3a",
+   "deDonde": "portada",
+   "base": "#33664b",
+   "banda": "oscura",
+   "fondo": "#33664b",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#75957a",
+    "#254936",
+    "#1a3326",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-caja-real-con-linea-4x5": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "fondo": "#b0306a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c7718f",
+    "#7f234c",
+    "#581835",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-caja-real-sin-linea-4x5": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "fondo": "#b0306a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c7718f",
+    "#7f234c",
+    "#581835",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-caja-real-con-linea-9x16": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "fondo": "#b0306a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c7718f",
+    "#7f234c",
+    "#581835",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L2-caja-real-con-linea-4x5": {
+   "origen": "#a06c47",
+   "deDonde": "portada",
+   "base": "#865b3c",
+   "banda": "oscura",
+   "fondo": "#865b3c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#ab8d70",
+    "#60422b",
+    "#432e1e",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L2-caja-real-sin-linea-4x5": {
+   "origen": "#a06c47",
+   "deDonde": "portada",
+   "base": "#865b3c",
+   "banda": "oscura",
+   "fondo": "#865b3c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#ab8d70",
+    "#60422b",
+    "#432e1e",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L2-caja-real-con-linea-9x16": {
+   "origen": "#a06c47",
+   "deDonde": "portada",
+   "base": "#865b3c",
+   "banda": "oscura",
+   "fondo": "#865b3c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#ab8d70",
+    "#60422b",
+    "#432e1e",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-federico-silva-con-linea-4x5": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "fondo": "#b0306a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c7718f",
+    "#7f234c",
+    "#581835",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-federico-silva-sin-linea-4x5": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "fondo": "#b0306a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c7718f",
+    "#7f234c",
+    "#581835",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-federico-silva-con-linea-9x16": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "fondo": "#b0306a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c7718f",
+    "#7f234c",
+    "#581835",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L2-federico-silva-con-linea-4x5": {
+   "origen": "#4d80c1",
+   "deDonde": "portada",
+   "base": "#3866a1",
+   "banda": "oscura",
+   "fondo": "#3866a1",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7895b3",
+    "#284974",
+    "#1c3351",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L2-federico-silva-sin-linea-4x5": {
+   "origen": "#4d80c1",
+   "deDonde": "portada",
+   "base": "#3866a1",
+   "banda": "oscura",
+   "fondo": "#3866a1",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7895b3",
+    "#284974",
+    "#1c3351",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L2-federico-silva-con-linea-9x16": {
+   "origen": "#4d80c1",
+   "deDonde": "portada",
+   "base": "#3866a1",
+   "banda": "oscura",
+   "fondo": "#3866a1",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#7895b3",
+    "#284974",
+    "#1c3351",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-bajo-ceiba-con-linea-4x5": {
+   "origen": "#ff6f61",
+   "deDonde": "respaldo",
+   "base": "#bd2f21",
+   "banda": "oscura",
+   "fondo": "#bd2f21",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#d0705f",
+    "#882218",
+    "#5f1811",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-bajo-ceiba-sin-linea-4x5": {
+   "origen": "#ff6f61",
+   "deDonde": "respaldo",
+   "base": "#bd2f21",
+   "banda": "oscura",
+   "fondo": "#bd2f21",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#d0705f",
+    "#882218",
+    "#5f1811",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-bajo-ceiba-con-linea-9x16": {
+   "origen": "#ff6f61",
+   "deDonde": "respaldo",
+   "base": "#bd2f21",
+   "banda": "oscura",
+   "fondo": "#bd2f21",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#d0705f",
+    "#882218",
+    "#5f1811",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L2-bajo-ceiba-con-linea-4x5": {
+   "origen": "#8e9157",
+   "deDonde": "portada",
+   "base": "#969a4f",
+   "banda": "clara",
+   "fondo": "#969a4f",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#c5c593",
+    "#75783e",
+    "#57592e",
+    "#1a1a1a"
+   ]
+  },
+  "lugar-L2-bajo-ceiba-sin-linea-4x5": {
+   "origen": "#8e9157",
+   "deDonde": "portada",
+   "base": "#969a4f",
+   "banda": "clara",
+   "fondo": "#969a4f",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#c5c593",
+    "#75783e",
+    "#57592e",
+    "#1a1a1a"
+   ]
+  },
+  "lugar-L2-bajo-ceiba-con-linea-9x16": {
+   "origen": "#8e9157",
+   "deDonde": "portada",
+   "base": "#969a4f",
+   "banda": "clara",
+   "fondo": "#969a4f",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#c5c593",
+    "#75783e",
+    "#57592e",
+    "#1a1a1a"
+   ]
+  },
+  "lugar-L1-guarida-del-coyote-con-linea-4x5": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "fondo": "#b0306a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c7718f",
+    "#7f234c",
+    "#581835",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-guarida-del-coyote-sin-linea-4x5": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "fondo": "#b0306a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c7718f",
+    "#7f234c",
+    "#581835",
+    "#f4efd6"
+   ]
+  },
+  "lugar-L1-guarida-del-coyote-con-linea-9x16": {
+   "origen": "#b0306a",
+   "deDonde": "respaldo",
+   "base": "#b0306a",
+   "banda": "oscura",
+   "fondo": "#b0306a",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#c7718f",
+    "#7f234c",
+    "#581835",
+    "#f4efd6"
+   ]
+  },
+  "semana-4x5": {
+   "origen": "#2d3fd6",
+   "deDonde": "respaldo",
+   "base": "#2637c4",
+   "banda": "oscura",
+   "fondo": "#2637c4",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#6c76ca",
+    "#1b288d",
+    "#131c62",
+    "#f4efd6"
+   ]
+  },
+  "semana-9x16": {
+   "origen": "#2d3fd6",
+   "deDonde": "respaldo",
+   "base": "#2637c4",
+   "banda": "oscura",
+   "fondo": "#2637c4",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#6c76ca",
+    "#1b288d",
+    "#131c62",
+    "#f4efd6"
+   ]
+  }
+ }
+}

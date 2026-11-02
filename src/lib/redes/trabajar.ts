@@ -50,7 +50,7 @@ export type Herramientas = {
   cargarFicha: (db: SupabaseClient, tipo: "artista" | "lugar", id: string, ahora: Date) => Promise<FichaParaPublicar | null>;
   dibujarFicha: (f: FichaParaPublicar, formato: "4x5" | "9x16", ahora: Date) => Promise<Buffer>;
   /**
-   * OL-488: ¿la ficha tiene el material que la tarjeta puede dibujar (la foto y la portada del artista, la portada del lugar, en el Storage de la
+   * OL-488 y OL-505: ¿la ficha tiene el material que la tarjeta puede dibujar (la foto del artista, en el Storage de la
    * app)? Sin él no se publica con la imagen de relleno. Sin esta herramienta, se da por bueno (la semana ya solo elige fichas con material).
    */
   conMaterial?: (f: FichaParaPublicar) => boolean;
@@ -72,7 +72,7 @@ export type Dependencias = {
 export type ResultadoTrabajoPaso = { corrida: string | null; tipo: string | null; estado: "nada" | "corriendo" | "terminada" | "fallida" | "cancelada"; usd: number };
 
 /** OL-488: lo que dice un día de artista o de lugar que no salió por falta de material. */
-export const FRASE_SIN_MATERIAL = "Le falta su foto o su portada en la app: no se publicó con la imagen de relleno. Súbela o pídesela en «Falta material».";
+export const FRASE_SIN_MATERIAL = "Le falta su foto en la app: no se publicó sin ella. Súbela o pídesela en «Falta material».";
 
 const NADA: ResultadoTrabajoPaso = { corrida: null, tipo: null, estado: "nada", usd: 0 };
 
@@ -382,7 +382,8 @@ async function enFicha(dep: Dependencias, t: Trabajo): Promise<"corriendo" | "te
   const tipo = t.artista_id ? "artista" : "lugar";
   const f = await dep.h.cargarFicha(dep.db, tipo, (t.artista_id ?? t.lugar_id)!, ahora);
   if (!f || !f.visible) return cerrar(dep, t, null, "fallido", { mensaje: "Esa ficha ya no se ve en la app: no se publicó." }, "otro", f?.nombre);
-  // OL-488: sin su foto o su portada en la app, la tarjeta saldría con la imagen de relleno: no se publica (y se dice qué falta).
+  // OL-488 y OL-505: sin su foto en la app, la tarjeta del artista saldría con el símbolo SN en su círculo: no se publica (y se dice qué falta).
+  // El lugar siempre tiene material (sin portada sale L1).
   if (!t.avance?.instagram && dep.h.conMaterial && !dep.h.conMaterial(f)) return cerrar(dep, t, null, "fallido", { mensaje: FRASE_SIN_MATERIAL }, "imagen", f.nombre);
   const formato = "4x5" as const;
   const quitadas = quitadasDe(t);

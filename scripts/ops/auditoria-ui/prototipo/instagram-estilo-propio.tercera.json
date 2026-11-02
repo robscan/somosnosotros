@@ -1,0 +1,159 @@
+{
+ "_nota": "OL-490, tercera vuelta (bitácora 522): Repisa sin portada. Fichas reales leídas de las páginas públicas de somosnosotros.org el 2026-10-31 (nombre, disciplina, descripción, cuenta y las URL públicas del Storage). El artista lleva su foto de perfil y el color sale de ella; el lugar, en dos opciones (L1 sin foto, con el símbolo SN; L2 con su portada). «Esta semana» es la real del 30 de octubre al 1 de noviembre de 2026 en San Luis Potosí. Las imágenes se bajan con fetch al correr el guion; nada de .env.",
+ "base": "https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/",
+ "artistas": [
+  {
+   "clave": "un-leon-marinero",
+   "que": "frío: el azul del cielo de su foto · con fecha",
+   "nombre": "Un León Marinero",
+   "disciplina": "Música",
+   "detalle": "Folk y canción de autor",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "unleonmarinero",
+   "razon": "Artista de la semana",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/un-leon-marinero.jpg",
+   "proxima": { "mes": "nov", "dia": "7", "texto": "Sáb 7 de nov, 7:00 pm · Monterrey" },
+   "descripcion": "Proyecto solista de folk y canción de autor con raíces en San Luis Potosí, activo desde 2019; navega entre la canción de autor y el rock contemplativo. Su canción «Lluvias de Mayo» sonó en la serie «Como Agua Para Chocolate» de HBO Max y en 2026 estrenó una nueva versión junto a Carlos Rivera."
+  },
+  {
+   "clave": "hunik",
+   "que": "frío: el turquesa de su foto",
+   "nombre": "Hunik",
+   "disciplina": "Música",
+   "detalle": "DJ de techno y house",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "urielhunik.music",
+   "razon": "Artista destacado",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/hunik-foto-2026-10-27.jpg",
+   "descripcion": "Uriel Hunik, DJ y productor de música electrónica de San Luis Potosí, Musica: techno, tech house y house progresivo. Forma parte de Altiplano Sonoro y ha puesto musica en los principales foros musicales de la capital así cómo en diferentes estados de la república"
+  },
+  {
+   "clave": "ifigenia-muluk",
+   "que": "cálido: el rojo de su blusa · sin cuenta de Instagram",
+   "nombre": "Ifigenia Muluk",
+   "disciplina": "Artes visuales",
+   "detalle": "Artista multidisciplinaria",
+   "ciudad": "San Luis Potosí",
+   "cuenta": null,
+   "razon": "Artista destacado",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/ifigenia-muluk-foto-2026-10-27.jpg",
+   "descripcion": "Artista inter/transdisciplinaria independiente con 25 años de trayectoria. Se dedica a la producción artística y a la docencia."
+  },
+  {
+   "clave": "kawasound",
+   "que": "cálido: el rojo oscuro de su foto",
+   "nombre": "Kawasound",
+   "disciplina": "Música",
+   "detalle": "Sound system de dancehall",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "kawasoundsystem",
+   "razon": "Artista de la semana",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/kawasound-foto-2026-10-27.jpg",
+   "descripcion": "Jorge «Kawasound» Martínez, selector y sound system de dancehall y reggae de San Luis Potosí («Big and Dangerous Sound»), campeón del No Mercy Clash 2010."
+  },
+  {
+   "clave": "eva-d-santos",
+   "que": "claro: el olivo de su foto lleva texto negro",
+   "nombre": "Eva D Santos",
+   "disciplina": "Música",
+   "detalle": "Selectora con vinilos",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "evahdsantos",
+   "razon": "Artista destacado",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/eva-d-santos-foto-2026-10-27.jpg",
+   "descripcion": "Eva D Santos, selectora y promotora de San Luis Potosí: pone música con vinilos de distintas décadas, colecciona sonidos y forma parte de Sonidos Salvajes."
+  },
+  {
+   "clave": "emilio-palomino",
+   "que": "nombre de 33 letras · el color de la piel (café)",
+   "nombre": "Emilio Manuel Palomino Santibáñez",
+   "disciplina": "Letras",
+   "detalle": "Letras y fotografía",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "emiliopalomino__",
+   "razon": "Artista de la semana",
+   "foto": "artistas/5886c407-a393-4ddb-a276-11438f1357a2/foto-a7132b79-5671-46bb-9b82-1d0554de6bb7.jpg",
+   "descripcion": "Emilio Palomino (1997), escritor mexicano con más de una treintena de publicaciones nacionales e internacionales. En 2022 publicó «Amor, Locura y Pandemia», su primer libro de cuentos."
+  },
+  {
+   "clave": "carlos-guevara",
+   "que": "nombre de 32 letras · foto en blanco y negro: toma el respaldo",
+   "nombre": "Carlos Alejandro Guevara Requena",
+   "disciplina": "Cine",
+   "detalle": null,
+   "ciudad": "San Luis Potosí",
+   "cuenta": "carlos.guevara2",
+   "razon": "Artista destacado",
+   "foto": "artistas/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/carlos-alejandro-guevara-requena-76b44c8ccf2f.jpg",
+   "descripcion": "Estudió artes en la Escuela Estatal de Artes Plásticas de San Luis Potosí. Se ha especializado en la fotografía, la producción, dirección y edición de cortometraje documental."
+  }
+ ],
+ "lugares": [
+  {
+   "clave": "teatro-de-las-artes",
+   "que": "verde de su portada · Ciudad de México · sin descripción ni cuenta",
+   "nombre": "Teatro de las Artes",
+   "tipo": "Foro",
+   "ciudad": "Ciudad de México",
+   "cuenta": null,
+   "razon": "Lugar destacado",
+   "portada": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/teatro-de-las-artes-portada-2026-10-29.jpg",
+   "credito": "Gobierno CDMX · CC0",
+   "descripcion": null
+  },
+  {
+   "clave": "caja-real",
+   "que": "cálido: la cantera de su portada · nombre de 39 letras",
+   "nombre": "Centro Cultural Universitario Caja Real",
+   "tipo": "Casa de cultura",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "cajarealuaslp",
+   "razon": "Lugar de la semana",
+   "portada": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/centro-cultural-universitario-caja-real.jpg",
+   "descripcion": "Recinto de la UASLP en el edificio histórico de la Caja Real, en el Centro. Presenta exposiciones temporales de arte con obra nacional e internacional, clases magistrales y conversatorios. Entrada libre."
+  },
+  {
+   "clave": "federico-silva",
+   "que": "frío: el cielo de su portada · nombre de 44 letras",
+   "nombre": "Museo Federico Silva Escultura Contemporánea",
+   "tipo": "Museo",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "museo_federico_silva",
+   "razon": "Lugar destacado",
+   "portada": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/museo-federico-silva-escultura-contemporanea.jpg",
+   "descripcion": "Museo dedicado a la escultura contemporánea y a la obra de Federico Silva, frente al Jardín de San Juan de Dios. Organismo de la Secretaría de Cultura del Estado con exposiciones permanentes y temporales, biblioteca y programa educativo."
+  },
+  {
+   "clave": "bajo-ceiba",
+   "que": "claro: el olivo de su portada lleva texto negro",
+   "nombre": "Bajo Ceiba",
+   "tipo": "Foro",
+   "ciudad": "San Luis Potosí",
+   "cuenta": "bajoceiba_salas",
+   "razon": "Lugar de la semana",
+   "portada": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/portada-93250e6d-2219-4bf7-b8dd-895822265556.jpg",
+   "descripcion": "Salas de ensayo para música, danza, teatro y artes en el Centro Histórico, con un foro al aire libre para unas 150 personas donde hay conciertos y talleres."
+  },
+  {
+   "clave": "guarida-del-coyote",
+   "que": "sin portada: L2 cae en L1 · sin cuenta de Instagram",
+   "nombre": "La Guarida del Coyote",
+   "tipo": "Foro",
+   "ciudad": "San Luis Potosí",
+   "cuenta": null,
+   "razon": "Lugar destacado",
+   "portada": null,
+   "descripcion": "Proyecto Coyote nace en 1998. En el año 2012 inaugura el espacio escénico «La guarida del coyote» con sede en San Luis Potosí."
+  }
+ ],
+ "semana": {
+  "id": "semana-san-luis-potosi-2026-10-30",
+  "ciudad": "San Luis Potosí",
+  "titulo": "Del viernes 30 de octubre al domingo 1 de noviembre",
+  "eventos": [
+   { "dia": "Vie 30", "cuando": "Vie 30 · 5:30 pm · Aurora Co-Lab", "titulo": "Cultura Mística", "cartel": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-f27a97ca-6b1a-4810-a5a2-b488d43b2f54.jpg" },
+   { "dia": "Sáb 31", "cuando": "Sáb 31 · 5:00 pm · Museo Francisco Cossío", "titulo": "Merk Local edición Catrinas: concurso al mejor disfraz de catrina y catrín", "cartel": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/cartel-merk-local-catrinas-851ea5649567be8530c552b385d7a3a671d3cf04bba676fb25b4fe1d1cb41250.jpg" },
+   { "dia": "Dom 1", "cuando": "Dom 1 · 8:00 pm · Parque Tangamanga II", "titulo": "Los Auténticos Decadentes y Los Caligaris", "cartel": "lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-2c56b708-c411-47ea-b1c0-52d0be8025c5.jpg" }
+  ]
+ }
+}

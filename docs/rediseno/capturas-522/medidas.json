@@ -1,0 +1,490 @@
+{
+ "nombres": [
+  {
+   "nombre": "Ana Paz",
+   "letras": 7,
+   "renglones": 1,
+   "tamano": 132,
+   "recortado": false
+  },
+  {
+   "nombre": "Íñigo Montalvo",
+   "letras": 14,
+   "renglones": 1,
+   "tamano": 132,
+   "recortado": false
+  },
+  {
+   "nombre": "Valeria Quiroz (demo)",
+   "letras": 21,
+   "renglones": 1,
+   "tamano": 132,
+   "recortado": false
+  },
+  {
+   "nombre": "Colectivo Nube de Papel (demo)",
+   "letras": 30,
+   "renglones": 1,
+   "tamano": 90,
+   "recortado": false
+  },
+  {
+   "nombre": "Orquesta Típica de San Luis Potosí",
+   "letras": 34,
+   "renglones": 1,
+   "tamano": 84,
+   "recortado": false
+  },
+  {
+   "nombre": "ORQUESTA MEXICANA DE MÚSICA MAYA",
+   "letras": 32,
+   "renglones": 2,
+   "tamano": 120,
+   "recortado": false
+  },
+  {
+   "nombre": "Colectivo Mamá Wambú Mujeres Mimo",
+   "letras": 33,
+   "renglones": 2,
+   "tamano": 120,
+   "recortado": false
+  },
+  {
+   "nombre": "Compañía Nacional de Danza Folklórica",
+   "letras": 37,
+   "renglones": 2,
+   "tamano": 120,
+   "recortado": false
+  },
+  {
+   "nombre": "Museo del Ferrocarril Jesús García Corona",
+   "letras": 41,
+   "renglones": 2,
+   "tamano": 120,
+   "recortado": false
+  },
+  {
+   "nombre": "Centro de las Artes de San Luis Potosí Centenario",
+   "letras": 49,
+   "renglones": 2,
+   "tamano": 110,
+   "recortado": false
+  },
+  {
+   "nombre": "Museo Federico Silva, Escultura Contemporánea de San Luis Potosí",
+   "letras": 64,
+   "renglones": 2,
+   "tamano": 84,
+   "recortado": false
+  }
+ ],
+ "revision": {
+  "A-artista-4x5": [],
+  "A-lugar-4x5": [],
+  "A-semana-4x5": [],
+  "A-artista-9x16": [],
+  "A-lugar-9x16": [],
+  "A-semana-9x16": [],
+  "A-clara-4x5": [],
+  "A-sinportada-4x5": [],
+  "A-largo-4x5": [],
+  "B-artista-4x5": [],
+  "B-lugar-4x5": [],
+  "B-semana-4x5": [],
+  "B-artista-9x16": [],
+  "B-lugar-9x16": [],
+  "B-semana-9x16": [],
+  "B-clara-4x5": [],
+  "B-sinportada-4x5": [],
+  "B-largo-4x5": [],
+  "C-artista-4x5": [],
+  "C-lugar-4x5": [],
+  "C-semana-4x5": [],
+  "C-artista-9x16": [],
+  "C-lugar-9x16": [],
+  "C-semana-9x16": [],
+  "C-clara-4x5": [],
+  "C-sinportada-4x5": [],
+  "C-largo-4x5": []
+ },
+ "colores": {
+  "A-artista-4x5": {
+   "origen": "#c03e23",
+   "deDonde": "portada",
+   "base": "#b43a21",
+   "banda": "oscura",
+   "fondo": "#b43a21",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#ca785f",
+    "#822a18",
+    "#5a1d11",
+    "#f4efd6"
+   ]
+  },
+  "A-lugar-4x5": {
+   "origen": "#2b6066",
+   "deDonde": "portada",
+   "base": "#2d656c",
+   "banda": "oscura",
+   "fondo": "#2d656c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#719490",
+    "#20494e",
+    "#173336",
+    "#f4efd6"
+   ]
+  },
+  "A-semana-4x5": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#a04d1c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#bd845b",
+    "#733714",
+    "#50270e",
+    "#f4efd6"
+   ]
+  },
+  "A-artista-9x16": {
+   "origen": "#c03e23",
+   "deDonde": "portada",
+   "base": "#b43a21",
+   "banda": "oscura",
+   "fondo": "#b43a21",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#ca785f",
+    "#822a18",
+    "#5a1d11",
+    "#f4efd6"
+   ]
+  },
+  "A-lugar-9x16": {
+   "origen": "#2b6066",
+   "deDonde": "portada",
+   "base": "#2d656c",
+   "banda": "oscura",
+   "fondo": "#2d656c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#719490",
+    "#20494e",
+    "#173336",
+    "#f4efd6"
+   ]
+  },
+  "A-semana-9x16": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#a04d1c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#bd845b",
+    "#733714",
+    "#50270e",
+    "#f4efd6"
+   ]
+  },
+  "A-clara-4x5": {
+   "origen": "#dfb34a",
+   "deDonde": "portada",
+   "base": "#dfb349",
+   "banda": "clara",
+   "fondo": "#dfb349",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#ead190",
+    "#ae8c39",
+    "#81682a",
+    "#1a1a1a"
+   ]
+  },
+  "A-sinportada-4x5": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#a04d1c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#bd845b",
+    "#733714",
+    "#50270e",
+    "#f4efd6"
+   ]
+  },
+  "A-largo-4x5": {
+   "origen": "#583793",
+   "deDonde": "portada",
+   "base": "#583793",
+   "banda": "oscura",
+   "fondo": "#583793",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#8d76aa",
+    "#3f286a",
+    "#2c1c4a",
+    "#f4efd6"
+   ]
+  },
+  "B-artista-4x5": {
+   "origen": "#c03e23",
+   "deDonde": "portada",
+   "base": "#b43a21",
+   "banda": "oscura",
+   "fondo": "#b43a21",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#ca785f",
+    "#822a18",
+    "#5a1d11",
+    "#f4efd6"
+   ]
+  },
+  "B-lugar-4x5": {
+   "origen": "#2b6066",
+   "deDonde": "portada",
+   "base": "#2d656c",
+   "banda": "oscura",
+   "fondo": "#2d656c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#719490",
+    "#20494e",
+    "#173336",
+    "#f4efd6"
+   ]
+  },
+  "B-semana-4x5": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#a04d1c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#bd845b",
+    "#733714",
+    "#50270e",
+    "#f4efd6"
+   ]
+  },
+  "B-artista-9x16": {
+   "origen": "#c03e23",
+   "deDonde": "portada",
+   "base": "#b43a21",
+   "banda": "oscura",
+   "fondo": "#b43a21",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#ca785f",
+    "#822a18",
+    "#5a1d11",
+    "#f4efd6"
+   ]
+  },
+  "B-lugar-9x16": {
+   "origen": "#2b6066",
+   "deDonde": "portada",
+   "base": "#2d656c",
+   "banda": "oscura",
+   "fondo": "#2d656c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#719490",
+    "#20494e",
+    "#173336",
+    "#f4efd6"
+   ]
+  },
+  "B-semana-9x16": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#a04d1c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#bd845b",
+    "#733714",
+    "#50270e",
+    "#f4efd6"
+   ]
+  },
+  "B-clara-4x5": {
+   "origen": "#dfb34a",
+   "deDonde": "portada",
+   "base": "#dfb349",
+   "banda": "clara",
+   "fondo": "#dfb349",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#ead190",
+    "#ae8c39",
+    "#81682a",
+    "#1a1a1a"
+   ]
+  },
+  "B-sinportada-4x5": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#a04d1c",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#bd845b",
+    "#733714",
+    "#50270e",
+    "#f4efd6"
+   ]
+  },
+  "B-largo-4x5": {
+   "origen": "#583793",
+   "deDonde": "portada",
+   "base": "#583793",
+   "banda": "oscura",
+   "fondo": "#583793",
+   "tinta": "#f4efd6",
+   "figuras": [
+    "#8d76aa",
+    "#3f286a",
+    "#2c1c4a",
+    "#f4efd6"
+   ]
+  },
+  "C-artista-4x5": {
+   "origen": "#c03e23",
+   "deDonde": "portada",
+   "base": "#b43a21",
+   "banda": "oscura",
+   "fondo": "#f4efd6",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#b43a21",
+    "#822a18",
+    "#5a1d11",
+    "#1a1a1a"
+   ]
+  },
+  "C-lugar-4x5": {
+   "origen": "#2b6066",
+   "deDonde": "portada",
+   "base": "#2d656c",
+   "banda": "oscura",
+   "fondo": "#f4efd6",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#2d656c",
+    "#20494e",
+    "#173336",
+    "#1a1a1a"
+   ]
+  },
+  "C-semana-4x5": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#f4efd6",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#a04d1c",
+    "#733714",
+    "#50270e",
+    "#1a1a1a"
+   ]
+  },
+  "C-artista-9x16": {
+   "origen": "#c03e23",
+   "deDonde": "portada",
+   "base": "#b43a21",
+   "banda": "oscura",
+   "fondo": "#f4efd6",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#b43a21",
+    "#822a18",
+    "#5a1d11",
+    "#1a1a1a"
+   ]
+  },
+  "C-lugar-9x16": {
+   "origen": "#2b6066",
+   "deDonde": "portada",
+   "base": "#2d656c",
+   "banda": "oscura",
+   "fondo": "#f4efd6",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#2d656c",
+    "#20494e",
+    "#173336",
+    "#1a1a1a"
+   ]
+  },
+  "C-semana-9x16": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#f4efd6",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#a04d1c",
+    "#733714",
+    "#50270e",
+    "#1a1a1a"
+   ]
+  },
+  "C-clara-4x5": {
+   "origen": "#dfb34a",
+   "deDonde": "portada",
+   "base": "#dfb349",
+   "banda": "clara",
+   "fondo": "#f4efd6",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#dfb349",
+    "#ae8c39",
+    "#81682a",
+    "#1a1a1a"
+   ]
+  },
+  "C-sinportada-4x5": {
+   "origen": "#b5541c",
+   "deDonde": "respaldo",
+   "base": "#a04d1c",
+   "banda": "oscura",
+   "fondo": "#f4efd6",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#a04d1c",
+    "#733714",
+    "#50270e",
+    "#1a1a1a"
+   ]
+  },
+  "C-largo-4x5": {
+   "origen": "#583793",
+   "deDonde": "portada",
+   "base": "#583793",
+   "banda": "oscura",
+   "fondo": "#f4efd6",
+   "tinta": "#1a1a1a",
+   "figuras": [
+    "#583793",
+    "#3f286a",
+    "#2c1c4a",
+    "#1a1a1a"
+   ]
+  }
+ }
+}

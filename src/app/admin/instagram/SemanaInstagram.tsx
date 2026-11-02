@@ -33,7 +33,7 @@ const unir = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).
  * OL-488 (bitácora 520): los días que ya pasaron sin publicación van en una línea gris («Mié 7 · antes de armar la semana»); de hoy en adelante,
  * un día sin publicación trae lo que sugiere la regla (su hoja: «Publicar ahora» hoy, «Programar» a su hora) o, si nadie tiene material,
  * «Nadie con material para hoy», que abre «Falta material»; y al final de la semana, el renglón «Falta material» (quién se quedó fuera por falta
- * de foto o portada, con «Pedírselo» y «Subir yo»).
+ * de foto (OL-505), con «Pedírselo» y «Subir yo»).
  */
 export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestanas, abrir, conexion, usuarioId = "" }: { ciudad: { slug: string | null; nombre: string }; ciudades: CiudadPanel[]; semana: Semana | null; cual: "esta" | "viene"; pestanas: ReactNode; abrir: string | null; conexion?: ReactNode; usuarioId?: string }) {
   const router = useRouter();
