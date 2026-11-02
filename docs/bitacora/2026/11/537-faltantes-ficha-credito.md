@@ -55,10 +55,12 @@ Y lo demás sigue igual: ya quieta, las cajas de `main` y de cada bloque de la f
 
 ## 4. Comprobaciones
 
+Con `origin/main` unido (`2ee5aa06`, OL-501 y OL-502 dentro; solo `OPEN_LOOPS.md` chocó y se resolvió conservando todo):
+
 - `npm run lint`: 0 errores (los 2 avisos de siempre, en `capturar-inicio-vacio.mjs` y `VisorImagen.componentes.test.mjs`).
 - `npm run typecheck`: correcto.
-- `npm test`: 320 archivos, 5 148 pruebas correctas.
-- `npm run test:componentes`: 803 pruebas, 0 fallaron (una nueva).
+- `npm test`: 322 archivos, 5 162 pruebas correctas.
+- `npm run test:componentes`: 805 pruebas, 0 fallaron (una nueva).
 - `npm run inventario`: sin novedades.
 - `npm run medir`: 63 pantallas × 4 anchos, sin novedades. No hubo que aceptar ninguna medida: el recorte no añade nodos ni profundidad, y la ficha quieta mide lo mismo.
 
