@@ -147,7 +147,8 @@ export function saludoDe(nombre: string, grupo: boolean): string {
  * crédito y cómo decir que no. Sin nada que parezca vigilancia: solo lo que ya dice su ficha.
  */
 export function avisoPrevio(a: { saludo: string; dia: string; tipo: "artista" | "lugar"; ficha: string }): string {
-  const quien = a.tipo === "artista" ? "entre lxs artistas destacadxs de la semana: tu foto, tu portada y lo que dice tu ficha" : "entre los lugares destacados de la semana: tu portada y lo que dice tu ficha";
+  // OL-505 («Repisa»): el artista sale con su foto de perfil, sin portada; el lugar, con su portada si la tiene.
+  const quien = a.tipo === "artista" ? "entre lxs artistas destacadxs de la semana: tu foto y lo que dice tu ficha" : "entre los lugares destacados de la semana: tu portada (si la tienes) y lo que dice tu ficha";
   return [
     `¡Hola, ${a.saludo}! Te escribimos de Somos Nosotrxs (@${CUENTA_INSTAGRAM}), la agenda cultural de la ciudad.`,
     `El ${a.dia} queremos presentarte en nuestro Instagram ${quien} (${a.ficha}), con el crédito de la foto a tu cuenta.`,

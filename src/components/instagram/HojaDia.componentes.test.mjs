@@ -125,6 +125,15 @@ after(async () => {
 const DIAS = {
   artista: ARTISTA,
   publicado: { ...ARTISTA, estado: 'publicado', abierto: false, aviso: null, titulo: 'Lun 5 · 7:00 pm · Artista', publicado: { instagram: 'https://www.instagram.com/p/A/', facebook: 'https://www.facebook.com/1/posts/2', historia: 'https://www.instagram.com/stories/x/1/', cuando: 'lun 5 de oct, 7:00 pm', sinCoautor: true, fallo: null }, medida: { visitas: 31, van: 3 } },
+  // OL-504 y OL-505: un lugar L2 (su portada de Wikimedia en el arco) con su crédito (OL-491): la vista previa del texto dice lo mismo que la
+  // publicación. Desde OL-505 `prepararDia` solo manda `credito` en el lugar L2 (`creditoDeTarjeta`, probado en `lib/instagram/ficha.test.ts`).
+  credito: {
+    ...ARTISTA, tipo: 'lugar', titulo: 'Lun 12 · 7:00 pm · Lugar', nombre: 'Bajo Ceiba', por: 'Lugar con 2 eventos esta semana, de San Luis Potosí, nunca en Instagram.',
+    contenido: { tipo: 'lugar', cuenta: 'bajoceiba_salas', credito: 'Pablo Pérez · CC BY-SA 4.0 (https://commons.wikimedia.org/wiki/File:Nube.jpg)', datos: { nombre: 'Bajo Ceiba', slug: 'bajo-ceiba', descripcion: 'Salas de ensayo para música, danza, teatro y artes en el Centro Histórico, con un foro al aire libre.', tipo: 'foro', detalle: null, ciudad: 'San Luis Potosí', direccion: null, redes: [{ url: 'https://www.instagram.com/bajoceiba_salas' }], semana: [] } },
+    aviso: { ...ARTISTA.aviso, cuenta: 'bajoceiba_salas', abrir: 'https://ig.me/m/bajoceiba_salas' },
+  },
+  // OL-505: un artista con portada y crédito en su ficha: su tarjeta lleva su foto de perfil, no la portada, y `prepararDia` no manda crédito.
+  artistaConPortada: { ...ARTISTA, contenido: { ...ARTISTA.contenido, credito: null } },
   descanso: { ...ARTISTA, tipo: 'descanso', titulo: 'Dom 18 · Descanso', nombre: 'Sin publicación', por: null, estado: 'descanso', abierto: false, hora: null, contenido: { tipo: 'descanso' }, aviso: null },
 };
 
@@ -233,6 +242,34 @@ test("quitar la etiqueta cambia el texto; «Publicar ahora» la manda sin ella, 
   const q = await qa(p);
   assert.deepEqual(q.acciones.find((a) => a[0] === "publicarDiaAhora"), ["publicarDiaAhora", ARTISTA.id, { texto: null, quitadas: ["nubedepapel"], facebook: true }]);
   assert.equal(q.cerrada, 1);
+});
+
+test("OL-504: el lugar L2 con crédito de la portada: la vista previa dice «Foto: autor · licencia» como la publicación; sin la cuenta, el crédito sigue", async (t) => {
+  const p = await abrir(t, "credito");
+  // El valor que lleva el campo (cerrado, su `input` oculto) y lo que enseña su renglón.
+  const campo = () => hoja(p).locator('[name="texto"]').first().inputValue();
+  const resumen = () => texto(hoja(p).getByRole("button", { name: "Texto de la publicación" }));
+  const conCuenta = await campo();
+  assert.match(conCuenta, /^Foto: Pablo Pérez · CC BY-SA 4\.0 \(https:\/\/commons\.wikimedia\.org\/wiki\/File:Nube\.jpg\)$/m);
+  assert.doesNotMatch(conCuenta, /^Foto: @bajoceiba_salas$/m, "el crédito sustituye a «Foto: @cuenta»");
+  assert.match(conCuenta, /@bajoceiba_salas/, "la cuenta sigue mencionada");
+  await tocar(p, hoja(p).getByRole("button", { name: "Quitar @bajoceiba_salas" }));
+  await hoja(p).getByRole("button", { name: "Volver a etiquetar" }).waitFor();
+  const sinCuenta = await campo();
+  assert.doesNotMatch(sinCuenta, /@bajoceiba_salas/);
+  assert.match(sinCuenta, /^Foto: Pablo Pérez · CC BY-SA 4\.0 /m, "sin la cuenta, el crédito va igual");
+  assert.match(await resumen(), /Foto: Pablo Pérez · CC BY-SA 4\.0/);
+  // El texto del sistema no se manda (`texto: null`): el trabajador lo arma con `textoDeFicha`, que lleva el mismo crédito.
+  await tocar(p, hoja(p).getByRole("button", { name: "Publicar ahora" }));
+  await p.getByRole("dialog").waitFor({ state: "detached" });
+  assert.deepEqual((await qa(p)).acciones.find((a) => a[0] === "publicarDiaAhora"), ["publicarDiaAhora", ARTISTA.id, { texto: null, quitadas: ["bajoceiba_salas"], facebook: true }]);
+});
+
+test("OL-505: el artista con portada: sin crédito de portada, «Foto: @cuenta» como siempre", async (t) => {
+  const p = await abrir(t, "artistaConPortada");
+  const valor = await hoja(p).locator('[name="texto"]').first().inputValue();
+  assert.match(valor, /^Foto: @nubedepapel$/m);
+  assert.doesNotMatch(valor, /Pablo Pérez|CC BY/);
 });
 
 test("lo que se cambió en un día programado se guarda al cerrar; sin cambios, no", async (t) => {

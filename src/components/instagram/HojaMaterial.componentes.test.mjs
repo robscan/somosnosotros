@@ -35,10 +35,11 @@ const mocks = {
 
 const FALTA = {
   lunes: "2026-10-05",
-  resumen: "1 artista y 1 lugar con fecha se quedaron fuera por falta de foto o portada",
+  // OL-505: solo artistas y solo la foto (la portada, opcional, va en «otros»).
+  resumen: "2 artistas con fecha se quedaron fuera por falta de foto",
   fichas: [
-    { tipo: "artista", id: "a0000000-0000-4000-8000-000000000488", slug: "inigo", nombre: "Íñigo Montalvo", foto: null, falta: ["foto", "portada"], queFalta: "Falta la foto y la portada", otros: null, proxima: "Próxima fecha: dom 11 · Guitarra sola", lleva: "Marcos", puedePedir: true, pedido: null, ficha: "/artistas/inigo" },
-    { tipo: "lugar", id: "b0000000-0000-4000-8000-000000000488", slug: "museo", nombre: "Museo Leonora Carrington", foto: null, falta: ["portada"], queFalta: "Falta la portada", otros: null, proxima: "Próxima fecha: sáb 10 · Taller", lleva: null, puedePedir: false, pedido: null, ficha: "/lugares/museo" },
+    { tipo: "artista", id: "a0000000-0000-4000-8000-000000000488", slug: "inigo", nombre: "Íñigo Montalvo", foto: null, falta: ["foto"], queFalta: "Falta la foto", otros: "La portada es opcional", proxima: "Próxima fecha: dom 11 · Guitarra sola", lleva: "Marcos", puedePedir: true, pedido: null, ficha: "/artistas/inigo" },
+    { tipo: "artista", id: "b0000000-0000-4000-8000-000000000488", slug: "renata", nombre: "Renata Saldaña", foto: null, falta: ["foto_ajena"], queFalta: "Su foto es de otra página: hay que subirla a la app", otros: null, proxima: "Próxima fecha: sáb 10 · Taller", lleva: null, puedePedir: false, pedido: null, ficha: "/artistas/renata" },
   ],
 };
 
@@ -126,10 +127,10 @@ const qa = (p) => p.evaluate(() => JSON.parse(JSON.stringify(window.qa)));
 test("la lista: qué falta, su próxima fecha y quién lleva la ficha", async (t) => {
   const p = await abrir(t);
   const inigo = await hoja(p).locator("li", { hasText: "Íñigo Montalvo" }).innerText();
-  assert.match(inigo, /Falta la foto y la portada/);
+  assert.match(inigo, /Falta la foto/);
   assert.match(inigo, /Próxima fecha: dom 11/);
   assert.match(inigo, /La lleva Marcos/);
-  assert.match(await hoja(p).locator("li", { hasText: "Museo" }).innerText(), /Nadie lleva la ficha/);
+  assert.match(await hoja(p).locator("li", { hasText: "Renata" }).innerText(), /Nadie lleva la ficha/);
 });
 
 test("alguien la lleva: «Pedírselo» pide el aviso con su lunes y ya no se ofrece otra vez", async (t) => {
@@ -146,7 +147,7 @@ test("alguien la lleva: «Pedírselo» pide el aviso con su lunes y ya no se ofr
 
 test("nadie la lleva: solo «Subir yo»", async (t) => {
   const p = await abrir(t);
-  await tocar(p, hoja(p).locator("li", { hasText: "Museo" }).locator("a"));
+  await tocar(p, hoja(p).locator("li", { hasText: "Renata" }).locator("a"));
   await hoja(p).getByRole("button", { name: "Subir yo" }).waitFor();
   assert.equal(await hoja(p).getByRole("button", { name: "Pedírselo" }).count(), 0);
   assert.match(await hoja(p).innerText(), /Nadie lleva esta ficha todavía: súbela tú/);
@@ -157,20 +158,18 @@ test("«Subir yo»: «Guardar» dice qué falta hasta subir cada hueco; al guard
   await tocar(p, hoja(p).locator("li", { hasText: "Íñigo Montalvo" }).locator("a"));
   await tocar(p, hoja(p).getByRole("button", { name: "Subir yo" }));
   const guardar = hoja(p).locator("footer button, [class*=pie] button").last();
-  assert.equal(await guardar.textContent(), "Falta la foto y la portada");
+  assert.equal(await guardar.textContent(), "Falta la foto");
   assert.equal(await guardar.isDisabled(), true);
+  assert.equal(await hoja(p).getByLabel("Elegir la portada").count(), 0, "OL-505: la portada ya no se pide");
   const archivo = { name: "obra.jpg", mimeType: "image/jpeg", buffer: Buffer.from("/9j/4AAQSkZJRgABAQAAAQABAAD/2Q==", "base64") };
   await hoja(p).getByLabel("Elegir la foto").setInputFiles(archivo);
   await hoja(p).getByText("Cambiar la foto").waitFor();
-  assert.equal(await guardar.textContent(), "Falta la portada");
-  await hoja(p).getByLabel("Elegir la portada").setInputFiles(archivo);
-  await hoja(p).getByText("Cambiar la portada").waitFor();
   assert.equal(await guardar.textContent(), "Guardar");
   await tocar(p, guardar);
   await hoja(p).getByText(/Íñigo Montalvo ya tiene su material/).waitFor();
   const q = await qa(p);
-  assert.deepEqual(q.subidas.map((s) => s.slice(0, 3)), [["artistas", "admin-488", "foto"], ["artistas", "admin-488", "portada"]]);
-  assert.deepEqual(q.acciones, [["ponerMaterial", "artista", "a0000000-0000-4000-8000-000000000488", { foto: `${PIXEL}#foto`, portada: `${PIXEL}#portada` }]]);
+  assert.deepEqual(q.subidas.map((s) => s.slice(0, 3)), [["artistas", "admin-488", "foto"]]);
+  assert.deepEqual(q.acciones, [["ponerMaterial", "artista", "a0000000-0000-4000-8000-000000000488", { foto: `${PIXEL}#foto` }]]);
   assert.equal(await hoja(p).locator("li", { hasText: "Íñigo Montalvo" }).count(), 0, "ya no está en la lista");
-  assert.equal(await hoja(p).locator("li", { hasText: "Museo" }).count(), 1);
+  assert.equal(await hoja(p).locator("li", { hasText: "Renata" }).count(), 1);
 });

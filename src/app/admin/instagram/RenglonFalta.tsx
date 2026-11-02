@@ -12,7 +12,7 @@ import type { FaltaMaterial } from "./semana";
 import styles from "./SemanaInstagram.module.css";
 
 /**
- * El renglón «Falta material» de Administración › Instagram (OL-488, bitácora 520): quién se quedó fuera de la semana por falta de foto o portada;
+ * El renglón «Falta material» de Administración › Instagram (OL-488, bitácora 520): quién se quedó fuera de la semana por falta de foto (OL-505);
  * tocarlo abre su hoja (`HojaMaterial`, con «Pedírselo» y «Subir yo»). Va al final de «Semana» y, OL-495, arriba de «Eventos» cuando la semana
  * está vacía por eso. Quien lo pinta guarda si la hoja está abierta (la semana también la abre desde un día sin material).
  */
