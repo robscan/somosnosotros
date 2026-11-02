@@ -133,6 +133,11 @@ registro lo que llega. `capturar-instagram-carrusel.mjs` dibuja esos carteles (i
 bitácora 496 con toques reales (la tira, quitar, mover, publicar en las dos, «Ya en Instagram», la historia, un evento de una imagen) y mide los
 textos cortados a 320, 390 y 430. La prueba de componentes `HojaCarrusel.componentes.test.mjs` usa las mismas filas.
 
+La entrada de las fichas y el crédito en la hoja del día (OL-504, bitácora 537): `capturar-faltantes-ficha-credito.mjs <árbol> <salida> <prefijo>`
+(con `RESPALDO_HISTORIAL=1 RESPALDO_INSTAGRAM_SEMANA=1` y un crédito inventado en el museo Leonora Carrington, el lugar de «hoy») saca la hoja del día
+con el texto abierto y la ficha de lugar a 390, 768, 1048 y 1280; con las animaciones a 1/50 por CDP mide el mayor ancho de la página mientras la
+ficha entra y si se puede correr de lado (`medir` no lo ve: mide con movimiento reducido). Respaldo en el puerto 8897.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes
