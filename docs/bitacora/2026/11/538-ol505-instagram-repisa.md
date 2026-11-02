@@ -105,6 +105,14 @@ gestor):
 - «Cambiar» (las notas de la lista): «Solo fichas completas (foto, descripción e Instagram)…» y, en lugares, «Solo fichas con descripción (sin
   portada salen con el símbolo SN)…».
 
+### Ajuste para casar con OL-504 (tras unir `origin/main` con el PR #631)
+
+OL-504 dejó en `prepararDia` (`accionesSemana.ts`) el crédito de la portada para artista y lugar si había portada, y `HojaDia` lo pone en la vista
+previa del texto. Con Repisa, `credito` sale de `creditoDeTarjeta` (nueva, `lib/instagram/ficha.ts`), la misma regla que usa `textoDeFicha`:
+null en el artista y, en el lugar, solo si sale L2 (`cartelDescargable` de su portada). `HojaDia.tsx` no se tocó. En
+`HojaDia.componentes.test.mjs` el caso del crédito pasó a un lugar L2 (Bajo Ceiba, sigue pasando) y se añadió el del artista con portada: sin
+crédito, «Foto: @cuenta».
+
 ## 3 · La evidencia con fichas reales (`docs/rediseno/capturas-538/`)
 
 `scripts/ops/auditoria-ui/instagram-repisa.mjs` empaqueta el **código de la app** (`dibujarDestacado`, `dibujarPortadaSemana`, `cajaDeFoto`,
@@ -162,6 +170,7 @@ publicadas esta semana · 5 sin material»); no la toca esta pieza. Sin errores 
 | `npm run medir` | 63 pantallas × 4 anchos, sin novedades (s46 a s49 de Instagram iguales) |
 | `npm run test:componentes` | **802 de 802** (`HojaMaterial` con los datos nuevos: solo la foto, sin hueco de portada) |
 | `node scripts/ops/auditoria-ui/instagram-repisa.mjs` | 12 tarjetas, 0 con falla |
+| Tras unir `origin/main` (#631) y el ajuste de OL-504 | lint 0 errores; typecheck bien; `npm test` 5 174 de 5 174; `test:componentes` 806 de 806 (el lugar L2 con crédito y el artista con portada sin él); `test:db` 3 076, 0 fallaron |
 
 `instagram-sin-material-rapida.test.mjs` compara la función rápida con una copia de la lenta: la copia ahora lleva la misma regla de OL-505
 (`conReglaOL505`, cuatro cambios de texto que la prueba comprueba antes de crear la función), así la comparación fila por fila sigue valiendo.

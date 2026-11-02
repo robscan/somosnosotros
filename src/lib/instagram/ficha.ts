@@ -128,14 +128,22 @@ export function fichaConMaterial(f: Pick<FichaParaPublicar, "tipo" | "foto" | "p
   return f.tipo === "lugar" || cartelDescargable(f.foto, supabaseUrl);
 }
 
-/** El texto que arma el sistema; sin la cuenta si la administración la quitó (`quitadas`): sin mención ni «Foto: @cuenta». El crédito de la
- *  portada (OL-491) va solo en el lugar que la lleva en su tarjeta (L2): su línea «Foto: …» lo dice. El artista sale con su foto de perfil, sin
- *  la portada: su crédito es el de siempre («Foto: @cuenta»). */
+/**
+ * El crédito de la portada (OL-491) que lleva el texto de la tarjeta: solo el del lugar que sale L2 (su portada en el arco: la que `dibujarFicha`
+ * puede bajar, `cartelDescargable`). El artista sale con su foto de perfil, sin la portada: su crédito es el de siempre («Foto: @cuenta»). Lo
+ * usan el texto que se publica (`textoDeFicha`) y la vista previa de la hoja del día (`prepararDia`, OL-504): dicen lo mismo.
+ */
+export function creditoDeTarjeta(f: Pick<FichaParaPublicar, "tipo" | "portada" | "portadaCredito">, supabaseUrl = configPublica().supabaseUrl): string | null {
+  return f.tipo === "lugar" && cartelDescargable(f.portada, supabaseUrl) ? (f.portadaCredito ?? null) : null;
+}
+
+/** El texto que arma el sistema; sin la cuenta si la administración la quitó (`quitadas`): sin mención ni «Foto: @cuenta». Con el crédito de la
+ *  portada de un lugar L2 (`creditoDeTarjeta`), su línea «Foto: …» lo dice. */
 export function textoDeFicha(f: FichaParaPublicar, ahora: Date, quitadas: readonly string[] = [], supabaseUrl = configPublica().supabaseUrl): string {
   const sinCuenta = !!f.cuenta && quitadas.includes(f.cuenta);
   const datos = sinCuenta ? { ...f.datos, redes: [] } : f.datos;
   const texto = f.tipo === "artista" ? textoArtista(datos as ArtistaDestacado, ahora) : textoLugar(datos as LugarDestacado, ahora);
-  return f.tipo === "lugar" && cartelDescargable(f.portada, supabaseUrl) ? conCreditoDeFoto(texto, f.portadaCredito) : texto;
+  return conCreditoDeFoto(texto, creditoDeTarjeta(f, supabaseUrl));
 }
 
 /** La razón de la publicación, en versalitas arriba del nombre. */

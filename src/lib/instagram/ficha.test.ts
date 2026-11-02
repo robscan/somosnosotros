@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fichaConMaterial, textoDeFicha, type FichaParaPublicar } from "./ficha";
+import { creditoDeTarjeta, fichaConMaterial, textoDeFicha, type FichaParaPublicar } from "./ficha";
 
 /**
  * OL-505 («Repisa»): qué material pide la tarjeta de la semana y de quién es el crédito de la foto. El artista sale con su foto de perfil (sin
@@ -48,5 +48,16 @@ describe("el crédito de la foto en el texto", () => {
   it("el lugar sin portada que se pueda dibujar (L1): sin ese crédito", () => {
     expect(textoDeFicha(lugar(null), AHORA, [], URL)).not.toContain("Ana López");
     expect(textoDeFicha(lugar(AJENA), AHORA, [], URL)).not.toContain("Ana López");
+  });
+});
+
+describe("creditoDeTarjeta: lo que dicen igual la vista previa de la hoja (prepararDia, OL-504) y la publicación", () => {
+  it("el artista con portada y crédito: ninguno (su tarjeta lleva su foto de perfil)", () => {
+    expect(creditoDeTarjeta(ficha({ portada: PROPIA }), URL)).toBeNull();
+  });
+  it("el lugar L2: el crédito de su portada; L1 (sin portada o de otra página): ninguno", () => {
+    expect(creditoDeTarjeta(lugar(PROPIA), URL)).toBe("Ana López · CC BY 4.0");
+    expect(creditoDeTarjeta(lugar(null), URL)).toBeNull();
+    expect(creditoDeTarjeta(lugar(AJENA), URL)).toBeNull();
   });
 });
