@@ -109,6 +109,12 @@ export const EVENTOS = {
   app_instalada: {},
   /** Una pantalla no cargó (la de «Algo falló»). */
   error_pantalla: {},
+  /**
+   * La app no llegó a cargar y el service worker enseñó «No se pudo cargar» (OL-501, `public/sin-conexion.html`): sin red o tardó de más
+   * (`red`) o el servidor contestó con error (`servidor`), en la web (`pwa`) o dentro de la app de la tienda (`tienda`). Sin red no se puede
+   * mandar en ese momento: la página deja una marca y se manda en la siguiente carga buena (`cargaFallida.ts`). Nunca cuál pantalla.
+   */
+  carga_fallida: { app: ["pwa", "tienda"], motivo: ["red", "servidor"] },
 } as const satisfies Record<string, Record<string, readonly string[]>>;
 
 export type NombreEvento = keyof typeof EVENTOS;
