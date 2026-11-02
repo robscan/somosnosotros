@@ -3,12 +3,13 @@ import { KeyboardResize } from "@capacitor/keyboard";
 
 /**
  * Envoltorio de iPhone (OL-194, pieza 4 de docs/rediseno/47-app-ios.md). La app no trae su propia web: carga
- * siempre https://somosnosotros.org (server.url) dentro de un WKWebView. `webDir` solo sirve la página de
- * "Sin conexión" (www/index.html), que MainViewController.swift muestra a mano con un NWPathMonitor cuando de
- * verdad no hay red — a propósito NO se usa `server.errorPath` (la opción propia de Capacitor): esa la dispara
- * `didFailProvisionalNavigation` en cualquier navegación cancelada, incluida la que EntrarSistemaPlugin.swift
- * cancela a propósito para abrir Apple o Google en el navegador del sistema, y dejaba la app entera mostrando
- * "Sin conexión" con la red perfectamente encendida (visto en el simulador). En un arranque normal nunca se ve.
+ * siempre https://somosnosotros.org (server.url) dentro de un WKWebView. `webDir` (www/index.html) solo existe
+ * porque Capacitor lo exige: desde OL-503 (bitácora 536) cuando una carga falla sale una vista nativa «No se pudo
+ * cargar» (ios/App/App/RespaldoCarga.swift). A propósito NO se usa `server.errorPath` (la opción propia de
+ * Capacitor): esa la dispara `didFailProvisionalNavigation` en cualquier navegación cancelada, incluida la que
+ * EntrarSistemaPlugin.swift cancela a propósito para abrir Apple o Google en el navegador del sistema, y dejaba la
+ * app entera mostrando "Sin conexión" con la red perfectamente encendida (visto en el simulador). RespaldoCarga
+ * descarta esas cancelaciones.
  *
  * `appendUserAgent` marca el navegador de la app; quien decide hoy que Apple y Google salen por una sesión del
  * sistema en vez de por el WKWebView es EntrarSistemaPlugin.swift, que intercepta la ida a `/auth/apple` y

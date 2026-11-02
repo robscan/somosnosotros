@@ -24,6 +24,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         SceneDelegateProxy.shared.scene(scene, continue: userActivity)
     }
 
+    /// OL-503 (bitácora 536): si la última carga falló o el WKWebView se quedó sin documento, cargar otra vez al volver.
+    /// El proceso web muerto ya lo recarga Capacitor (`webViewWebContentProcessDidTerminate`): no se duplica.
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        (window?.rootViewController as? MainViewController)?.alVolverAlFrente()
+    }
+
     /**
      * Enlaces universales «normales» (una ficha de evento, lugar o artista compartida y tocada fuera de la app):
      * Capacitor los reenvía como la notificación `capacitorOpenUniversalLink` (SceneDelegateProxy, de serie en la

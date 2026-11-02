@@ -10,9 +10,9 @@ se duplica aquí.
 - `capacitor.config.ts` — `appId: org.somosnosotros.app`, `server.url` a producción, `allowNavigation` con los
   dominios que la web usa hoy (Supabase, Mapbox, los reproductores incrustados) y `appendUserAgent:
   "SomosNosotrosApp"` (por si una pieza futura necesita distinguir el navegador de la app; hoy nadie lo lee).
-- `www/index.html` — la página de "Sin conexión" (símbolo SN). No es una pantalla de la web: el envoltorio nativo
-  la muestra a mano (`ios/App/App/MainViewController.swift`, con `NWPathMonitor`) cuando el teléfono se queda sin
-  red; en un arranque normal nunca se ve.
+- `www/index.html` — página local que Capacitor exige como `webDir`. Desde OL-503 (bitácora 536) la app ya no la
+  enseña: el respaldo ante cargas fallidas es nativo (`ios/App/App/RespaldoCarga.swift`, abajo). Si algún día se viera,
+  su botón va a `https://somosnosotros.org/` (antes hacía `location.reload()` del archivo local y volvía a caer en ella).
 - `ios/` — el proyecto de Xcode generado por `npx cap add ios`, comiteado según la convención de Capacitor
   (`Pods/`, `build/` y `DerivedData/` quedan fuera por el `.gitignore` que trae el propio `cap add`). Dos archivos
   nativos propios, aparte del scaffold de Capacitor:
@@ -31,7 +31,13 @@ se duplica aquí.
     cadena antes de decodificar (8 MiB), permiso antes de tocar la imagen, formato por los bytes (JPEG, PNG o WebP),
     dimensiones por metadatos (8000 px por lado, 12 Mpx); JPEG y PNG van tal cual y WebP pasa a JPEG. Rechaza con
     `permiso`, `formato`, `tamano` o `error`.
-  - `ios/App/App/MainViewController.swift` — registra ese plugin y muestra `www/index.html` cuando no hay red.
+  - `ios/App/App/MainViewController.swift` — registra los plugins propios, engancha `RespaldoCarga` y, con
+    `NWPathMonitor`, reintenta solo cuando vuelve la red (1 s después) si el respaldo está a la vista.
+  - `ios/App/App/RespaldoCarga.swift` — «No se pudo cargar» (OL-503, bitácora 536): toma el puesto de
+    `navigationDelegate` del WKWebView y le pasa todo a Capacitor; añade el respaldo nativo cuando el documento de
+    somosnosotros.org falla (error de red sin contar cancelaciones, 500 o más, 12 s sin llegar). «Intentar de nuevo»
+    carga la dirección que falló; vuelve solo con la red y al volver al frente (`SceneDelegate.swift`). Deja la marca
+    `sn_carga_fallida` (`app: "tienda"`) en el `localStorage` de la web en la siguiente carga buena.
   - `ios/App/App/App.entitlements` — `applinks:somosnosotros.org` y `webcredentials:somosnosotros.org` (enlaces
     universales para las fichas — eventos, lugares, artistas — y el llavero de iOS; entrar con Apple/Google ya no
     depende de un enlace universal).
@@ -90,11 +96,10 @@ xcrun simctl create "mi-simulador" com.apple.CoreSimulator.SimDeviceType.iPhone-
 - **`server.errorPath` de Capacitor, descartado a propósito.** Esa opción muestra la página local en *cualquier*
   navegación fallida del `WKWebView`, incluida la que `EntrarSistemaPlugin` cancela a propósito para abrir la
   sesión del sistema — con ella activada, cancelar esa navegación dejaba la app entera en "Sin conexión" con la
-  red perfectamente encendida (se vio en el simulador). En su lugar, `MainViewController.swift` usa
-  `NWPathMonitor` y solo muestra `www/index.html` cuando el teléfono de verdad pierde la red. Límite conocido: si
-  `somosnosotros.org` cae pero el teléfono sigue con datos o wifi, esto no lo detecta (no hay pantalla de "sin
-  conexión" para ese caso, solo para avión/sin señal); ampliarlo pediría interceptar también los códigos de error
-  de una navegación fallida sin usar `errorPath`, que no se hizo aquí.
+  red perfectamente encendida (se vio en el simulador). Hasta OL-503 la única salida era `NWPathMonitor` (solo sin
+  ruta: un 5xx, un tiempo agotado o una radio que no engancha dejaban la pantalla en blanco, lo que vio el founder el
+  2026-11-02). Desde OL-503, `RespaldoCarga.swift` atiende las navegaciones fallidas del dominio propio y descarta las
+  cancelaciones (-999 y el 102 de WebKit, que es el de los plugins); ver su comentario.
 - **`apple-app-site-association` ya no reclama `/auth/*`.** Con la corrección del gestor, entrar con Apple o
   Google no pasa por ningún enlace universal (ver arriba): reclamarlo no hacía falta y, peor, competía con el
   enlace del correo cuando alguien lo abre fuera de la app. Sigue reclamando `/eventos/*`, `/lugares/*` y

@@ -1,6 +1,7 @@
 import Capacitor
 import Network
 import UserNotifications
+import WebKit
 
 /**
  * OL-194: dos cambios sobre la vista base de Capacitor.
@@ -10,10 +11,13 @@ import UserNotifications
  *    puro, sin paquete). `capacitorDidLoad()` es el enganche que Capacitor ofrece para registrar plugins propios,
  *    y `registerPluginInstance` no depende de `autoRegisterPlugins`.
  *
- * 2. La página de "Sin conexión" (apps/ios/www/index.html): se muestra a mano con `NWPathMonitor`, nunca con la
- *    opción `server.errorPath` de Capacitor (ver el comentario de capacitor.config.ts: esa dispara con cualquier
- *    navegación cancelada, incluida la que EntrarSistemaPlugin cancela a propósito para abrir Apple o Google en
- *    el navegador del sistema).
+ * 2. «No se pudo cargar» (OL-503, bitácora 536, `RespaldoCarga.swift`): una vista nativa sobre el WKWebView cuando el
+ *    documento propio no llega (error de red, 500 o más, o 12 s sin respuesta), nunca con la opción `server.errorPath`
+ *    de Capacitor (ver el comentario de capacitor.config.ts: esa dispara con cualquier navegación cancelada, incluida
+ *    la que EntrarSistemaPlugin cancela a propósito para abrir Apple o Google en el navegador del sistema).
+ *    `NWPathMonitor` ya no cambia la pantalla al perder la red (antes cargaba `www/index.html` encima de lo que hubiera,
+ *    y su «Reintentar» recargaba ese archivo local): lo ya cargado se queda («primero lo cargado», bitácora 533), y si
+ *    una navegación falla sin red sale el respaldo. Al volver la ruta, el respaldo se reintenta solo tras 1 s.
  *
  * OL-205 (auditoría OL-202, docs/rediseno/48-shell-ios.md §3.3): el gesto de deslizar desde el borde para volver
  * se enciende aquí (`allowsBackForwardNavigationGestures`), pero `GestoAtrasPlugin` (ver ese archivo) cancela la
@@ -34,7 +38,12 @@ import UserNotifications
  */
 class MainViewController: CAPBridgeViewController, NotificationHandlerProtocol {
     private let monitorDeRed = NWPathMonitor()
-    private var mostrandoSinConexion = false
+    /// OL-503: toma el puesto de `navigationDelegate` y le pasa todo a Capacitor (ver RespaldoCarga.swift). El WKWebView
+    /// guarda su delegado con referencia débil: esta es la fuerte.
+    private var respaldoCarga: RespaldoCarga?
+    /// Un segundo, como la web (`public/sin-conexion.html`): el aviso de que hay ruta puede llegar antes de que la red
+    /// de verdad sirva, y reintentar en ese instante volvería a caer en el respaldo.
+    private static let esperaTrasVolverLaRed: TimeInterval = 1
 
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
@@ -45,6 +54,11 @@ class MainViewController: CAPBridgeViewController, NotificationHandlerProtocol {
         bridge?.registerPluginInstance(CalendarioPlugin())
         bridge?.registerPluginInstance(FotosPlugin())
         webView?.allowsBackForwardNavigationGestures = true
+        if let webView, let capacitor = webView.navigationDelegate as? WebViewDelegationHandler, let config = bridge?.config {
+            let respaldo = RespaldoCarga(capacitor: capacitor, webView: webView, contenedor: webView, urlInicio: config.appStartServerURL)
+            webView.navigationDelegate = respaldo
+            respaldoCarga = respaldo
+        }
         observarRed()
     }
 
@@ -68,14 +82,16 @@ class MainViewController: CAPBridgeViewController, NotificationHandlerProtocol {
     }
 
     private func alCambiarRed(hayRed: Bool) {
-        guard let webView = webView, let config = bridge?.config else { return }
-        if !hayRed, !mostrandoSinConexion, let sinConexion = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "public") {
-            mostrandoSinConexion = true
-            webView.loadFileURL(sinConexion, allowingReadAccessTo: sinConexion.deletingLastPathComponent())
-        } else if hayRed, mostrandoSinConexion {
-            mostrandoSinConexion = false
-            webView.load(URLRequest(url: config.appStartServerURL))
+        guard hayRed, respaldoCarga?.mostrando == true else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.esperaTrasVolverLaRed) { [weak self] in
+            guard let respaldo = self?.respaldoCarga, respaldo.mostrando else { return }
+            respaldo.reintentar()
         }
+    }
+
+    /// SceneDelegate, al volver al frente: ver `RespaldoCarga.alVolverAlFrente()`.
+    func alVolverAlFrente() {
+        respaldoCarga?.alVolverAlFrente()
     }
 
     deinit {
