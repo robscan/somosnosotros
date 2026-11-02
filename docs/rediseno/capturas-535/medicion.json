@@ -1,0 +1,18 @@
+{
+ "tops": {
+  "reposo": 300,
+  "hoja": 1294,
+  "en-camino": 300,
+  "reintentando": 300,
+  "publicado": 300,
+  "facebook": 300,
+  "facebook-ok": 300,
+  "fallido": 300,
+  "atras-cache": 300,
+  "atras-fresco": 500,
+  "letra": 256,
+  "quieto": 300
+ },
+ "mismoTop": true,
+ "errores": []
+}
