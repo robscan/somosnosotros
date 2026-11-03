@@ -6,6 +6,7 @@ import { IconoInstagram } from "@/components/ui/Iconos";
 import { CerrarMenu } from "@/components/ui/MenuAcciones";
 import renglon from "@/components/ui/Renglon.module.css";
 import { CUENTA_INSTAGRAM } from "@/lib/instagram/texto";
+import { enCamino } from "@/lib/redes/reglas";
 import HojaInstagram from "./HojaInstagram";
 
 const ABRIR = "sn:instagram";
@@ -45,5 +46,6 @@ export function HojaInstagramDeFicha({ eventoId }: { eventoId: string }) {
     window.addEventListener(ABRIR, abrir);
     return () => window.removeEventListener(ABRIR, abrir);
   }, []);
-  return abierta ? <HojaInstagram eventoId={eventoId} onCerrar={() => setAbierta(false)} onPublicado={() => router.refresh()} /> : null;
+  // La ficha se refresca al guardar y al terminar, como antes (OL-506 solo quita las recargas de la lista de Administración).
+  return abierta ? <HojaInstagram eventoId={eventoId} onCerrar={() => setAbierta(false)} onPublicado={() => router.refresh()} onTrabajo={(e) => !enCamino(e) && router.refresh()} /> : null;
 }

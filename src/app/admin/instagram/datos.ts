@@ -8,7 +8,7 @@ import { armarCarrusel, type ImagenCarrusel, type ParaCarrusel } from "@/lib/ins
 import { bajarCartel } from "@/lib/instagram/imagen";
 import { armarTexto, etiquetasDeLaFoto, usuarioDeInstagram, type ActoIg, type ArtistaIg, type EventoIg } from "@/lib/instagram/texto";
 import { enCamino, lineaDeTrabajo } from "@/lib/redes/reglas";
-import { trabajosPorEvento } from "./colaPorEvento";
+import { trabajosPorEvento, type TrabajoEnCamino } from "./colaPorEvento";
 import { nombreDeSedes, sedesDeFestival } from "@/lib/sedesFestival";
 import type { ClienteServidor } from "@/lib/supabase/servidor";
 
@@ -57,10 +57,17 @@ export type Sugerencia = {
   donde: string;
   linea: string;
   publicado: boolean;
+  /** OL-506: cuándo salió en Instagram (ISO), para saber si la lista ya sabe de lo que se publicó desde esta pantalla. */
+  publicadoEn?: string | null;
   facebook: EstadoFacebook | null;
   publicando: boolean;
-  /** OL-488: los trabajos en camino de este evento (la lista pregunta por ellos cada 5 s y se refresca en cuanto terminan). */
-  enCamino?: { id: string; reintentando: boolean }[];
+  /**
+   * OL-488: los trabajos en camino de este evento. OL-506: con ellos se siembra lo que la lista sabe de cada trabajo (pregunta por ellos cada 2 s y
+   * cambia la línea sin volver a pedir la pantalla).
+   */
+  enCamino?: TrabajoEnCamino[];
+  /** OL-506: la línea dice que el último intento no se pudo publicar (va en rojo). */
+  fallido?: boolean;
 };
 
 
@@ -141,9 +148,11 @@ export async function cargarSugerencias(supabase: ClienteServidor, ciudad: strin
       ? `${FORMATO[f.publicado_formato === "9x16" || f.publicado_formato === "carrusel" ? f.publicado_formato : "4x5"]} · ${cuandoSePublico(f.publicado_en, ahora, f.zona)}`
       : lineaDeSenal({ destacado: f.destacado, van: f.van, interesa: f.interesa, conCartel: !!f.imagen, inicio: f.inicio })),
     publicado: !!f.publicado_en,
+    publicadoEn: f.publicado_en,
     facebook: f.publicado_en && enFacebook ? (trabajos.facebook.has(f.id) ? { estado: "publicando" } : (enFacebook.get(f.id) ?? { estado: "nada" })) : null,
     publicando: enCamino(trabajos.instagram.get(f.id)) || (!!f.publicado_en && trabajos.facebook.has(f.id)),
     enCamino: trabajos.vivos.get(f.id) ?? [],
+    fallido: trabajos.instagram.get(f.id)?.estado === "fallido" && !f.publicado_en,
   });
   const senal = (f: FilaSugerencia) => ({ destacado: f.destacado, van: f.van, interesa: f.interesa, conCartel: !!f.imagen, inicio: f.inicio });
   const para = filas.filter((f) => !f.publicado_en).sort((a, b) => porSenal(senal(a), senal(b))).map(renglon);

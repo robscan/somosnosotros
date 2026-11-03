@@ -73,7 +73,8 @@
 }
 /* El botón de acción de la fila (ui/BotonRenglon): el icono a secas, en el color de acción (H-19); decidido, el círculo verde de
    siempre. */
-.lista > button:not([aria-pressed="true"]) {
+.lista > button:not([aria-pressed="true"]),
+.lista > a:not(.frente) {
   color: var(--primario);
 }
 /* El sitio del botón mientras llega (`accionEnEspera`): del ancho del botón (ui/BotonRenglon, un control), sin alto ni nada que ver. */
@@ -145,6 +146,31 @@
 .frente > small > .envuelve {
   white-space: normal;
   overflow-wrap: anywhere;
+}
+/* La línea del estado (OL-506, prototipo firmado `publicar-sin-recargar.html`): lo que está pasando ahora con el renglón, en su color y con su
+   marca (el anillo de ui/Girando o la palomita, de 1em, en el primer renglón si la línea se parte). Solo esa línea se tiñe; manda sobre el pulsado
+   y el paso del ratón, que tocan el fondo y el título. */
+.frente > small > .estado {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--espacio-2);
+  font-weight: 600;
+}
+.frente > small > .estado > .marca {
+  flex: none;
+  width: 1em;
+  height: 1em;
+  margin: 0.15em 0 0;
+}
+.frente > small > .estado[data-estado="en-camino"],
+.frente > small > .estado[data-estado="reintentando"] {
+  color: var(--primario);
+}
+.frente > small > .estado[data-estado="hecho"] {
+  color: var(--ok);
+}
+.frente > small > .estado[data-estado="fallido"] {
+  color: var(--error);
 }
 /* Con la letra grande (OL-373; la pantalla mide menos de 19¾ letras, ver globals.css) el cuándo ya no cabe en su renglón y se recortaba al borde
    («Próximo: hoy · 18:0»): la línea pasa a texto corrido, con su icono delante, y parte renglón donde haga falta. */

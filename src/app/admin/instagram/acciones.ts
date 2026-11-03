@@ -117,7 +117,7 @@ export async function prepararInstagram(eventoId: string): Promise<Preparado> {
   };
 }
 
-/** Cómo va un trabajo (la hoja lo pregunta cada 5 s mientras está en camino, y al volver a la app). */
+/** Cómo va un trabajo (la hoja lo pregunta cada 2 s mientras está en camino, y al volver a la app). */
 export async function estadoTrabajo(id: string): Promise<EstadoTrabajo | null> {
   const s = esUuid(id) ? await sesionAdmin() : null;
   if (!s) return null;
@@ -126,18 +126,19 @@ export async function estadoTrabajo(id: string): Promise<EstadoTrabajo | null> {
 }
 
 /**
- * OL-488: cómo van varios trabajos a la vez (la lista y la semana lo preguntan cada 5 s mientras algo dice «Publicando…»): su estado y si van en
- * otro intento. Lo que no se pudo leer no sale (quien pregunta lo deja como estaba).
+ * OL-488: cómo van varios trabajos a la vez (la lista y la semana lo preguntan cada 2 s mientras algo dice «Publicando…»): su estado y si van en
+ * otro intento. OL-506: el trabajo entero (la red, el error y el resultado con los enlaces), para que la lista diga «Publicado» con su «Ver» o el
+ * error sin volver a pedir la pantalla. Lo que no se pudo leer no sale (quien pregunta lo deja como estaba).
  */
-export async function estadosTrabajos(ids: string[]): Promise<Record<string, { estado: EstadoTrabajo["estado"]; reintentando: boolean }>> {
+export async function estadosTrabajos(ids: string[]): Promise<Record<string, EstadoTrabajo>> {
   const validos = Array.isArray(ids) ? [...new Set(ids.filter((x) => esUuid(x)))].slice(0, 50) : [];
   const s = validos.length ? await sesionAdmin() : null;
   if (!s) return {};
   const { data } = await s.supabase.from("redes_trabajos").select("id, red, formato, estado, pedido, resultado, error, intentos, fallos").in("id", validos);
-  const fuera: Record<string, { estado: EstadoTrabajo["estado"]; reintentando: boolean }> = {};
+  const fuera: Record<string, EstadoTrabajo> = {};
   for (const f of (data ?? []) as Record<string, unknown>[]) {
     const e = leerEstadoTrabajo(f);
-    if (e) fuera[e.id] = { estado: e.estado, reintentando: e.reintentando };
+    if (e) fuera[e.id] = e;
   }
   return fuera;
 }

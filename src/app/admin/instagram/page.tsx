@@ -85,6 +85,7 @@ export default async function Instagram({ searchParams }: { searchParams: Promis
           para: sugerencias?.para ?? [],
           ya: sugerencias?.ya ?? [],
           abrir: sugerencias && esUuid(p.evento) ? p.evento! : null,
+          generada: new Date().toISOString(),
           conteo: sugerencias && total ? `${total === 1 ? "1 evento" : `${total} eventos`} en los próximos 7 días${sugerencias.ya.length ? ` · ${sugerencias.ya.length} ya en Instagram` : ""}` : null,
           vacio: sugerencias && !total ? `No hay eventos por publicar en ${ciudad ? nombre : "ninguna ciudad"} en los próximos 7 días.` : null,
         }}
