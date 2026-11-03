@@ -6,6 +6,8 @@
 // margen ni en lo que tapa la historia, ninguno encimado ni cortado, ninguno sobre una foto, la tinta a 4,5:1 o más).
 //
 //   node scripts/ops/auditoria-ui/instagram-repisa.mjs
+//   node scripts/ops/auditoria-ui/instagram-repisa.mjs --mismo-dia   (OL-508, bitácora 540: solo «Esta semana» con los dos primeros
+//     eventos del .json puestos el mismo viernes y el título de `tituloSemana` de un solo día; guarda en `docs/rediseno/capturas-540/`)
 //
 // El id de cada ficha (que elige el color de respaldo) es su clave del .json: el prototipo no guardó los id reales. Con los id reales, el
 // respaldo de una foto gris o de un lugar sin portada puede tocar otro de los nueve colores.
@@ -18,7 +20,8 @@ const RAIZ = path.resolve(AQUI, "../../..");
 const requerir = createRequire(path.join(RAIZ, "package.json"));
 const esbuild = requerir("esbuild");
 const sharp = requerir("sharp");
-const SALIDA = path.join(RAIZ, "docs/rediseno/capturas-538");
+const MISMO_DIA = process.argv.includes("--mismo-dia");
+const SALIDA = path.join(RAIZ, MISMO_DIA ? "docs/rediseno/capturas-540" : "docs/rediseno/capturas-538");
 const CACHE = path.join(RAIZ, ".next/cache/instagram-repisa");
 fs.mkdirSync(SALIDA, { recursive: true });
 fs.mkdirSync(CACHE, { recursive: true });
@@ -29,7 +32,7 @@ const paquete = path.join(AQUI, ".instagram-repisa.tmp.mjs");
 const vacio = path.join(path.dirname(requerir.resolve("server-only")), "empty.js");
 await esbuild.build({
   stdin: {
-    contents: `export { dibujarDestacado, dibujarPortadaSemana } from "@/lib/carteles/dibujar"; export { cajaDeFoto, cajasDeCarteles } from "@/lib/carteles/plantillas/repisa"; export { contraste } from "@/lib/portadasSistema"; export { FORMATOS, MARGEN } from "@/lib/carteles/tokens";`,
+    contents: `export { dibujarDestacado, dibujarPortadaSemana } from "@/lib/carteles/dibujar"; export { cajaDeFoto, cajasDeCarteles } from "@/lib/carteles/plantillas/repisa"; export { contraste } from "@/lib/portadasSistema"; export { FORMATOS, MARGEN } from "@/lib/carteles/tokens"; export { tituloSemana } from "@/lib/instagram/destacado";`,
     resolveDir: RAIZ,
     loader: "ts",
   },
@@ -99,7 +102,7 @@ const ARTISTAS = [
   ["artista-emilio-palomino", "emilio-palomino"],
   ["artista-carlos-guevara", "carlos-guevara"],
 ];
-for (const [nombre, clave] of ARTISTAS) {
+for (const [nombre, clave] of MISMO_DIA ? [] : ARTISTAS) {
   const a = artista(clave);
   const foto = await bajar(a.foto);
   for (const formato of ["4x5", "9x16"]) {
@@ -111,7 +114,7 @@ const LUGARES = [
   ["lugar-L2-bajo-ceiba", "bajo-ceiba", true],
   ["lugar-L1-guarida-del-coyote", "guarida-del-coyote", false],
 ];
-for (const [nombre, clave, conPortada] of LUGARES) {
+for (const [nombre, clave, conPortada] of MISMO_DIA ? [] : LUGARES) {
   const l = lugar(clave);
   const foto = conPortada ? await bajar(l.portada) : null;
   for (const formato of ["4x5", "9x16"]) {
@@ -120,7 +123,14 @@ for (const [nombre, clave, conPortada] of LUGARES) {
   }
 }
 {
-  const s = T.semana;
+  // Con --mismo-dia: los dos primeros eventos, los dos el viernes 30 (el segundo conserva su hora y su lugar), como la del founder del 2026-11-02.
+  const s = MISMO_DIA
+    ? {
+        ...T.semana,
+        titulo: A.tituloSemana("2026-10-30", "2026-10-30", "America/Mexico_City", new Date("2026-10-29T12:00:00Z")),
+        eventos: T.semana.eventos.slice(0, 2).map((e) => ({ ...e, dia: "Vie 30", cuando: e.cuando.replace(/^\S+ \d+/, "Vie 30") })),
+      }
+    : T.semana;
   const carteles = await Promise.all(s.eventos.map((e) => bajar(e.cartel)));
   for (const formato of ["4x5", "9x16"]) {
     const pedido = { id: s.id, formato, ciudad: s.ciudad, titulo: s.titulo, eventos: s.eventos.map((e) => ({ cuando: e.cuando, titulo: e.titulo })), dias: s.eventos.map((e) => e.dia), carteles, conNodos: true, png: true };

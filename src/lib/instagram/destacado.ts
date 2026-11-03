@@ -1,5 +1,5 @@
 import { etiquetaDisciplina } from "../artistas";
-import { diaConMes, diaLargo, diaLocal, horaCorta } from "../fechas";
+import { conMayuscula, diaConMes, diaLargo, diaLocal, horaCorta } from "../fechas";
 import { etiquetaTipo } from "../lugares";
 import { CUENTA_INSTAGRAM, hashtag, usuarioDeInstagram } from "./texto";
 
@@ -127,10 +127,14 @@ export function textoSemana(s: { ciudad: string; eventos: EventoDeLaSemana[] }, 
   ].join("\n\n");
 }
 
-/** «Del viernes 16 al domingo 18 de octubre»: el título de la portada de «Esta semana». */
+/**
+ * «Del viernes 16 al domingo 18 de octubre»: el título de la portada de «Esta semana». Si todos los eventos caen el mismo día,
+ * el día solo, «Viernes 6 de noviembre» (OL-508; founder, 2026-11-02: «Del viernes 6 al viernes 6» «no tiene sentido»).
+ */
 export function tituloSemana(desde: string, hasta: string, zona: string, ahora: Date): string {
   const a = diaLargo(desde, ahora, zona);
   const b = diaLargo(hasta, ahora, zona);
+  if (a === b) return conMayuscula(a);
   const [, mesA] = a.match(/de (\S+)( de \d+)?$/) ?? [];
   const [, mesB] = b.match(/de (\S+)( de \d+)?$/) ?? [];
   return mesA && mesA === mesB ? `Del ${a.replace(/ de \S+( de \d+)?$/, "")} al ${b}` : `Del ${a} al ${b}`;
