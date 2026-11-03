@@ -15,7 +15,7 @@ import { elegirImagenes, PORTADA, resumenCarrusel, textoImagenes } from "@/lib/i
 import { ESTADO_FACEBOOK } from "@/lib/instagram/frases";
 import { armarTexto, CUENTA_INSTAGRAM, etiquetasDeLaFoto, etiquetasQueNoCaben, TOPE_CARACTERES, TOPE_ETIQUETAS_FOTO } from "@/lib/instagram/texto";
 import Girando from "@/components/ui/Girando";
-import { botonReciente, enCamino, mensajeDeFallo, preguntaRepetir, REFRESCO_MS, textoEnCamino, type EstadoTrabajo, type Reciente } from "@/lib/redes/reglas";
+import { botonReciente, enCamino, mensajeDeFallo, preguntaRepetir, REFRESCO_MS, textoEnCamino, type EstadoTrabajo, type Reciente, type Red } from "@/lib/redes/reglas";
 import styles from "./HojaInstagram.module.css";
 
 type Formato = "4x5" | "9x16";
@@ -51,11 +51,14 @@ const NO_SE_GUARDO: Encolado = { ok: false, error: "otro", mensaje: "No se pudo 
  *
  * OL-465 (bitácora 497): publicar va en segundo plano. «Publicar» guarda el trabajo en la cola y la hoja se cierra en seguida (el renglón de la
  * lista dice «Publicando…» y al terminar llega el aviso al teléfono). Al abrirla otra vez, la hoja dice cómo va el último trabajo de ese evento
- * (en camino, publicado con sus «Ver», o por qué no se pudo) y, mientras va, lo pregunta cada 20 s y al volver a la app. Si ese evento con ese
+ * (en camino, publicado con sus «Ver», o por qué no se pudo) y, mientras va, lo pregunta cada 2 s (OL-506) y al volver a la app. Si ese evento con ese
  * formato está en camino o salió hace menos de 15 minutos, el botón lo dice («Se está publicando», «Ya se publicó hace 3 min») y pide
  * confirmar antes de repetir.
+ * OL-506 (bitácora 539): la hoja avisa qué guardó (`onPublicado`: el evento, la red, el trabajo y si lleva Facebook) y, mientras está abierta, cómo
+ * va (`onTrabajo`): la lista cambia la línea del renglón en su sitio, sin volver a pedir la pantalla.
  */
-export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eventoId: string; onCerrar: () => void; onPublicado?: () => void }) {
+export type Publicado = { eventoId: string; red: Red; id: string | null; yaEstaba?: boolean; conFacebook: boolean };
+export default function HojaInstagram({ eventoId, onCerrar, onPublicado, onTrabajo }: { eventoId: string; onCerrar: () => void; onPublicado?: (p: Publicado) => void; onTrabajo?: (e: EstadoTrabajo) => void }) {
   const [prep, setPrep] = useState<Preparado | null>(null);
   const [formato, setFormatoElegido] = useState<Formato>("4x5");
   const [recorte, setRecorte] = useState(false);
@@ -90,11 +93,12 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
     };
   }, [eventoId]);
 
-  // Mientras el trabajo va: preguntar cada 5 s (si la pantalla se ve) y al volver a la app. Al terminar, la lista se refresca (OL-488).
+  // Mientras el trabajo va: preguntar cada 2 s (si la pantalla se ve) y al volver a la app; cada respuesta va también a quien abrió la hoja
+  // (OL-506: la lista cambia la línea del renglón; la ficha se refresca al terminar).
   const idEnCamino = enCamino(trabajo) ? trabajo!.id : null;
-  const alPublicar = useRef(onPublicado);
+  const alTrabajo = useRef(onTrabajo);
   useEffect(() => {
-    alPublicar.current = onPublicado;
+    alTrabajo.current = onTrabajo;
   });
   useEffect(() => {
     if (!idEnCamino) return;
@@ -105,7 +109,7 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
         (e) => {
           if (!vivo || !e) return;
           setTrabajo(e);
-          if (!enCamino(e)) alPublicar.current?.();
+          alTrabajo.current?.(e);
         },
         () => undefined,
       );
@@ -180,7 +184,7 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
       }
       const r = await publicarEnInstagram({ eventoId: listo.id, formato, recorte, diseno, texto: formato === "4x5" ? texto : null, quitadas, facebook: conFacebook, imagenes: carrusel?.van.map((i) => i.clave), repetir }).catch(() => NO_SE_GUARDO);
       if (r.ok) {
-        onPublicado?.();
+        onPublicado?.({ eventoId: listo.id, red: "instagram", id: r.id, conFacebook });
         onCerrar();
         return;
       }
@@ -193,7 +197,7 @@ export default function HojaInstagram({ eventoId, onCerrar, onPublicado }: { eve
       if (!listo) return;
       const r = await publicarEnFacebook(listo.id, formato === "4x5" ? texto : null, confirmar === "facebook").catch(() => NO_SE_GUARDO);
       if (r.ok) {
-        onPublicado?.();
+        onPublicado?.({ eventoId: listo.id, red: "facebook", id: r.id, yaEstaba: r.yaEstaba, conFacebook: false });
         onCerrar();
         return;
       }

@@ -42,7 +42,9 @@ before(async () => {
       import Palanca from './src/components/ui/Palanca';
       import SoloLector from './src/components/ui/SoloLector';
       import IconoEnCirculo from './src/components/ui/IconoEnCirculo';
-      import {IconoBoleto, IconoChevronDerecha, IconoLapiz, IconoMas, IconoNota, IconoOk, IconoPin, IconoReloj} from './src/components/ui/Iconos';
+      import {IconoAbrirFuera, IconoBoleto, IconoChevronDerecha, IconoLapiz, IconoMas, IconoNota, IconoOk, IconoPin, IconoReloj} from './src/components/ui/Iconos';
+      import BotonIcono from './src/components/ui/BotonIcono';
+      import Girando from './src/components/ui/Girando';
       import './src/app/globals.css';
       const FOTO = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
       // El botón real de un renglón (H-19): el icono a secas sobre el fondo hueso.
@@ -64,6 +66,22 @@ before(async () => {
                 <span><IconoNota width={15} height={15} /><span>Música académica y clásica · Solista · Grupo de cámara de San Luis Potosí</span></span>
                 <span className={rs.envuelve}><IconoPin width={15} height={15} />Templo de San Francisco · Calle Jardín Guerrero 7, 78000 San Luis Potosí, San Luis Potosí, México</span>
                 <span><IconoBoleto width={15} height={15} /><span>Cooperación solidaria de doscientos pesos por persona en taquilla</span></span>
+              </Renglon>
+            </ul>
+            {/* OL-506: la última línea dice lo que está pasando; «Ver» en el hueco de acción. */}
+            <ul aria-label="estados" style={{ listStyle: 'none' }}>
+              {['en-camino', 'reintentando', 'hecho', 'fallido'].map((e) => (
+                <Renglon key={e} href={'/' + e} foto={FOTO} titulo={'Estado ' + e} estado={e}
+                  otraLinea={e === 'hecho' ? <span className={rs.envuelve}><Girando texto="Facebook: publicando…" /></span> : null}
+                  accion={e === 'hecho' ? <BotonIcono href="https://www.instagram.com/p/DEMO/" target="_blank" rel="noopener noreferrer" aria-label={'Ver en Instagram: Estado ' + e}><IconoAbrirFuera width={22} height={22} /></BotonIcono> : undefined}>
+                  <span className={rs.envuelve}>sáb 10 de oct · 6:00–8:00 pm</span>
+                  <span className={rs.envuelve}>Teatro de la Paz</span>
+                  {{ 'en-camino': 'Publicando…', reintentando: 'Reintentando…', hecho: 'Publicado · hace un momento', fallido: 'No se publicó: Instagram no aceptó la imagen' }[e]}
+                </Renglon>
+              ))}
+              <Renglon href="/sin-estado" foto={FOTO} titulo="Sin estado">
+                <span className={rs.envuelve}>sáb 10 de oct · 6:00–8:00 pm</span>
+                <span className={rs.envuelve}>0 van · 0 les interesa</span>
               </Renglon>
             </ul>
             <ul aria-label="datos" style={{ listStyle: 'none' }}>
@@ -121,8 +139,8 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function pagina(t) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+async function pagina(t, opciones = {}) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, ...opciones });
   t.after(() => context.close());
   const p = await context.newPage();
   p.setDefaultTimeout(5000);
@@ -316,4 +334,84 @@ test("SoloLector no ocupa sitio y IconoEnCirculo mide 64 y es redondo", async (t
   const circulo = await rect(dato(p, "circulo").locator("span"));
   assert.deepEqual([circulo.w, circulo.h], [64, 64]);
   assert.equal(await dato(p, "circulo").locator("span").evaluate((e) => getComputedStyle(e).borderRadius), "50%");
+});
+
+const estado = (p, e) => p.locator("ul[aria-label=estados] > li").filter({ has: p.locator(`a[href="/${e}"]`) });
+const color = (p, token) =>
+  p.evaluate((t) => {
+    const x = document.createElement("i");
+    x.style.color = `var(${t})`;
+    document.body.append(x);
+    const c = getComputedStyle(x).color;
+    x.remove();
+    return c;
+  }, token);
+
+test("OL-506 · estado: solo la última línea se tiñe (violeta con anillo, verde con palomita, rojo) y se anuncia; el fondo no cambia", async (t) => {
+  const p = await pagina(t);
+  const [violeta, verde, rojo, gris] = await Promise.all(["--primario", "--ok", "--error", "--texto-suave"].map((x) => color(p, x)));
+  const esperado = { "en-camino": [violeta, "Publicando…", "anillo"], reintentando: [violeta, "Reintentando…", "anillo"], hecho: [verde, "Publicado · hace un momento", "svg"], fallido: [rojo, "No se publicó: Instagram no aceptó la imagen", null] };
+  const fondo = await p.locator("ul[aria-label=estados] > li").filter({ has: p.locator('a[href="/sin-estado"]') }).evaluate((e) => getComputedStyle(e).backgroundColor);
+  for (const [e, [tinte, frase, marca]] of Object.entries(esperado)) {
+    const li = estado(p, e);
+    const lineas = li.locator("small > *");
+    const ultima = li.locator("small > [data-estado]");
+    assert.equal(await ultima.getAttribute("role"), "status", `${e}: se anuncia`);
+    assert.equal(await ultima.getAttribute("data-estado"), e);
+    assert.equal((await ultima.innerText()).trim(), frase);
+    const i = await ultima.evaluate((x) => [...x.parentElement.children].indexOf(x));
+    assert.equal(i, 2, `${e}: es la línea después del cuándo y el dónde`);
+    assert.equal(await ultima.evaluate((x) => getComputedStyle(x).color), tinte, `${e}: su color`);
+    assert.equal(await ultima.evaluate((x) => getComputedStyle(x).fontWeight), "600");
+    for (const n of [0, 1]) assert.equal(await lineas.nth(n).evaluate((x) => getComputedStyle(x).color), gris, `${e}: las demás líneas siguen en gris`);
+    assert.equal(await li.evaluate((x) => getComputedStyle(x).backgroundColor), fondo, `${e}: el fondo del renglón no cambia`);
+    if (marca === "anillo") {
+      const anillo = await rect(ultima.locator('[class*="anillo"]'));
+      assert.ok(anillo.w > 10 && anillo.w === anillo.h, `${e}: el anillo de 1em (${anillo.w}×${anillo.h})`);
+    } else assert.equal(await ultima.locator('[class*="anillo"]').count(), 0);
+    assert.equal(await ultima.locator("svg").count(), marca === "svg" ? 1 : 0, `${e}: palomita solo en hecho`);
+  }
+  // La línea de Facebook va debajo, con su propio anillo y sin teñirse de verde.
+  const fb = estado(p, "hecho").locator("small > :last-child");
+  assert.equal((await fb.innerText()).trim(), "Facebook: publicando…");
+  assert.equal(await fb.evaluate((x) => getComputedStyle(x).color), gris);
+  assert.equal(await fb.locator('[class*="girando"]').evaluate((x) => getComputedStyle(x).color), violeta);
+});
+
+test("OL-506 · «Ver» va en el hueco de acción: un enlace de 44, hermano del enlace del renglón, en el color de acción, que abre fuera", async (t) => {
+  const p = await pagina(t);
+  const li = estado(p, "hecho");
+  const ver = li.getByRole("link", { name: "Ver en Instagram: Estado hecho" });
+  assert.equal(await ver.evaluate((x) => x.parentElement.tagName), "LI", "hermano del enlace, nunca dentro de él");
+  assert.equal(await li.locator("a a").count(), 0);
+  const caja = await rect(ver);
+  assert.deepEqual([caja.w, caja.h], [44, 44]);
+  assert.equal(await ver.evaluate((x) => getComputedStyle(x).color), await color(p, "--primario"));
+  assert.equal(await ver.getAttribute("target"), "_blank");
+  assert.equal(await ver.getAttribute("rel"), "noopener noreferrer");
+  const frente = await rect(li.locator("a").first());
+  assert.ok(frente.r <= caja.x, "el texto no pasa por debajo de «Ver»");
+});
+
+test("OL-506 · con «reducir movimiento» el anillo no gira", async (t) => {
+  const quieto = await pagina(t, { reducedMotion: "reduce" });
+  assert.equal(await estado(quieto, "en-camino").locator('[class*="anillo"]').evaluate((x) => getComputedStyle(x).animationName), "none");
+  const gira = await pagina(t);
+  assert.notEqual(await estado(gira, "en-camino").locator('[class*="anillo"]').evaluate((x) => getComputedStyle(x).animationName), "none", "sin la preferencia, gira");
+});
+
+test("OL-506 · letra al doble: la línea del estado se parte en dos renglones, la palomita queda en el primero y «Ver» no se monta", async (t) => {
+  const p = await pagina(t);
+  await p.evaluate(() => (document.documentElement.style.fontSize = "200%"));
+  const li = estado(p, "hecho");
+  const ultima = li.locator("small > [data-estado]");
+  const linea = await rect(ultima);
+  const palomita = await rect(ultima.locator("svg"));
+  const texto = await rect(ultima.locator("span").last());
+  const alto = await ultima.evaluate((x) => parseFloat(getComputedStyle(x).lineHeight) || parseFloat(getComputedStyle(x).fontSize) * 1.2);
+  assert.ok(texto.h > alto * 1.5, `se parte (${texto.h} de alto con ${alto} por renglón)`);
+  assert.ok(palomita.y < linea.y + alto, "la palomita va en el primer renglón");
+  const ver = await rect(li.getByRole("link", { name: /^Ver en Instagram/ }));
+  assert.ok(linea.r <= ver.x, `la línea (${linea.r}) no pasa de «Ver» (${ver.x})`);
+  assert.ok((await rect(li)).b >= ver.b, "«Ver» queda dentro de su renglón");
 });
