@@ -15,10 +15,10 @@ export const ESPERAS_MS = [60_000, 180_000, 420_000] as const;
 /** Cuánto queda tomado un trabajo al reclamarlo: más que lo que puede vivir la función (300 s), así uno que se cae queda libre. */
 export const OCUPADO_MS = 320_000;
 /**
- * La lista y la hoja vuelven a leer cómo va cada 5 s mientras algo dice «Publicando…» (OL-488, añadido del founder del 2026-10-29: la pantalla
- * se quedaba en «Publicando» aunque la cola ya había terminado; antes, cada 20 s).
+ * La lista y la hoja vuelven a leer cómo va cada 2 s mientras algo dice «Publicando…» (OL-506, prototipo firmado el 2026-11-02: «Publicado» llega
+ * menos de 2 s después de que la cola termina, sin recargar; la pregunta es una consulta chica. Antes, 5 s desde OL-488 y 20 s desde OL-465).
  */
-export const REFRESCO_MS = 5_000;
+export const REFRESCO_MS = 2_000;
 
 /**
  * ¿Vale la pena reintentar? Sí ante lo pasajero: Instagram todavía procesando la imagen o sin responder, un 5xx, la red («imagen» y «otro»).
@@ -168,3 +168,6 @@ export function lineaDeTrabajo(e: EstadoTrabajo): string | null {
   if (e.estado === "fallido") return e.red === "facebook" ? `Facebook: no se publicó (${motivoLlano("facebook", e.error ?? "otro")})` : `No se publicó: ${motivoLlano("instagram", e.error ?? "otro")}`;
   return null;
 }
+
+/** OL-506: la línea del renglón que se acaba de publicar mientras la tarjeta siga en su sitio (en «Ya en Instagram» dice la hora, como siempre). */
+export const LINEA_PUBLICADO = "Publicado · hace un momento";

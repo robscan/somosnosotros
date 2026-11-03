@@ -55,8 +55,13 @@ export default function SemanaInstagram({ ciudad, ciudades, semana, cual, pestan
     const consulta = s.toString();
     router.replace(consulta ? `${ruta}?${consulta}` : ruta, { scroll: false });
   };
-  // OL-488 (añadido): mientras un día se publica, cada 5 s se pregunta por su trabajo y la semana se refresca en cuanto termina (y al volver).
-  useAlDia((semana?.dias ?? []).flatMap((d) => (d.estado === "publicando" && d.trabajoId ? [{ id: d.trabajoId, reintentando: !!d.reintentando }] : [])), () => router.refresh());
+  // OL-488 (añadido): mientras un día se publica, se pregunta por su trabajo (cada 2 s desde OL-506) y la semana se refresca en cuanto termina (y
+  // al volver). La pestaña Semana sigue refrescando: «publicar sin recargar» (OL-506) es de la pestaña Eventos.
+  useAlDia(
+    (semana?.dias ?? []).flatMap((d) => (d.estado === "publicando" && d.trabajoId ? [{ id: d.trabajoId, reintentando: !!d.reintentando }] : [])),
+    () => router.refresh(),
+    () => router.refresh(),
+  );
 
   const renglon = (d: DiaSemana) =>
     d.pasado ? (

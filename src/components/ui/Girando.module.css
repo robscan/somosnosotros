@@ -1,6 +1,6 @@
 /* ui/Girando (OL-488): «Publicando…» con su anillo. El anillo mide lo que mide la letra (1em), es del color del texto (el violeta de lo que pide
-   atención, --primario) con un cuarto apagado, y gira una vuelta por segundo. Con «reducir movimiento», gira despacio: sigue diciendo que algo
-   pasa sin marear. */
+   atención, --primario) con un cuarto apagado, y gira una vuelta por segundo. Con «reducir movimiento» no gira (OL-506, prototipo firmado el
+   2026-11-02; antes giraba despacio): el anillo queda abierto y quieto, y la palabra sigue diciendo que algo pasa. */
 .girando {
   display: inline-flex;
   align-items: center;
@@ -24,6 +24,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .anillo {
-    animation-duration: 2.4s;
+    animation: none;
   }
 }

@@ -310,6 +310,13 @@ export const IconoEnlace = (p: P) => (
     <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5" />
   </svg>
 );
+/** Abrir fuera de la app (OL-506: «Ver» la publicación en Instagram): la flecha que sale de la caja. */
+export const IconoAbrirFuera = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M14 5h5v5M19 5l-8 8" />
+    <path d="M19 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4" />
+  </svg>
+);
 export const IconoChevronIzquierda = (p: P) => (
   <svg {...base({ strokeWidth: 2, ...p })}>
     <path d="M14.5 6l-6 6 6 6" />

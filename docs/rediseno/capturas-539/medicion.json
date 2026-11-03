@@ -1,0 +1,79 @@
+{
+ "antes": {
+  "top": 300,
+  "mismo": true,
+  "scrollY": 994,
+  "grupo": "Para publicar· 11"
+ },
+ "03-publicando": {
+  "top": 300,
+  "mismo": true,
+  "scrollY": 994,
+  "grupo": "Para publicar· 11",
+  "refrescos": 0,
+  "texto": "Delirium Pollum, clown y pantomima con Pimpolina sáb 10 de oct · 6:00–8:00 pm Teatro de la Paz Publicando…"
+ },
+ "05-publicado": {
+  "top": 300,
+  "mismo": true,
+  "scrollY": 994,
+  "grupo": "Para publicar· 11",
+  "refrescos": 0,
+  "texto": "Delirium Pollum, clown y pantomima con Pimpolina sáb 10 de oct · 6:00–8:00 pm Teatro de la Paz Publicado · hace un momento"
+ },
+ "09-peticiones-al-volver": [],
+ "09-atras-cache": {
+  "top": 300,
+  "mismo": false,
+  "scrollY": 994,
+  "grupo": "Para publicar· 11",
+  "texto": "Delirium Pollum, clown y pantomima con Pimpolina sáb 10 de oct · 6:00–8:00 pm Teatro de la Paz Publicado · hace un momento"
+ },
+ "10-atras-fresco": {
+  "top": 500,
+  "mismo": false,
+  "scrollY": 1231,
+  "grupo": "Ya en Instagram· 2",
+  "texto": "Delirium Pollum, clown y pantomima con Pimpolina sáb 10 de oct · 6:00–8:00 pm Teatro de la Paz Publicación · Hoy, 10:00 am Facebook: sin publicar"
+ },
+ "04-reintentando": {
+  "top": 300,
+  "mismo": true,
+  "scrollY": 994,
+  "grupo": "Para publicar· 11",
+  "refrescos": 0,
+  "texto": "Delirium Pollum, clown y pantomima con Pimpolina sáb 10 de oct · 6:00–8:00 pm Teatro de la Paz Reintentando…"
+ },
+ "06-facebook": {
+  "top": 300,
+  "mismo": true,
+  "scrollY": 994,
+  "grupo": "Para publicar· 11",
+  "refrescos": 0,
+  "texto": "Delirium Pollum, clown y pantomima con Pimpolina sáb 10 de oct · 6:00–8:00 pm Teatro de la Paz Publicado · hace un momento Facebook: publicando…"
+ },
+ "07-facebook-ok": {
+  "top": 300,
+  "mismo": true,
+  "scrollY": 994,
+  "grupo": "Para publicar· 11",
+  "refrescos": 0,
+  "texto": "Delirium Pollum, clown y pantomima con Pimpolina sáb 10 de oct · 6:00–8:00 pm Teatro de la Paz Publicado · hace un momento Facebook: publicado"
+ },
+ "08-fallido": {
+  "top": 300,
+  "mismo": true,
+  "scrollY": 994,
+  "grupo": "Para publicar· 11",
+  "refrescos": 0,
+  "texto": "Delirium Pollum, clown y pantomima con Pimpolina sáb 10 de oct · 6:00–8:00 pm Teatro de la Paz No se publicó: hoy ya van 100 publicaciones en Instagram"
+ },
+ "11-letra": {
+  "lineaDerecha": 314,
+  "frenteDerecha": 314,
+  "verIzquierda": 326,
+  "verAbajo": 443,
+  "filaAbajo": 587,
+  "lineaAlto": 84
+ }
+}

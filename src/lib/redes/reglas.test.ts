@@ -95,7 +95,7 @@ describe("el trabajo como lo ven la hoja y la lista", () => {
     expect(lineaDeTrabajo({ ...en({ fallos: 1 }), red: "facebook" })).toBe("Facebook: reintentando…");
     expect(textoEnCamino(en({}), true)).toBe("Instagram: publicando…");
     expect(textoEnCamino(en({ fallos: 1 }), true)).toBe("Instagram: reintentando…");
-    expect(REFRESCO_MS).toBe(5_000);
+    expect(REFRESCO_MS).toBe(2_000);
   });
   it("OL-488: la cola por evento dice qué trabajos van en camino (para preguntar por ellos)", () => {
     const { vivos } = trabajosPorEvento([
@@ -103,8 +103,8 @@ describe("el trabajo como lo ven la hoja y la lista", () => {
       { id: "t1", evento_id: "e1", red: "instagram", formato: "4x5", estado: "publicado", pedido: {} },
       { id: "t3", evento_id: "e2", red: "facebook", formato: "4x5", estado: "publicando", pedido: {} },
     ]);
-    expect(vivos.get("e1")).toEqual([{ id: "t2", reintentando: true }]);
-    expect(vivos.get("e2")).toEqual([{ id: "t3", reintentando: false }]);
+    expect(vivos.get("e1")).toEqual([{ id: "t2", reintentando: true, red: "instagram", conFacebook: false }]);
+    expect(vivos.get("e2")).toEqual([{ id: "t3", reintentando: false, red: "facebook", conFacebook: false }]);
   });
   it("la frase larga de un fallo: la que guardó el trabajador o, si no, la corta", () => {
     const e = leerEstadoTrabajo({ id: "t1", red: "instagram", formato: "4x5", estado: "fallido", error: "permiso", resultado: { mensaje: "Instagram ya no nos deja publicar." } })!;
