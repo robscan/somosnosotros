@@ -17,7 +17,10 @@
 //       Administración a Instagram con su renglón: cuándo sale la espera (esqueleto) y cuándo el contenido.
 //   D · publicar en Instagram: la lista de eventos, la persona baja hasta un evento, abre su hoja y toca «Publicar» con Instagram tardando 8 s
 //       (`/__lento`); cada 500 ms una captura, el desplazamiento, dónde está el renglón, si es el mismo nodo (o se volvió a montar), qué dice, y
-//       cada petición de React (refresco de la pantalla y acciones del servidor).
+//       cada petición de React (refresco de la pantalla y acciones del servidor). OL-506 (bitácora 539): además, al milisegundo (un observador en
+//       la página), cuándo sale la primera señal tras el toque («Publicando…» en el botón de la hoja o en el renglón), cuándo se cierra la hoja y
+//       cuándo dice el renglón «Publicando…» y «Publicado»; y cuándo terminó el trabajo en el respaldo (se le pregunta cada 100 ms), para medir
+//       cuánto tarda «Publicado» en llegar a la pantalla después.
 // Salida: `tiempos.json` con todo lo crudo y `tiempos.md` con las tablas, en `--salida` (por omisión, una carpeta temporal).
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -469,6 +472,33 @@ if (browser && !args.includes("--sin-publicar") && elegida("instagram")) {
     lote = "D";
     t0.v = Date.now();
     const t0Registro = performance.now() - reloj0;
+    // OL-506: lo que pasa al milisegundo (performance.now de la página, desde el toque) y cuándo termina el trabajo en el respaldo.
+    await page.evaluate((titulo) => {
+      const m = (window.__d = { toque: null, senal: null, hojaCerrada: null, renglonPublicando: null, publicado: null });
+      const fila = () => [...document.querySelectorAll("main li")].find((x) => x.textContent.includes(titulo));
+      const mirar = () => {
+        if (m.toque === null) return;
+        const t = performance.now() - m.toque;
+        const hoja = document.querySelector('[role="dialog"]');
+        const li = fila()?.innerText ?? "";
+        if (m.senal === null && ((hoja && /Publicando…/.test(hoja.innerText)) || /Publicando…/.test(li))) m.senal = t;
+        if (m.hojaCerrada === null && !hoja) m.hojaCerrada = t;
+        if (m.renglonPublicando === null && /Publicando…/.test(li)) m.renglonPublicando = t;
+        if (m.publicado === null && /Publicado|Ya en Instagram/.test(li + (fila()?.closest("section")?.querySelector("h2")?.textContent ?? ""))) m.publicado = t;
+      };
+      document.addEventListener("pointerdown", () => (m.toque ??= performance.now()), { capture: true });
+      new MutationObserver(mirar).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true });
+    }, TITULO);
+    const respaldoD = { terminado: null, estado: null };
+    let mirando = true;
+    const vigilarRespaldo = (async () => {
+      while (mirando) {
+        const filas = await fetch(`${respaldoUrl}/rest/v1/redes_trabajos?select=id,estado,red,creado_en&order=creado_en.desc&limit=1`).then((r) => r.json(), () => []);
+        const f = Array.isArray(filas) ? filas[0] : null;
+        if (f && respaldoD.terminado === null && (f.estado === "publicado" || f.estado === "fallido")) Object.assign(respaldoD, { terminado: Date.now() - t0.v, estado: f.estado });
+        await dormir(100);
+      }
+    })();
     await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
     const cuadros = [];
     for (let i = 0; i <= 80; i++) {
@@ -495,11 +525,14 @@ if (browser && !args.includes("--sin-publicar") && elegida("instagram")) {
       }, TITULO);
       cuadros.push({ t, ...estado });
       await page.screenshot({ path: path.join(SALIDA, `D-${String(i).padStart(2, "0")}-${String(t).padStart(5, "0")}ms.jpg`), type: "jpeg", quality: 55 });
-      if (cuadros.filter((c) => /^Ya en Instagram/.test(c.grupo ?? "")).length > 6) break;
+      if (cuadros.filter((c) => /^Ya en Instagram/.test(c.grupo ?? "") || /Publicado · hace un momento/.test(c.texto ?? "")).length > 6) break;
       const siguiente = t0.v + (i + 1) * 500;
       await dormir(Math.max(0, siguiente - Date.now()));
     }
-    const publicado = cuadros.find((c) => /^Ya en Instagram/.test(c.grupo ?? ""));
+    mirando = false;
+    await vigilarRespaldo;
+    const alMilisegundo = await page.evaluate(() => window.__d);
+    const publicado = cuadros.find((c) => /^Ya en Instagram/.test(c.grupo ?? "") || /Publicado · hace un momento/.test(c.texto ?? ""));
     const publicando = cuadros.find((c) => /Publicando/.test(c.texto ?? ""));
     resultado.publicar = {
       titulo: TITULO,
@@ -511,8 +544,16 @@ if (browser && !args.includes("--sin-publicar") && elegida("instagram")) {
       publicandoEn: publicando?.t ?? null,
       publicadoEn: publicado?.t ?? null,
       hojaCerradaEn: cuadros.find((c) => !c.hoja)?.t ?? null,
+      // OL-506: al milisegundo desde el toque (la página) y el trabajo en el respaldo (desde el clic del guion).
+      alMilisegundo,
+      trabajoTerminadoEn: respaldoD.terminado,
+      trabajoEstado: respaldoD.estado,
+      refrescos: peticiones.filter((x) => x.tipo === "refresco/RSC").length,
+      mismoTop: cuadros.every((c) => c.fila === antes.fila && c.mismoNodo === true && c.scrollY === antes.scrollY),
     };
     console.log(`D · publicar: hoja cerrada a los ${ms(resultado.publicar.hojaCerradaEn)}, «Publicando…» a los ${ms(resultado.publicar.publicandoEn)}, «Publicado» a los ${ms(resultado.publicar.publicadoEn)}, ${peticiones.length} peticiones de React`);
+    const d = resultado.publicar.alMilisegundo ?? {};
+    console.log(`D · al milisegundo: señal ${ms(d.senal)}, hoja cerrada ${ms(d.hojaCerrada)}, renglón «Publicando…» ${ms(d.renglonPublicando)}, «Publicado» ${ms(d.publicado)}; trabajo terminado en el respaldo a los ${ms(resultado.publicar.trabajoTerminadoEn)}; ${resultado.publicar.refrescos} refrescos; mismo nodo y mismo sitio: ${resultado.publicar.mismoTop ? "sí" : "no"}`);
   } finally {
     lote = null;
     await ctx.close();
@@ -552,6 +593,8 @@ if (resultado.publicar) {
     previo = clave;
     lineas.push(`| ${ms(c.t)} | ${c.hoja ? "abierta" : "—"} | ${c.scrollY} | ${c.fila} | ${c.aLaVista ? "sí" : "no"} | ${c.mismoNodo === null ? "—" : c.mismoNodo ? "sí" : "no"} | ${c.grupo ?? "—"} | ${c.alto} | ${(c.texto ?? "").replace(/\|/g, "/")} |`);
   }
+  const d = r.alMilisegundo ?? {};
+  lineas.push("", "Al milisegundo (desde el toque, en la página):", "", `- primera señal («Publicando…» en el botón de la hoja o en el renglón): ${ms(d.senal)}`, `- la hoja se cierra: ${ms(d.hojaCerrada)}`, `- el renglón dice «Publicando…»: ${ms(d.renglonPublicando)}`, `- el renglón dice «Publicado» (o pasó a «Ya en Instagram»): ${ms(d.publicado)}`, `- el trabajo terminó en el respaldo (${r.trabajoEstado ?? "—"}): ${ms(r.trabajoTerminadoEn)}${r.trabajoTerminadoEn !== null && d.publicado ? ` → «Publicado» llega ${ms(d.publicado - r.trabajoTerminadoEn)} después` : ""}`, `- peticiones de refresco (RSC) tras el toque: ${r.refrescos}`, `- el renglón, en el mismo nodo, el mismo sitio y el mismo desplazamiento en todos los cuadros: ${r.mismoTop ? "sí" : "no"}`);
   lineas.push("", "Peticiones de React tras el toque:", "", ...r.peticiones.map((p) => `- ${ms(p.t)} → ${ms(p.fin)} · ${p.tipo} · ${p.url}`));
 }
 fs.writeFileSync(path.join(SALIDA, "tiempos.md"), lineas.join("\n") + "\n");

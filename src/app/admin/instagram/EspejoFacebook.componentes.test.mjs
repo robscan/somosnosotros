@@ -1,16 +1,18 @@
 /**
- * Administración › Instagram con el espejo a Facebook (OL-461, bitácora 493) y la publicación en segundo plano (OL-465, bitácora 497): los
- * componentes de verdad (`ListaInstagram` con su `HojaInstagram`) con eventos inventados, las acciones del servidor de prueba (una API falsa con su
- * cola en `window.qa.cola`) y un latido simulado (`window.qa.latido()`: el trabajador publica lo que está en la cola). La lista se vuelve a pedir
- * con `router.refresh()` como en la app (el doble vuelve a armar sus renglones con lo que diga la cola). Toques reales: el ratón en coordenadas.
+ * Administración › Instagram con el espejo a Facebook (OL-461, bitácora 493), la publicación en segundo plano (OL-465, bitácora 497) y publicar sin
+ * recargar (OL-506, bitácora 539): los componentes de verdad (`ListaInstagram` con su `HojaInstagram`) con eventos inventados, las acciones del
+ * servidor de prueba (una API falsa con su cola en `window.qa.cola`) y un latido simulado (`window.qa.latido()`: el trabajador publica lo que está
+ * en la cola). La lista se arma como en el servidor: al cargar y con `router.refresh()` (que cuenta `qa.refrescos`); `qa.salir()` y `qa.atras()`
+ * desmontan la pantalla y la vuelven a montar con la misma lista (Atrás dentro del minuto). Toques reales: el ratón en coordenadas.
  *   · la casilla «También en Facebook» (marcada, se recuerda en la sesión);
- *   · «Publicar» → la hoja se cierra → el renglón dice «Publicando…» → latido → «Ya en Instagram» con «Facebook: publicado»;
- *   · la hoja abierta mientras va dice cómo va y lo pregunta cada 5 s (reloj de Playwright; OL-488, antes 20 s) hasta «publicado» con sus «Ver»;
- *   · OL-488 (añadido del founder): «Publicando…» lleva su cargador; la lista pregunta cada 5 s por lo que va en camino y se refresca en cuanto
- *     termina o pasa a otro intento («Reintentando…»);
+ *   · OL-506: «Publicar» → la hoja se cierra y el renglón dice «Publicando…» en el mismo pintado → latido → a los 2 s «Publicado · hace un
+ *     momento» con «Ver» y «Facebook: publicado», en el mismo nodo, en el mismo sitio y en el mismo grupo, sin volver a pedir la pantalla;
+ *   · la hoja abierta mientras va dice cómo va y lo pregunta cada 2 s (reloj de Playwright) hasta «publicado» con sus «Ver»;
+ *   · la lista pregunta cada 2 s solo mientras algo va en camino; «Reintentando…» llega solo; al terminar no pregunta más;
  *   · sin duplicados: «Ya se publicó hace 3 min» / «Se está publicando» piden confirmar; Facebook desde la lista, igual;
  *   · Facebook que falla después de Instagram: «Facebook: falta permiso» con «Reintentar en Facebook», que va a la cola;
- *   · lo que no se pudo publicar lo dicen el renglón y la hoja.
+ *   · lo que no se pudo publicar lo dice el renglón en rojo y la hoja;
+ *   · al volver a la app pregunta en seguida y solo pide la pantalla con la lista de más de 5 min y nada en camino; Atrás dentro del minuto.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -31,7 +33,7 @@ const MASTER = "33333333-3333-4333-8333-333333333333";
 
 const acciones = `
   const apuntar = (nombre, args) => window.qa.acciones.push([nombre, ...args]);
-  const comoEstado = (t) => t && { id: t.id, red: t.red, formato: t.formato, estado: t.estado, conFacebook: t.red === 'instagram' && !!t.pedido.facebook, resultado: t.resultado, error: t.error, reintentando: (t.estado === 'en_cola' || t.estado === 'publicando') && (t.fallos ?? 0) >= 1 };
+  const comoEstado = (t) => t && JSON.parse(JSON.stringify({ id: t.id, red: t.red, formato: t.formato, estado: t.estado, conFacebook: t.red === 'instagram' && !!t.pedido.facebook, resultado: t.resultado, error: t.error, reintentando: (t.estado === 'en_cola' || t.estado === 'publicando') && (t.fallos ?? 0) >= 1 }));
   const ultimo = (id) => [...window.qa.cola].reverse().find((t) => t.evento === id) ?? null;
   // Como redes_reciente: en camino, o publicado hace poco (lo que diga qa.recientes).
   const reciente = (id, red, formato) => {
@@ -49,7 +51,7 @@ const acciones = `
   }
   export async function estadosTrabajos(ids) {
     apuntar('estadosTrabajos', [ids]);
-    return Object.fromEntries(window.qa.cola.filter((t) => ids.includes(t.id)).map((t) => [t.id, { estado: t.estado, reintentando: comoEstado(t).reintentando }]));
+    return Object.fromEntries(window.qa.cola.filter((t) => ids.includes(t.id)).map((t) => [t.id, comoEstado(t)]));
   }
   export async function estadoTrabajo(id) {
     apuntar('estadoTrabajo', [id]);
@@ -102,7 +104,8 @@ before(async () => {
       import '../../globals.css';
       const consulta = new URLSearchParams(location.search);
       window.qa = { acciones: [], refrescos: 0, cola: [], recientes: {}, fallaFacebook: consulta.has('falla'), fallaInstagram: null,
-        ig: { '${SUSURROS}': 'Historia · Ayer, 7:40 pm', '${MASTER}': 'Publicación · Ayer, 6:00 pm' }, fb: { '${MASTER}': 'publicada' } };
+        ig: { '${SUSURROS}': 'Historia · Ayer, 7:40 pm', '${MASTER}': 'Publicación · Ayer, 6:00 pm' }, fb: { '${MASTER}': 'publicada' },
+        igEn: { '${SUSURROS}': '2026-10-07T01:40:00.000Z', '${MASTER}': '2026-10-07T00:00:00.000Z' }, generada: null };
       if (consulta.has('fb-reciente')) window.qa.recientes['facebook:${SUSURROS}:4x5'] = { estado: 'publicado', minutos: 2 };
       // El latido simulado: el trabajador publica todo lo que está en la cola (o falla como diga qa).
       window.qa.latido = () => {
@@ -115,6 +118,7 @@ before(async () => {
           const fb = q.fallaFacebook ? { ok: false, error: 'permiso', mensaje: 'Hay que volver a conectar la página de Facebook con el permiso para publicar. En Instagram sí quedó publicado.' } : { ok: true, permalink: 'https://www.facebook.com/1/posts/2' };
           if (t.red === 'instagram') {
             q.ig[t.evento] = (t.formato === '9x16' ? 'Historia' : 'Publicación') + ' · Hoy, 10:00 am';
+            q.igEn[t.evento] = new Date(Date.now() + 1000).toISOString();
             q.recientes['instagram:' + t.evento + ':' + t.formato] = { estado: 'publicado', minutos: 3 };
             Object.assign(t, { estado: 'publicado', resultado: { instagram: { permalink: 'https://www.instagram.com/p/DEMO/', imagenes: 1, sinEtiquetas: false, formato: t.formato }, facebook: t.pedido.facebook ? fb : null } });
             if (t.pedido.facebook) q.fb[t.evento] = fb.ok ? 'publicada' : 'error';
@@ -133,17 +137,22 @@ before(async () => {
           const publicado = !!q.ig[id];
           const linea = (t && (enCamino(t) || (t.estado === 'fallido' && !publicado)) ? lineaDeTrabajo(t) : null) ?? (publicado ? q.ig[id] : 'Destacado');
           const facebook = !publicado ? null : cola.facebook.has(id) ? { estado: 'publicando' } : q.fb[id] === 'publicada' ? { estado: 'publicada' } : q.fb[id] === 'error' ? { estado: 'error', error: 'permiso' } : { estado: 'nada' };
-          return { id, href: '/eventos/' + id, titulo, foto: null, cuando: 'Sábado 10 de octubre · 6:00 pm', donde: 'Teatro de la Paz', linea, publicado, facebook, publicando: enCamino(t) || (publicado && cola.facebook.has(id)), enCamino: cola.vivos.get(id) ?? [] };
+          return { id, href: '/eventos/' + id, titulo, foto: null, cuando: 'Sábado 10 de octubre · 6:00 pm', donde: 'Teatro de la Paz', linea, publicado, publicadoEn: q.igEn[id] ?? null, facebook, publicando: enCamino(t) || (publicado && cola.facebook.has(id)), enCamino: cola.vivos.get(id) ?? [], fallido: t?.estado === 'fallido' && !publicado };
         };
         const todas = [s('${FELEAL}', 'Feleal en el Museo'), s('${SUSURROS}', 'Susurros del agua'), s('${MASTER}', 'Master Class de danzón')];
         return { para: todas.filter((x) => !x.publicado), ya: todas.filter((x) => x.publicado) };
       };
+      // Como el servidor: la lista se arma al pedir la pantalla (al cargar y con \`router.refresh()\`), no en cada pintado. \`qa.salir()\` y
+      // \`qa.atras()\`: la pantalla se desmonta y vuelve con la misma lista (Atrás dentro del minuto: la caché de Next).
+      const pedir = () => ({ ...filas(), generada: new Date().toISOString() });
       function App() {
-        const [, setVuelta] = React.useState(0);
-        window.qa.alRefrescar = () => setVuelta((n) => n + 1);
-        const { para, ya } = filas();
+        const [lista, setLista] = React.useState(pedir);
+        const [montada, setMontada] = React.useState(true);
+        window.qa.alRefrescar = () => setLista(pedir());
+        window.qa.salir = () => setMontada(false);
+        window.qa.atras = () => setMontada(true);
         return <main className={plantilla.paginaContenido + ' ' + admin.listado}><h1>Instagram</h1>
-          <ListaInstagram ciudad={{ slug: 'san-luis-potosi', nombre: 'San Luis Potosí' }} ciudades={[]} para={para} ya={ya} abrir={null} conteo="3 eventos" vacio={null} /></main>;
+          {montada && <ListaInstagram ciudad={{ slug: 'san-luis-potosi', nombre: 'San Luis Potosí' }} ciudades={[]} para={lista.para} ya={lista.ya} abrir={null} conteo="3 eventos" vacio={null} generada={lista.generada} />}</main>;
       }
       createRoot(document.getElementById('root')).render(<App />);
     `,
@@ -201,7 +210,7 @@ const qa = (p) => p.evaluate(() => window.qa);
 const texto = (l) => l.innerText().then((x) => x.replace(/\s+/g, " ").trim());
 const renglon = (p, titulo) => p.locator("main li", { hasText: titulo });
 async function hojaDe(p, titulo = "Feleal en el Museo") {
-  await tocar(p, p.getByRole("link", { name: new RegExp(titulo) }));
+  await tocar(p, p.getByRole("link", { name: new RegExp(`^${titulo}`) }));
   const hoja = p.getByRole("dialog", { name: "Publicar en Instagram" });
   await hoja.getByRole("button", { name: /^(Publicar|Se está|Ya se publicó)/ }).waitFor();
   return hoja;
@@ -231,10 +240,35 @@ test("la casilla «También en Facebook» viene marcada, se desmarca de un toque
   assert.equal(publicar[1].facebook, false, "sin la casilla no se pide Facebook");
 });
 
-test("OL-465: «Publicar» guarda el trabajo y la hoja se cierra; el renglón dice «Publicando…»; tras el latido, «Ya en Instagram» con «Facebook: publicado»", async (t) => {
-  const p = await abrir(t);
+/** El renglón de un evento, con su marca: lo que el sondeo cambia es la última línea de ese mismo nodo, en el mismo sitio. */
+async function marcar(p, titulo) {
+  return p.evaluate((t) => {
+    const li = [...document.querySelectorAll("main li")].find((x) => x.textContent.includes(t));
+    li.__marca = "original";
+    return { top: Math.round(li.getBoundingClientRect().top), scrollY: Math.round(window.scrollY) };
+  }, titulo);
+}
+const dondeEsta = (p, titulo) =>
+  p.evaluate((t) => {
+    const li = [...document.querySelectorAll("main li")].find((x) => x.textContent.includes(t));
+    return { top: Math.round(li.getBoundingClientRect().top), scrollY: Math.round(window.scrollY), mismo: li.__marca === "original", grupo: li.closest("section")?.querySelector("h2")?.textContent ?? null };
+  }, titulo);
+const linea = (l) => l.locator('[role="status"][data-estado]');
+
+test("OL-506: «Publicar» cierra la hoja y el renglón dice «Publicando…» en el mismo pintado; a los 2 s, «Publicado · hace un momento» con «Ver», en su sitio y sin recargar", async (t) => {
+  const p = await abrir(t, "", { reloj: true });
   const hoja = await hojaDe(p);
   assert.match(await texto(hoja), /Se publica en @smsnstrsapp y en su página de Facebook\. Te avisamos en el teléfono cuando termine\./);
+  const antes = await marcar(p, "Feleal en el Museo");
+  // La hoja se va y el renglón ya dice «Publicando…»: nunca uno sin el otro.
+  await p.evaluate(() => {
+    window.__sinSenal = 0;
+    new MutationObserver(() => {
+      const hoja = document.querySelector('[role="dialog"]');
+      const li = [...document.querySelectorAll("main li")].find((x) => x.textContent.includes("Feleal en el Museo"));
+      if (!hoja && !/Publicando…/.test(li?.textContent ?? "")) window.__sinSenal++;
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
   await hoja.waitFor({ state: "detached" });
   let q = await qa(p);
@@ -243,35 +277,47 @@ test("OL-465: «Publicar» guarda el trabajo y la hoja se cierra; el renglón di
   assert.equal(publicar[1].eventoId, FELEAL);
   assert.equal(publicar[1].repetir, false);
   assert.deepEqual(q.cola.map((x) => [x.evento, x.red, x.estado]), [[FELEAL, "instagram", "en_cola"]]);
-  assert.equal(q.refrescos, 1, "la lista se vuelve a pedir");
+  assert.equal(q.refrescos, 0, "la lista no se vuelve a pedir");
+  assert.equal(await p.evaluate(() => window.__sinSenal), 0, "ningún pintado con la hoja cerrada y sin «Publicando…»");
   const feleal = renglon(p, "Feleal en el Museo");
-  assert.match(await texto(feleal), /Publicando…/);
-  assert.match(await texto(p.locator("main")), /Para publicar/);
-  // El trabajador publica (latido) y la lista se entera al volver a la app.
+  assert.equal(await texto(linea(feleal)), "Publicando…");
+  assert.equal(await linea(feleal).getAttribute("data-estado"), "en-camino");
+  assert.equal(await feleal.locator('[class*="anillo"]').count(), 1, "con su anillo");
+  // El trabajador publica (latido); a los 2 s la lista pregunta y el renglón cambia solo.
   await latido(p);
-  await volverALaApp(p);
-  await feleal.getByText("Facebook: publicado").waitFor();
-  assert.match(await texto(feleal), /Publicación · Hoy, 10:00 am Facebook: publicado/);
-  assert.doesNotMatch(await texto(feleal), /Publicando…/);
+  await p.clock.runFor(2_100);
+  await linea(feleal).getByText("Publicado · hace un momento").waitFor();
+  assert.equal(await linea(feleal).getAttribute("data-estado"), "hecho");
+  assert.equal(await linea(feleal).locator("svg").count(), 1, "con su palomita");
+  assert.match(await texto(feleal), /Publicado · hace un momento Facebook: publicado$/);
+  const ver = feleal.getByRole("link", { name: "Ver en Instagram: Feleal en el Museo" });
+  assert.equal(await ver.getAttribute("href"), "https://www.instagram.com/p/DEMO/");
+  assert.equal(await ver.getAttribute("target"), "_blank");
+  assert.equal(await ver.getAttribute("rel"), "noopener noreferrer");
+  const caja = await ver.boundingBox();
+  assert.ok(caja.width >= 44 && caja.height >= 44, `«Ver» mide ${caja.width}×${caja.height}`);
+  assert.equal(await feleal.locator("a a").count(), 0, "«Ver» es hermano del enlace, nunca dentro de él");
+  q = await qa(p);
+  assert.equal(q.refrescos, 0, "sin recargar al terminar");
+  const despues = await dondeEsta(p, "Feleal en el Museo");
+  assert.deepEqual(despues, { top: antes.top, scrollY: antes.scrollY, mismo: true, grupo: "Para publicar" }, "mismo nodo, mismo sitio, mismo grupo");
   // La hoja, otra vez: lo que pasó con sus «Ver»; el botón dice que ya se publicó y pide confirmar antes de repetir.
   const otra = await hojaDe(p);
   assert.equal(await texto(otra.getByRole("status").first()), "Instagram: publicado Ver Facebook: publicado Ver");
   assert.equal(await otra.getByRole("link", { name: "Ver en Instagram" }).getAttribute("href"), "https://www.instagram.com/p/DEMO/");
   assert.equal(await otra.getByRole("link", { name: "Ver en Facebook" }).getAttribute("href"), "https://www.facebook.com/1/posts/2");
-  const boton = otra.getByRole("button", { name: "Ya se publicó hace 3 min" });
-  await tocar(p, boton);
+  await tocar(p, otra.getByRole("button", { name: "Ya se publicó hace 3 min" }));
   await otra.getByText("Este evento se publicó hace 3 min. ¿Publicarlo otra vez?").waitFor();
-  q = await qa(p);
-  assert.equal(q.acciones.filter((a) => a[0] === "publicarEnInstagram").length, 1, "el primer toque solo pregunta");
+  assert.equal((await qa(p)).acciones.filter((a) => a[0] === "publicarEnInstagram").length, 1, "el primer toque solo pregunta");
   const si = otra.getByRole("button", { name: "Sí, publicar otra vez" });
-  const caja = await si.boundingBox();
-  assert.ok(caja.height >= 44, `el botón mide ${caja.height}`);
+  assert.ok((await si.boundingBox()).height >= 44);
   await tocar(p, si);
   await otra.waitFor({ state: "detached" });
   q = await qa(p);
-  const repetido = q.acciones.filter((a) => a[0] === "publicarEnInstagram")[1];
-  assert.equal(repetido[1].repetir, true);
+  assert.equal(q.acciones.filter((a) => a[0] === "publicarEnInstagram")[1][1].repetir, true);
   assert.equal(q.cola.length, 2);
+  assert.equal(await texto(linea(feleal)), "Publicando…", "lo nuevo en camino manda en la línea");
+  assert.equal(await feleal.getByRole("link", { name: /^Ver en Instagram/ }).count(), 0);
 });
 
 test("OL-465: «Mejor no» deshace la pregunta; un segundo toque mientras se publica también pregunta («Se está publicando»)", async (t) => {
@@ -289,7 +335,7 @@ test("OL-465: «Mejor no» deshace la pregunta; un segundo toque mientras se pub
   assert.equal((await qa(p)).cola.length, 1, "no se guardó otro");
 });
 
-test("OL-465 + OL-488: con la hoja abierta mientras se publica, se pregunta cada 5 s y llega «publicado» con sus «Ver»", async (t) => {
+test("OL-506: con la hoja abierta mientras se publica, se pregunta cada 2 s, llega «publicado» con sus «Ver» y el renglón ya lo dice al cerrarla", async (t) => {
   const p = await abrir(t, "", { reloj: true });
   let hoja = await hojaDe(p);
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
@@ -298,44 +344,45 @@ test("OL-465 + OL-488: con la hoja abierta mientras se publica, se pregunta cada
   await hoja.getByText("Instagram: publicando…").waitFor();
   assert.equal(await hoja.locator('[role=status] [class*="anillo"]').count(), 1, "«Instagram: publicando…» lleva su cargador");
   await latido(p);
-  await p.clock.runFor(4_000);
-  assert.equal((await qa(p)).acciones.filter((a) => a[0] === "estadoTrabajo").length, 0, "antes de 5 s no pregunta");
   await p.clock.runFor(1_500);
+  assert.equal((await qa(p)).acciones.filter((a) => a[0] === "estadoTrabajo").length, 0, "antes de 2 s no pregunta");
+  await p.clock.runFor(600);
   await hoja.getByText("Instagram: publicado").waitFor();
   assert.equal(await texto(hoja.getByRole("status").first()), "Instagram: publicado Ver Facebook: publicado Ver");
-  assert.ok((await qa(p)).refrescos >= 2, "al terminar, la lista se refresca");
-  // La lista también se refresca sola mientras algo va en camino.
+  assert.equal((await qa(p)).refrescos, 0, "al terminar, nada se vuelve a pedir");
   await p.keyboard.press("Escape");
   await hoja.waitFor({ state: "detached" });
-  assert.match(await texto(renglon(p, "Feleal en el Museo")), /Facebook: publicado/);
+  assert.match(await texto(renglon(p, "Feleal en el Museo")), /Publicado · hace un momento Facebook: publicado/);
 });
 
-test("OL-465 + OL-488: la lista pregunta cada 5 s mientras haya algo «Publicando…» y se refresca sola en cuanto termina", async (t) => {
+test("OL-506: la lista pregunta cada 2 s solo mientras haya algo en camino; al terminar no se recarga ni pregunta más", async (t) => {
   const p = await abrir(t, "", { reloj: true });
+  const preguntas = async () => (await qa(p)).acciones.filter((a) => a[0] === "estadosTrabajos").length;
+  await p.clock.runFor(10_000);
+  assert.equal(await preguntas(), 0, "sin nada en camino no pregunta");
   const hoja = await hojaDe(p);
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
   await hoja.waitFor({ state: "detached" });
   const feleal = renglon(p, "Feleal en el Museo");
   await feleal.getByText("Publicando…").waitFor();
-  assert.equal(await feleal.locator('[class*="anillo"]').count(), 1, "el renglón «Publicando…» lleva su cargador");
-  const antes = (await qa(p)).refrescos;
-  // Mientras sigue en camino, pregunta pero no refresca.
-  await p.clock.runFor(5_500);
-  assert.equal((await qa(p)).acciones.filter((a) => a[0] === "estadosTrabajos").length, 1, "a los 5 s pregunta por el trabajo");
-  assert.equal((await qa(p)).refrescos, antes, "nada cambió: no refresca");
+  await p.clock.runFor(1_900);
+  assert.equal(await preguntas(), 0);
+  await p.clock.runFor(200);
+  assert.equal(await preguntas(), 1, "a los 2 s pregunta por el trabajo");
+  await p.clock.runFor(2_000);
+  assert.equal(await preguntas(), 2, "y otra vez a los 4 s");
+  assert.match(await texto(linea(feleal)), /^Publicando…$/, "nada cambió: la línea sigue igual");
   await latido(p);
-  await p.clock.runFor(5_500);
-  await feleal.getByText("Facebook: publicado").waitFor();
-  assert.equal((await qa(p)).refrescos, antes + 1, "terminó: se refresca sola, sin recargar");
+  await p.clock.runFor(2_000);
+  await feleal.getByText("Publicado · hace un momento").waitFor();
   assert.equal(await feleal.locator('[class*="anillo"]').count(), 0, "ya sin cargador");
-  // Ya sin nada en camino, no pregunta ni se refresca más.
-  const preguntas = (await qa(p)).acciones.filter((a) => a[0] === "estadosTrabajos").length;
+  const hechas = await preguntas();
   await p.clock.runFor(60_000);
-  assert.equal((await qa(p)).refrescos, antes + 1);
-  assert.equal((await qa(p)).acciones.filter((a) => a[0] === "estadosTrabajos").length, preguntas);
+  assert.equal(await preguntas(), hechas, "ya sin nada en camino, no pregunta más");
+  assert.equal((await qa(p)).refrescos, 0);
 });
 
-test("OL-488: si la cola va en otro intento, el renglón pasa solo a «Reintentando…» con su cargador, y luego a publicado", async (t) => {
+test("OL-488 + OL-506: si la cola va en otro intento, el renglón pasa solo a «Reintentando…» con su cargador, y luego a publicado", async (t) => {
   const p = await abrir(t, "", { reloj: true });
   const hoja = await hojaDe(p);
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
@@ -344,23 +391,26 @@ test("OL-488: si la cola va en otro intento, el renglón pasa solo a «Reintenta
   await feleal.getByText("Publicando…").waitFor();
   // El primer intento falla con algo pasajero: la cola lo devuelve con un fallo anotado (como `devolverACola`).
   await p.evaluate(() => Object.assign(window.qa.cola[0], { fallos: 1, intentos: 1 }));
-  await p.clock.runFor(5_500);
+  await p.clock.runFor(2_100);
   await feleal.getByText("Reintentando…").waitFor();
+  assert.equal(await linea(feleal).getAttribute("data-estado"), "reintentando");
   assert.equal(await feleal.locator('[class*="anillo"]').count(), 1);
   await latido(p);
-  await p.clock.runFor(5_500);
-  await feleal.getByText("Facebook: publicado").waitFor();
+  await p.clock.runFor(2_100);
+  await feleal.getByText("Publicado · hace un momento").waitFor();
+  assert.equal((await qa(p)).refrescos, 0);
 });
 
-test("si Facebook falla después de Instagram, la hoja lo dice en llano y «Reintentar en Facebook» va a la cola con el mismo texto", async (t) => {
-  const p = await abrir(t, "?falla");
+test("si Facebook falla después de Instagram, el renglón y la hoja lo dicen; «Reintentar en Facebook» va a la cola y su línea cambia sola", async (t) => {
+  const p = await abrir(t, "?falla", { reloj: true });
   let hoja = await hojaDe(p);
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
   await hoja.waitFor({ state: "detached" });
   await latido(p);
-  await volverALaApp(p);
+  await p.clock.runFor(2_100);
   const feleal = renglon(p, "Feleal en el Museo");
   await feleal.getByText("Facebook: falta permiso").waitFor();
+  assert.match(await texto(feleal), /Publicado · hace un momento Facebook: falta permiso$/);
   hoja = await hojaDe(p);
   const estado = hoja.getByRole("status").first();
   assert.match(await texto(estado), /^Instagram: publicado Ver Facebook: falta permiso Hay que volver a conectar la página de Facebook.*En Instagram sí quedó publicado\. Reintentar en Facebook$/);
@@ -372,31 +422,45 @@ test("si Facebook falla después de Instagram, la hoja lo dice en llano y «Rein
   assert.equal(r[1], FELEAL);
   assert.match(r[2], /^Feleal en el Museo\n.*somosnosotrxs\.org \(enlace en la bio\)/s, "el texto que llevó Instagram");
   assert.equal(r[3], false);
-  assert.match(await texto(feleal), /Facebook: publicando…/);
+  assert.match(await texto(feleal), /Publicado · hace un momento Facebook: publicando…$/);
   await latido(p);
-  await volverALaApp(p);
+  await p.clock.runFor(2_100);
   await feleal.getByText("Facebook: publicado").waitFor();
+  assert.equal((await qa(p)).refrescos, 0);
 });
 
-test("lo que no se pudo publicar lo dicen el renglón y la hoja; publicar otra vez no pide confirmar", async (t) => {
-  const p = await abrir(t);
+test("OL-506: lo que no se pudo publicar lo dice el renglón en rojo, en su sitio; la hoja lo explica y publicar otra vez no pide confirmar", async (t) => {
+  const p = await abrir(t, "", { reloj: true });
   await p.evaluate(() => (window.qa.fallaInstagram = "imagen"));
   let hoja = await hojaDe(p);
+  const antes = await marcar(p, "Feleal en el Museo");
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
   await hoja.waitFor({ state: "detached" });
   await latido(p);
-  await volverALaApp(p);
+  await p.clock.runFor(2_100);
   const feleal = renglon(p, "Feleal en el Museo");
   await feleal.getByText("No se publicó: Instagram no aceptó la imagen").waitFor();
+  assert.equal(await linea(feleal).getAttribute("data-estado"), "fallido");
+  assert.equal(await feleal.getByRole("link", { name: /^Ver en Instagram/ }).count(), 0, "sin «Ver» ni botón nuevo");
+  assert.equal(await feleal.getByRole("button").count(), 0);
+  // «Reducir movimiento» deja una transición de 0,01 ms que el reloj falso no deja terminar: se termina antes de leer el color.
+  const color = await linea(feleal).evaluate((e) => {
+    for (const a of e.getAnimations()) a.finish();
+    return getComputedStyle(e).color;
+  });
+  const rojo = await p.evaluate(() => { const x = document.createElement("i"); x.style.color = "var(--error)"; document.body.append(x); const c = getComputedStyle(x).color; x.remove(); return c; });
+  assert.equal(color, rojo, "en el rojo de la app");
+  assert.deepEqual(await dondeEsta(p, "Feleal en el Museo"), { top: antes.top, scrollY: antes.scrollY, mismo: true, grupo: "Para publicar" });
   hoja = await hojaDe(p);
   assert.match(await texto(hoja.getByRole("alert")), /Instagram no aceptó la imagen\./);
   await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
   await hoja.waitFor({ state: "detached" });
   assert.equal((await qa(p)).cola.length, 2);
+  assert.equal(await texto(linea(feleal)), "Publicando…");
 });
 
-test("«Ya en Instagram» dice cómo va en Facebook y lo que falta lleva «Publicar en Facebook»: va a la cola y el renglón dice «Facebook: publicando…»", async (t) => {
-  const p = await abrir(t);
+test("«Ya en Instagram» dice cómo va en Facebook y lo que falta lleva «Publicar en Facebook»: va a la cola y la línea cambia sola, sin recargar", async (t) => {
+  const p = await abrir(t, "", { reloj: true });
   const susurros = renglon(p, "Susurros del agua");
   const master = renglon(p, "Master Class de danzón");
   assert.match(await texto(susurros), /Historia · Ayer, 7:40 pm Facebook: sin publicar/);
@@ -410,14 +474,16 @@ test("«Ya en Instagram» dice cómo va en Facebook y lo que falta lleva «Publi
   await susurros.getByText("Facebook: publicando…").waitFor();
   let q = await qa(p);
   assert.deepEqual(q.acciones.filter((a) => a[0] === "publicarEnFacebook"), [["publicarEnFacebook", SUSURROS, null, false]]);
-  assert.equal(q.refrescos, 1);
+  assert.equal(q.refrescos, 0, "la línea de Facebook la pone el estado, sin volver a pedir la pantalla");
   assert.equal(await boton.count(), 0, "en la cola, el botón se va");
   assert.equal(q.acciones.filter((a) => a[0] === "prepararInstagram").length, 0, "el botón no abre la hoja");
   await latido(p);
-  await volverALaApp(p);
+  await p.clock.runFor(2_100);
   await susurros.getByText("Facebook: publicado").waitFor();
   q = await qa(p);
   assert.equal(q.cola[0].estado, "publicado");
+  assert.equal(q.refrescos, 0);
+  assert.match(await texto(susurros), /Historia · Ayer, 7:40 pm Facebook: publicado$/, "la línea de Instagram no cambia");
 });
 
 test("OL-465: si se publicó en Facebook hace poco, el botón de la lista pregunta antes de repetir", async (t) => {
@@ -431,4 +497,58 @@ test("OL-465: si se publicó en Facebook hace poco, el botón de la lista pregun
   const q = await qa(p);
   assert.deepEqual(q.acciones.filter((a) => a[0] === "publicarEnFacebook").map((a) => a[3]), [false, true]);
   assert.equal(q.cola.length, 1);
+});
+
+test("OL-506: al volver a la app pregunta en seguida por lo que va en camino; solo vuelve a pedir la pantalla sin nada en camino y con la lista de más de 5 min", async (t) => {
+  const p = await abrir(t, "", { reloj: true });
+  const hoja = await hojaDe(p);
+  await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
+  await hoja.waitFor({ state: "detached" });
+  const preguntas = async () => (await qa(p)).acciones.filter((a) => a[0] === "estadosTrabajos").length;
+  await latido(p);
+  await volverALaApp(p);
+  await renglon(p, "Feleal en el Museo").getByText("Publicado · hace un momento").waitFor();
+  assert.equal(await preguntas(), 1, "preguntó al volver, sin esperar los 2 s");
+  assert.equal((await qa(p)).refrescos, 0, "la lista es nueva: no se vuelve a pedir");
+  await p.clock.runFor(4 * 60_000);
+  await volverALaApp(p);
+  assert.equal((await qa(p)).refrescos, 0, "con 4 min tampoco");
+  await p.clock.runFor(61_000);
+  await volverALaApp(p);
+  assert.equal((await qa(p)).refrescos, 1, "con más de 5 min y nada en camino, sí");
+  // La lista nueva ya lo sabe: el evento pasó a «Ya en Instagram», con las palabras de siempre.
+  const feleal = renglon(p, "Feleal en el Museo");
+  await feleal.getByText("Publicación · Hoy, 10:00 am").waitFor();
+  assert.equal((await dondeEsta(p, "Feleal en el Museo")).grupo, "Ya en Instagram· 3");
+  assert.equal(await linea(feleal).count(), 0, "sin línea de estado: manda lo que dice el servidor");
+});
+
+test("OL-506: Atrás dentro del minuto: la lista de la caché llega con la línea vieja y la tarjeta queda como se dejó; también al recargar la app", async (t) => {
+  const p = await abrir(t, "", { reloj: true });
+  const hoja = await hojaDe(p);
+  await tocar(p, hoja.getByRole("button", { name: "Publicar", exact: true }));
+  await hoja.waitFor({ state: "detached" });
+  await latido(p);
+  await p.clock.runFor(2_100);
+  const feleal = renglon(p, "Feleal en el Museo");
+  await feleal.getByText("Publicado · hace un momento").waitFor();
+  // Sale de la pantalla y vuelve con Atrás: la misma lista de antes (el evento en «Para publicar», sin «Publicando…»).
+  await p.evaluate(() => window.qa.salir());
+  await p.getByText("Para publicar").waitFor({ state: "detached" });
+  await p.evaluate(() => window.qa.atras());
+  await feleal.getByText("Publicado · hace un momento").waitFor();
+  assert.equal(await feleal.getByRole("link", { name: "Ver en Instagram: Feleal en el Museo" }).getAttribute("href"), "https://www.instagram.com/p/DEMO/");
+  assert.equal((await dondeEsta(p, "Feleal en el Museo")).grupo, "Para publicar");
+  // Con algo en camino, al volver pregunta una vez en seguida.
+  await tocar(p, renglon(p, "Susurros del agua").getByRole("button", { name: /^Publicar en Facebook/ }));
+  await renglon(p, "Susurros del agua").getByText("Facebook: publicando…").waitFor();
+  await p.evaluate(() => window.qa.salir());
+  await p.evaluate(() => window.qa.latido());
+  const antes = (await qa(p)).acciones.filter((a) => a[0] === "estadosTrabajos").length;
+  await p.evaluate(() => window.qa.atras());
+  await renglon(p, "Susurros del agua").getByText("Facebook: publicado").waitFor();
+  assert.equal((await qa(p)).acciones.filter((a) => a[0] === "estadosTrabajos").length, antes + 1, "una pregunta al volver");
+  assert.equal((await qa(p)).refrescos, 0);
+  // La app se recarga (la sesión lo recuerda; el doble arma la lista desde cero, sin la cola): la tarjeta sigue diciendo lo mismo.
+  await p.evaluate(() => sessionStorage.getItem("somosnosotros:instagram:trabajos")).then((x) => assert.ok(x, "lo recuerda la sesión"));
 });

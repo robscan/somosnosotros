@@ -138,6 +138,15 @@ La entrada de las fichas y el crédito en la hoja del día (OL-504, bitácora 53
 con el texto abierto y la ficha de lugar a 390, 768, 1048 y 1280; con las animaciones a 1/50 por CDP mide el mayor ancho de la página mientras la
 ficha entra y si se puede correr de lado (`medir` no lo ve: mide con movimiento reducido). Respaldo en el puerto 8897.
 
+Publicar sin recargar (OL-506, bitácora 539): `capturar-publicar-sin-recargar.mjs <árbol> <salida>` saca los estados del prototipo firmado (bitácora
+535) en la app de verdad, sobre «Delirium Pollum» a 300 px del borde: antes, la hoja, «Publicando…» a 0,1 s, «Reintentando…» (`/__falla-instagram?clave=imagen`),
+publicado con «Ver», con espejo a Facebook (falta permiso y «Reintentar en Facebook»), no se publicó (`clave=cupo`), Atrás antes del minuto (la
+lista de la caché del enrutador), la lista pedida otra vez, la letra al doble (`Page.setFontSizes`) y «reducir movimiento». Cada recorrido levanta
+el respaldo de nuevo (la cola vacía) y comprueba que el renglón sea el mismo nodo, en el mismo `top`, con el mismo desplazamiento y en el mismo grupo,
+y que la lista no se vuelva a pedir. La parte D de `medir-tiempos.mjs` mide además, al milisegundo, la primera señal, el cierre de la hoja,
+«Publicando…» y «Publicado» en el renglón, cuándo terminó el trabajo en el respaldo (le pregunta cada 100 ms) y cuántos refrescos hubo. Respaldo en
+el puerto 8889.
+
 ## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes
