@@ -114,6 +114,11 @@ describe("«Esta semana»", () => {
     expect(tituloSemana("2026-10-16", "2026-10-18", ZONA, AHORA)).toBe("Del viernes 16 al domingo 18 de octubre");
     expect(tituloSemana("2026-10-30", "2026-11-01", ZONA, AHORA)).toBe("Del viernes 30 de octubre al domingo 1 de noviembre");
   });
+
+  it("si todos caen el mismo día, el título es ese día solo (OL-508)", () => {
+    expect(tituloSemana("2026-11-06", "2026-11-06", ZONA, AHORA)).toBe("Viernes 6 de noviembre");
+    expect(tituloSemana("2026-11-06", "2026-11-07", ZONA, AHORA)).toBe("Del viernes 6 al sábado 7 de noviembre");
+  });
 });
 
 describe("la tarjeta y el aviso", () => {
