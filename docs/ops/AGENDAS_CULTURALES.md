@@ -56,3 +56,19 @@
 1. Del día 1 al 5: abrir la Agenda Cultural de la Secretaría y pasar lo del mes a `scripts/instituciones/eventos.json` (formato en `scripts/instituciones/instituciones.ts · EventoPropuesto`).
 2. Revisar la cartelera IMSS-Cultura y los programas de festivales en curso.
 3. Simular y cargar: `node scripts/instituciones/correr.mjs importar-eventos scripts/instituciones/eventos.json --autor <id del admin> --simular`, y sin `--simular` cuando el informe esté bien (se salta lo que ya está).
+
+## La rutina «Buscar agendas y eventos» en San Luis (OL-509, 2026-11-04)
+
+Lo que lee Administración › Ciudades › San Luis Potosí › «Buscar agendas y eventos», en este orden, y lo que cuesta (bitácora [542](../bitacora/2026/11/542-ol509-agendas-fuentes-gratis.md)):
+
+| Fuente | Tipo guardado | Cómo se lee | Costo |
+|---|---|---|---|
+| Agenda Cultural mensual (cultura.slp.gob.mx/agenda-cultural/) | `indice` y sus `pdf` | El índice, gratis desde el servidor; cada PDF, con la API por trozos de 7 días. Un trozo de un PDF del mes que sale vacío se pide otra vez (una sola) y, si vuelve vacío, se avisa «Trozo sin eventos: …» | Unos 0,007 USD por evento (2 de noviembre) |
+| Catálogo de eventos de la Secretaría (cultura.slp.gob.mx/eventos/) | `catalogo` | Gratis desde el servidor: la lista (`?page=N`) y cada ficha, una petición cada 1,5 s. Sin hora no entra; «Cartelera de la Cineteca Alameda» (un listado de otro) tampoco | 0 USD |
+| Eventos de Turismo del estado (eventos.visitasanluispotosi.com) | `tribe` (clave `guias`) | Gratis por su API pública `wp-json/tribe/events/v1/events`; fuera deportes, carreras, actos cívicos y ferias comerciales; lo de otro municipio queda fuera | 0 USD |
+| Universidades y museos | (buscadas con la API) | Se apagan para San Luis con `ciudades.parametros.fuentes_fuera` | 0 USD apagada (0,08 USD por cero eventos el 2 de noviembre) |
+| Búsqueda web | (con la API) | Se apaga para San Luis con `fuentes_fuera` | 0 USD apagada (0,039 USD por evento el 2 de noviembre) |
+
+- El JSON que apaga las dos últimas en San Luis (lo pone el gestor con SQL): `{ "fuentes_fuera": ["universidades-museos", "web"] }`.
+- «Buscar carteles» lee primero, gratis, la página de cada evento sin cartel que tiene enlace y propone su `og:image` si mide 600 px de ancho o más (se revisa en la bandeja: a veces es una fachada o el cartel de otra cosa); solo lo que siga sin cartel va a la búsqueda pagada (0,5–0,8 USD por cartel).
+- Los carteles del PDF mensual siguen sin leerse gratis (no hay forma de pasar una página del PDF a imagen en el servidor).

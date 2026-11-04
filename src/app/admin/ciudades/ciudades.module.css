@@ -400,6 +400,10 @@ ul.motivos > li:last-child {
 .fuentes {
   margin-bottom: var(--espacio-4);
 }
+/* OL-509: una fuente apagada para la ciudad, sin marca y en gris. */
+.apagada {
+  color: var(--texto-suave);
+}
 /* Corridas: los dos indicadores del crédito se leen, no se tocan. */
 .credito {
   margin-bottom: var(--espacio-3);

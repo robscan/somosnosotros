@@ -65,6 +65,9 @@ function pedirFalso() {
   const pedir = (async (url: string) => {
     pedidas.push(url);
     if (url === "https://cultura.slp.gob.mx/agenda-cultural/") return new Response(INDICE_SLP, { headers: { "content-type": "text/html" } });
+    // OL-509: las semillas nuevas de San Luis, aquí sin eventos (sus lectores se prueban en agendasLibres.test.ts).
+    if (url === "https://cultura.slp.gob.mx/eventos/") return new Response("<html><body>Catálogo de eventos</body></html>", { headers: { "content-type": "text/html" } });
+    if (url.startsWith("https://eventos.visitasanluispotosi.com/wp-json/tribe/events/v1/events?")) return new Response(JSON.stringify({ events: [], total: 0, total_pages: 0 }));
     return new Response("{}", { status: 404 });
   }) as typeof fetch;
   return { pedir, pedidas };
@@ -178,7 +181,7 @@ function mundo(corridas: Fila[] = [corrida("c-age")], extra: { ciudades?: Fila[]
 function dependencias(base: ReturnType<typeof mundo>, opciones: { api?: ClienteApi | null } = {}) {
   const { pedir, pedidas } = pedirFalso();
   const falsa = apiFalsa();
-  const dep: Dependencias = { db: base.db, api: opciones.api === undefined ? falsa.api : opciones.api, mapbox: null, pedir, ahora: () => AHORA, plazoMs: 45_000 };
+  const dep: Dependencias = { db: base.db, api: opciones.api === undefined ? falsa.api : opciones.api, mapbox: null, pedir, dormir: async () => undefined, ahora: () => AHORA, plazoMs: 45_000 };
   return { dep, pedidas, create: falsa.create };
 }
 const laCorrida = (base: ReturnType<typeof mundo>, id = "c-age") => base.tablas.rutinas_corridas.find((c) => c.id === id)! as Fila & { resumen: Record<string, unknown> };
@@ -214,7 +217,13 @@ describe("«Buscar agendas y eventos» de punta a punta (OL-429)", () => {
     expect(pasos.at(-1)?.estado).toBe("terminada");
     // El índice de San Luis se leyó desde el servidor, sin la API, y solo valen el PDF de octubre y el programa de Xantolo (sin mes: 31 días).
     // OL-444: la agenda en HTML de la UASLP también se intenta bajar desde el servidor (gratis); aquí no responde (404) y la abre la API como antes.
-    expect(pedidas).toEqual(["https://cultura.slp.gob.mx/agenda-cultural/", "https://www.uaslp.mx/agenda-cultural"]);
+    // OL-509: el catálogo de Cultura y los eventos de Turismo (semillas de San Luis) también se leen gratis, en su orden: gobierno, guías.
+    expect(pedidas).toEqual([
+      "https://cultura.slp.gob.mx/agenda-cultural/",
+      "https://cultura.slp.gob.mx/eventos/",
+      "https://eventos.visitasanluispotosi.com/wp-json/tribe/events/v1/events?start_date=2026-10-21&end_date=2026-12-05&per_page=50&page=1",
+      "https://www.uaslp.mx/agenda-cultural",
+    ]);
     const orden = create.mock.calls.map((_, i) => queLeyo(pedidoDe(create, i)));
     expect(orden).toEqual([
       "pdf Programa_Xantolo_2026.pdf 2026-10-21…2026-10-27",
@@ -239,7 +248,7 @@ describe("«Buscar agendas y eventos» de punta a punta (OL-429)", () => {
     // La búsqueda de universidades y museos guarda la agenda que encontró y la lee en esta misma corrida.
     const busqueda = pedidoDe(create, 9);
     expect(busqueda.tools?.find((t) => (t as { name?: string }).name === "web_search")).toMatchObject({ max_uses: 2 });
-    expect(c.resumen).toMatchObject({ paso: "3 de 3 fuentes", avance: 1, agendas_leidas: 3, publicados: 1, sin_publicar: 0 });
+    expect(c.resumen).toMatchObject({ paso: "4 de 4 fuentes", avance: 1, agendas_leidas: 5, publicados: 1, sin_publicar: 0 });
   });
 
   it("solo propone lo de hoy en adelante, con día y hora, de la ciudad, sin repetir lo que ya existe, lo propuesto ni lo rechazado; los contadores sin nombres", async () => {
@@ -263,7 +272,8 @@ describe("«Buscar agendas y eventos» de punta a punta (OL-429)", () => {
     const pf = c.resumen.por_fuente as Record<string, { propuestos: number; usd: number }>;
     expect(Object.fromEntries(Object.entries(pf).map(([k, v]) => [k, v.propuestos]))).toEqual({ "agenda-cultura": 3, "universidades-museos": 1, web: 1 });
     expect(pf["agenda-cultura"].usd).toBeGreaterThan(0);
-    expect(JSON.stringify(c.resumen)).not.toMatch(/Recital|Cierre|Xantolo|Festival|Coloquio|Otoño/);
+    // `resumen.trozos` nombra la agenda por su archivo («Programa_Xantolo_2026.pdf», OL-509): es la fuente, no un evento.
+    expect(JSON.stringify({ ...c.resumen, trozos: null })).not.toMatch(/Recital|Cierre|Xantolo|Festival|Coloquio|Otoño/);
     // El contrato de `propuestas.datos` de un evento: título, inicio (y fin), lugar como lo escribe la agenda, precio, descripción propia, agenda y cuándo se leyó.
     const recital = ps.find((p) => (p.datos as Fila).titulo === "Recital de guitarra")!.datos;
     expect(recital).toEqual({
@@ -292,8 +302,10 @@ describe("«Buscar agendas y eventos» de punta a punta (OL-429)", () => {
     const fuentes = (guardadas?.valor as { fuentes: FuenteAgenda[] }).fuentes;
     expect(fuentes.map((f) => [f.clave, f.tipo, f.url.split("/").pop(), !!f.leida])).toEqual([
       ["agenda-cultura", "indice", "", false],
+      ["agenda-cultura", "catalogo", "", false],
       ["agenda-cultura", "pdf", "Programa_Xantolo_2026.pdf", true],
       ["agenda-cultura", "pdf", "oct_2026.pdf", true],
+      ["guias", "tribe", "events", false],
       ["universidades-museos", "html", "agenda-cultural", false],
     ]);
     // Otra corrida: el índice se vuelve a mirar (gratis) y no hay PDF nuevos; la agenda de la UASLP se relee (una página cambia); no se busca

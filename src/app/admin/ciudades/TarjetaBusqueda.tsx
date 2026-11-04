@@ -38,6 +38,8 @@ type Props = {
   corre: boolean;
   credito: string;
   vezPasada: string | null;
+  /** Las fuentes apagadas para esta ciudad (OL-509): la hoja las muestra sin marca. */
+  apagadas?: readonly string[];
 };
 
 /**
@@ -45,7 +47,7 @@ type Props = {
  * que dice debajo, y bajo una raya la búsqueda que la alimenta (su píldora, su detalle, su razón si falló o llegó al tope, su barra si corre)
  * y su botón. «Pendiente» lleva «Cancelar la búsqueda»; «Corriendo», ninguno.
  */
-export default function TarjetaBusqueda({ slug, ciudad, tipo, valor, base, linea, principal, pendiente, corre, credito, vezPasada }: Props) {
+export default function TarjetaBusqueda({ slug, ciudad, tipo, valor, base, linea, principal, pendiente, corre, credito, vezPasada, apagadas }: Props) {
   const [abierta, setAbierta] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cancelando, iniciar] = useTransition();
@@ -102,7 +104,7 @@ export default function TarjetaBusqueda({ slug, ciudad, tipo, valor, base, linea
           )
         )}
       </div>
-      {abierta && <HojaCorrer slug={slug} ciudad={ciudad} tipo={tipo} credito={credito} vezPasada={vezPasada} onCerrar={() => setAbierta(false)} />}
+      {abierta && <HojaCorrer slug={slug} ciudad={ciudad} tipo={tipo} credito={credito} vezPasada={vezPasada} apagadas={apagadas} onCerrar={() => setAbierta(false)} />}
     </li>
   );
 }

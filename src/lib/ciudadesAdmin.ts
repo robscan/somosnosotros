@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { slugDeCiudad } from "./ciudad";
+import { leerFuentesFuera } from "./fuentesFuera";
 import { diaLocal, horaCorta, ZONA_INICIAL } from "./fechas";
 import { contar, unir } from "./panel";
 
@@ -139,6 +140,14 @@ export const HOJAS: Record<TipoHoja, { que: string; fuentes: readonly { clave: s
     tope: 0.5,
   },
 };
+
+/** La nota de una fuente apagada para la ciudad (OL-509, `ciudades.parametros.fuentes_fuera`) en la hoja de su botón. */
+export const NOTA_APAGADA = "apagada para esta ciudad";
+
+/** Las fuentes de la hoja, en su orden, con su texto y si están apagadas para la ciudad (entonces van sin marca y con `NOTA_APAGADA`). */
+export function fuentesDeHoja(tipo: TipoHoja, ciudad: string, apagadas: readonly string[] = []): { clave: string; texto: string; apagada: boolean }[] {
+  return HOJAS[tipo].fuentes.map((f) => ({ clave: f.clave, texto: f.texto(ciudad), apagada: tipo === "agendas" && apagadas.includes(f.clave) }));
+}
 
 export const TOPE_POR_DEFECTO = 3;
 export const TOPE_MAXIMO = 50;
@@ -392,7 +401,7 @@ export function listaCorta(xs: readonly string[]): string {
 }
 
 /** Lo que la pantalla lee de `ciudades.parametros` (OL-429 y OL-432): alcaldías, municipios del área, radio y cuándo se abrió. */
-export type ParametrosVista = { alcaldias: string[]; municipios: string[]; radioKm: number | null; abiertaEn: string | null };
+export type ParametrosVista = { alcaldias: string[]; municipios: string[]; radioKm: number | null; abiertaEn: string | null; fuentesFuera: string[] };
 const textos = (v: unknown): string[] =>
   Array.isArray(v)
     ? [
@@ -408,7 +417,13 @@ export function leerParametrosVista(v: unknown): ParametrosVista {
   const p = v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
   const r = Number(p.radio_km);
   const abierta = typeof p.abierta_en === "string" && Number.isFinite(Date.parse(p.abierta_en)) ? p.abierta_en : null;
-  return { alcaldias: textos(p.alcaldias), municipios: textos(p.municipios), radioKm: p.radio_km != null && Number.isFinite(r) && r >= 0.5 && r <= 100 ? r : null, abiertaEn: abierta };
+  return {
+    alcaldias: textos(p.alcaldias),
+    municipios: textos(p.municipios),
+    radioKm: p.radio_km != null && Number.isFinite(r) && r >= 0.5 && r <= 100 ? r : null,
+    abiertaEn: abierta,
+    fuentesFuera: leerFuentesFuera(p.fuentes_fuera),
+  };
 }
 
 /**
@@ -618,12 +633,15 @@ export function detalleCorrida(c: CorridaPanel, ahora: Date = new Date()): strin
       `${usdChico(c.gasto_usd)} USD`,
     ]);
   }
+  // OL-509: los trozos de un PDF del mes que salieron vacíos dos veces (el aviso dice cuáles).
+  const vacios = c.tipo === "agendas" ? Math.max(0, Math.round(Number(c.resumen.trozos_vacios) || 0)) : 0;
   return unir([
     mayuscula(cuando(c.fin ?? c.creado_en, ahora)),
     parametros,
     `${c.propuestas} ${c.propuestas === 1 ? "propuesto" : "propuestos"}`,
     contar(c.aceptadas, "aceptado", "aceptados"),
     contar(c.por_revisar, "por revisar", "por revisar"),
+    contar(vacios, "trozo sin eventos", "trozos sin eventos"),
     `${usd(c.gasto_usd)} USD`,
   ]);
 }

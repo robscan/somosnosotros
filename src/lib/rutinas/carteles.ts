@@ -3,7 +3,8 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { normalizarRedes } from "../enlaces";
 import { llamarConEntrega } from "./claude";
-import { bajarImagen, direccionPublica, PLAZO_IMAGEN_MS } from "./imagenWeb";
+import { ESPERA_MINIMA_MS } from "./carteleraCdmx";
+import { ANCHO_MINIMO_CARTEL, anchoDeImagen, bajarImagen, bajarPagina, direccionPublica, imagenDePagina, PLAZO_IMAGEN_MS } from "./imagenWeb";
 import { COSTO_ESTIMADO_LLAMADA, FalloCorrida, nombresDe, TIEMPO_PARA_LLAMADA_MS, type Contexto, type SalidaPaso } from "./lugares";
 
 /**
@@ -21,6 +22,13 @@ import { COSTO_ESTIMADO_LLAMADA, FalloCorrida, nombresDe, TIEMPO_PARA_LLAMADA_MS
  * (`imagenWeb.ts`). Se propone como `cartel` con la imagen, la página donde aparece y el evento; aceptarlo la sube a Storage y la pone en
  * `eventos.imagen` (`aceptarCartel.ts`). No se vuelve a proponer un evento que ya tiene un cartel propuesto o aceptado, ni una imagen que la
  * administración ya rechazó para ese evento.
+ *
+ * Carteles gratis antes de pagar (OL-509; el 2 de noviembre 14 de 15 carteles estaban en sitios que se leen gratis y cada uno costó 0,5–0,8 USD):
+ * entre el primer paso y la primera llamada pagada, uno o más pasos sin la API bajan la página de cada evento sin cartel que tiene `enlace`
+ * (solo esa dirección, con la calma: 1,5 s entre una y otra) y toman su `og:image` (o `twitter:image`). Si la imagen se baja, es JPEG, PNG o WebP
+ * y mide 600 px de ancho o más, se propone como `cartel` con costo 0 y la fuente «Página del evento» (`datos.gratis`). NO se acepta sola: el 2
+ * de noviembre tres `og:image` eran fachadas o el cartel de otra exposición. Solo lo que siga sin propuesta va a las llamadas pagadas;
+ * `resumen.gratis` cuenta las propuestas que salieron sin la API.
  */
 
 export const EVENTOS_POR_LLAMADA = 4;
@@ -37,7 +45,11 @@ export type EventoSinCartel = { id: string; titulo: string; inicio: string; enla
 /** Una llamada: un lugar (o un sitio sin ficha) con algunos de sus eventos sin cartel. */
 export type TareaCarteles = { lugar: string; sitio: string | null; redes: string[]; eventos: EventoSinCartel[] };
 export type SoloRedes = { lugar: string; redes: string[]; eventos: number };
-export type CursorCarteles = { tareas: TareaCarteles[]; total: number; fallosSeguidos: number };
+/** Una página de evento por leer en el paso gratis (OL-509). */
+export type PaginaEvento = EventoSinCartel & { enlace: string; lugar: string };
+export type CursorCarteles = { tareas: TareaCarteles[]; total: number; fallosSeguidos: number; paginas?: PaginaEvento[]; ultima?: number };
+/** Lo que se guarda al final del paso gratis para escribir en la base. */
+const RESERVA_GRATIS_MS = 15_000;
 
 type FilaEvento = { id: string; titulo: unknown; inicio: unknown; enlace: unknown; lugar_id: unknown; sitio_texto: unknown; imagen: unknown };
 type FilaLugar = { id: string; nombre: unknown; redes: unknown };
@@ -158,7 +170,9 @@ async function iniciar(ctx: Contexto, cont: Contadores): Promise<{ cursor: Curso
     lugares = (l.data ?? []) as FilaLugar[];
   }
   const { tareas, soloRedes } = agruparPorLugar(libres, lugares);
-  return { cursor: { tareas, total: tareas.length, fallosSeguidos: 0 }, soloRedes };
+  // OL-509: las páginas de los eventos que las tienen se leen primero, gratis.
+  const paginas: PaginaEvento[] = tareas.flatMap((t) => t.eventos.filter((e): e is EventoSinCartel & { enlace: string } => !!e.enlace).map((e) => ({ ...e, lugar: t.lugar })));
+  return { cursor: { tareas, total: tareas.length, fallosSeguidos: 0, ...(paginas.length ? { paginas, ultima: 0 } : {}) }, soloRedes };
 }
 
 // ---------- lo que se le pide a la API ----------
@@ -243,6 +257,8 @@ type Contadores = {
   busquedas_web: number;
   cortadas: number;
   usd: number;
+  /** OL-509: las propuestas que salieron del paso gratis (sin la API). */
+  gratis: number;
 };
 
 function leerContadores(r: Record<string, unknown>): Contadores {
@@ -255,13 +271,19 @@ function leerContadores(r: Record<string, unknown>): Contadores {
     busquedas_web: numero(r.busquedas_web),
     cortadas: numero(r.cortadas),
     usd: 0,
+    gratis: numero(r.gratis),
   };
 }
 
 export function leerCursorCarteles(v: unknown): CursorCarteles | null {
   const c = objeto(v);
   if (!Array.isArray(c.tareas)) return null;
-  return { tareas: c.tareas as TareaCarteles[], total: Math.max(1, numero(c.total)), fallosSeguidos: numero(c.fallosSeguidos) };
+  const cursor: CursorCarteles = { tareas: c.tareas as TareaCarteles[], total: Math.max(1, numero(c.total)), fallosSeguidos: numero(c.fallosSeguidos) };
+  if (Array.isArray(c.paginas)) {
+    cursor.paginas = (c.paginas as PaginaEvento[]).filter((p) => p && typeof p.id === "string" && typeof p.enlace === "string");
+    cursor.ultima = numero(c.ultima);
+  }
+  return cursor;
 }
 
 /** La fuente con la que la bandeja agrupa el cartel: el sitio del lugar, la página del evento o la búsqueda web. */
@@ -287,6 +309,8 @@ export async function pasoCarteles(ctx: Contexto): Promise<SalidaPaso> {
     soloRedes = inicio.soloRedes;
     const aviso = avisoSoloRedes(soloRedes);
     if (aviso) avisos.add(aviso);
+  } else if (cursor.paginas?.length) {
+    await gratis(cursor);
   } else if (cursor.tareas.length) {
     const cabe = () => ctx.corrida.gasto_usd + ctx.gastado() + COSTO_ESTIMADO_LLAMADA <= ctx.corrida.tope_usd;
     const tarea = cursor.tareas[0];
@@ -301,6 +325,51 @@ export async function pasoCarteles(ctx: Contexto): Promise<SalidaPaso> {
       cursor.tareas.shift();
       await buscar(tarea);
     }
+  }
+
+  /**
+   * El paso gratis (OL-509): la página de cada evento, una a la vez con la calma, su `og:image` y, si sirve (se baja, es imagen y mide 600 px de
+   * ancho o más, y no es una que la administración ya rechazó para ese evento), una propuesta de cartel con costo 0. Lo que salió así ya no va
+   * a las llamadas pagadas.
+   */
+  async function gratis(c: CursorCarteles) {
+    const { rechazadas } = await propuestosAntes(ctx);
+    const dormir = ctx.dormir ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+    const leida = ctx.ahora().toISOString();
+    const filas: { corrida_id: string; tipo: "cartel"; fuente: string; datos: Record<string, unknown> }[] = [];
+    while (c.paginas?.length && ctx.hasta - Date.now() > RESERVA_GRATIS_MS) {
+      const e = c.paginas.shift()!;
+      const falta = (c.ultima ?? 0) + ESPERA_MINIMA_MS - Date.now();
+      if (falta > 0) await dormir(falta);
+      const plazo = Math.min(PLAZO_IMAGEN_MS, ctx.hasta - Date.now() - RESERVA_GRATIS_MS);
+      const html = plazo > 1_000 ? await bajarPagina(e.enlace, ctx.pedir, plazo) : null;
+      c.ultima = Date.now();
+      const imagen = html ? imagenDePagina(html, e.enlace) : null;
+      if (!imagen || rechazadas.get(e.id)?.has(imagen)) continue;
+      const bytes = await bajarImagen(imagen, ctx.pedir, Math.min(PLAZO_IMAGEN_MS, Math.max(1, ctx.hasta - Date.now() - RESERVA_GRATIS_MS)));
+      c.ultima = Date.now();
+      const ancho = bytes ? await anchoDeImagen(bytes) : null;
+      if (!ancho || ancho < ANCHO_MINIMO_CARTEL) continue;
+      filas.push({
+        corrida_id: ctx.corrida.id,
+        tipo: "cartel",
+        fuente: FUENTE_EVENTO,
+        datos: { evento_id: e.id, titulo: e.titulo, inicio: e.inicio, lugar: e.lugar, imagen, pagina: e.enlace, url: e.enlace, ciudad: ctx.ciudad.nombre, leida, gratis: true },
+      });
+    }
+    if (!filas.length || !(await ctx.sigueCorriendo())) return;
+    const { error } = await ctx.db.from("propuestas").insert(filas);
+    if (error) {
+      // No se pierde nada: esos eventos siguen en las llamadas pagadas.
+      cont.errores++;
+      avisos.add("No se pudieron guardar algunos carteles de las páginas de los eventos");
+      return;
+    }
+    cont.propuestos += filas.length;
+    cont.gratis += filas.length;
+    const hechos = new Set(filas.map((f) => f.datos.evento_id as string));
+    c.tareas = c.tareas.map((t) => ({ ...t, eventos: t.eventos.filter((e) => !hechos.has(e.id)) })).filter((t) => t.eventos.length);
+    c.total = Math.max(1, c.tareas.length);
   }
 
   async function buscar(t: TareaCarteles) {
@@ -373,10 +442,15 @@ export async function pasoCarteles(ctx: Contexto): Promise<SalidaPaso> {
     cont.propuestos += filas.length;
   }
 
-  const terminada = !cursor.tareas.length;
+  const leyendo = cursor.paginas?.length ?? 0;
+  const terminada = !cursor.tareas.length && !leyendo;
   const hechas = cursor.total - cursor.tareas.length;
   const resumen: Record<string, unknown> = {
-    paso: cursor.total ? `${Math.min(cursor.total, hechas + (terminada ? 0 : 1))} de ${cursor.total} ${cursor.total === 1 ? "búsqueda" : "búsquedas"}` : "sin eventos que buscar",
+    paso: leyendo
+      ? `páginas de los eventos: ${leyendo} por leer`
+      : cursor.total
+        ? `${Math.min(cursor.total, hechas + (terminada ? 0 : 1))} de ${cursor.total} ${cursor.total === 1 ? "búsqueda" : "búsquedas"}`
+        : "sin eventos que buscar",
     avance: terminada ? 1 : Math.round(Math.min(0.99, hechas / cursor.total) * 100) / 100,
     propuestos: cont.propuestos,
     errores: cont.errores,
@@ -385,6 +459,7 @@ export async function pasoCarteles(ctx: Contexto): Promise<SalidaPaso> {
     busquedas_web: cont.busquedas_web,
   };
   if (cont.cortadas) resumen.cortadas = cont.cortadas;
+  if (cont.gratis) resumen.gratis = cont.gratis;
   if (tope) resumen.tope = true;
   if (soloRedes.length) resumen.solo_redes = soloRedes.slice(0, 40);
   if (avisos.size) resumen.avisos = [...avisos].slice(0, 8);
