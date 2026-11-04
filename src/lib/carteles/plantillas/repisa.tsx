@@ -61,6 +61,9 @@ const VIOLETA = "#6d34c8";
 const HUECO = 28;
 /** La franja del día al pie de cada barra de «Esta semana». */
 const FRANJA = 58;
+/** El arco del lugar (OL-510): ancho entre alto, y la orilla de cada aro como parte del ancho (la portada ocupa 1 − 2 orillas). */
+const ARCO_PROPORCION = 1.25;
+const ARCO_ORILLA = 0.12;
 
 /** La tinta que mejor se lee sobre un color (para el símbolo SN sobre un fondo de figura). */
 const tintaSobre = (color: string) => (contraste(color, CREMA) >= contraste(color, NEGRO) ? CREMA : NEGRO);
@@ -197,8 +200,10 @@ function planoDeFicha(t: FichaRepisa, P: Pick<PaletaPortada, "tinta" | "base">) 
     const rf = R * 0.68;
     return { ...z, piezas, selloFecha, selloIzq, artista: { cx, cy, R }, lugar: null, foto: { x: cx - rf, y: cy - rf, ancho: 2 * rf, alto: 2 * rf } };
   }
-  const { x, u, w } = colocar(0.8, z.util, z.repisa, z.arriba, selloAbajo, selloIzq);
-  const adentro = { x: x + w * 0.18, ancho: w * 0.64, alto: u - w * 0.18 };
+  // OL-510 (founder, 2026-11-04: «el contenedor de lugares es demasiado estrecho… hazlo más ancho para que se vea más la imagen»; eligió C): el arco
+  // 1,25 veces más ancho que alto (antes 0,8) y la portada ocupa el 76 % del ancho (antes el 64 %).
+  const { x, u, w } = colocar(ARCO_PROPORCION, z.util, z.repisa, z.arriba, selloAbajo, selloIzq);
+  const adentro = { x: x + w * ARCO_ORILLA, ancho: w * (1 - 2 * ARCO_ORILLA), alto: u - w * ARCO_ORILLA };
   return { ...z, piezas, selloFecha, selloIzq, artista: null, lugar: { x, u, w }, foto: { x: adentro.x, y: z.repisa - adentro.alto, ancho: adentro.ancho, alto: adentro.alto } };
 }
 
@@ -230,14 +235,13 @@ export function arbolRepisa(t: FichaRepisa, P: PaletaPortada, foto: string | nul
     figuras.push(circulo("punto", cx + R * 0.76 * Math.cos(-0.6), cy + R * 0.76 * Math.sin(-0.6), R * 0.07, acento));
   } else if (p.lugar) {
     const { x, u, w } = p.lugar;
-    figuras.push(arco("arco", x, p.repisa, w, u, uno), arco("arco2", x + w * 0.09, p.repisa, w * 0.82, u - w * 0.09, dos));
+    figuras.push(arco("arco", x, p.repisa, w, u, uno), arco("arco2", x + (w * ARCO_ORILLA) / 2, p.repisa, w * (1 - ARCO_ORILLA), u - (w * ARCO_ORILLA) / 2, dos));
     // L2: la portada en el arco de adentro. L1: el arco de adentro en la tinta y el símbolo SN en el color de la tarjeta.
     if (foto) figuras.push(imagen("foto", foto, p.foto, radiosDeArco(p.foto.ancho)));
     else figuras.push(arco("arco3", p.foto.x, p.repisa, p.foto.ancho, p.foto.alto, acento), simbolo("sn", p.foto, P.base, 0.6, 0.58));
-    // El sol: pequeño, apoyado en la repisa, del lado libre.
-    const libre = p.selloIzq - HUECO - (x + w);
-    const sol = Math.min(libre * 0.6, u * 0.22, W - MARGEN - (x + w) - HUECO);
-    if (sol > 60) figuras.push(circulo("sol", x + w + HUECO + sol / 2, p.repisa - sol / 2, sol / 2, acento));
+    // El sol (OL-510): arriba a la derecha de la ficha, donde el artista lleva su sello de fecha; con el arco ancho ya no cabe junto a él.
+    const sol = Math.min(u * 0.22, ANCHO_SELLO);
+    if (sol > 60) figuras.push(circulo("sol", W - MARGEN - sol / 2, p.arriba + sol / 2, sol / 2, acento));
   }
   const capas: ReactElement[] = [
     // Las figuras, recortadas en la repisa: debajo de la línea solo va el texto.
