@@ -6,7 +6,7 @@ import Campo from "@/components/ui/Campo";
 import Hoja from "@/components/ui/Hoja";
 import hoja from "@/components/ui/Hoja.module.css";
 import { IconoOk } from "@/components/ui/Iconos";
-import { errorTope, HOJAS, pegado, TOPE_POR_DEFECTO, usd, verboDe, type TipoHoja } from "@/lib/ciudadesAdmin";
+import { errorTope, fuentesDeHoja, HOJAS, NOTA_APAGADA, pegado, TOPE_POR_DEFECTO, usd, verboDe, type TipoHoja } from "@/lib/ciudadesAdmin";
 import { crearCorrida } from "./acciones";
 import styles from "../admin.module.css";
 import css from "./ciudades.module.css";
@@ -18,6 +18,8 @@ type Props = {
   credito: string;
   /** Si la vez pasada falló o llegó al tope, su razón (en minúscula: va tras «La vez pasada»). */
   vezPasada: string | null;
+  /** Las fuentes apagadas para esta ciudad (OL-509, `ciudades.parametros.fuentes_fuera`): van sin marca y con su nota. */
+  apagadas?: readonly string[];
   onCerrar: () => void;
 };
 
@@ -26,7 +28,7 @@ type Props = {
  * (campo con su ✕; 3,00 por omisión, 2,00 en «Buscar carteles»). «Correr» deja la corrida pendiente y la corre la rutina con la API. Si la vez pasada falló o llegó al
  * tope, la hoja empieza por recordarlo. Una búsqueda en curso no abre esta hoja: su tarjeta no lleva botón (o lleva «Cancelar la búsqueda»).
  */
-export default function HojaCorrer({ slug, ciudad, tipo, credito, vezPasada, onCerrar }: Props) {
+export default function HojaCorrer({ slug, ciudad, tipo, credito, vezPasada, apagadas = [], onCerrar }: Props) {
   const verbo = verboDe(tipo);
   const h = HOJAS[tipo];
   const [tope, setTope] = useState(usd(h.tope ?? TOPE_POR_DEFECTO));
@@ -69,12 +71,21 @@ export default function HojaCorrer({ slug, ciudad, tipo, credito, vezPasada, onC
         <b>Fuentes, en este orden</b>
       </p>
       <ul className={`${styles.puede} ${css.fuentes}`}>
-        {h.fuentes.map((f) => (
-          <li key={f.clave}>
-            <IconoOk width={18} height={18} />
-            {f.texto(ciudad)}
-          </li>
-        ))}
+        {fuentesDeHoja(tipo, ciudad, apagadas).map((f) =>
+          f.apagada ? (
+            <li key={f.clave} className={css.apagada}>
+              <span aria-hidden="true" />
+              <span>
+                {f.texto} <small>· {NOTA_APAGADA}</small>
+              </span>
+            </li>
+          ) : (
+            <li key={f.clave}>
+              <IconoOk width={18} height={18} />
+              {f.texto}
+            </li>
+          ),
+        )}
       </ul>
       <Campo
         etiqueta="Tope de gasto (USD)"

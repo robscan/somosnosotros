@@ -153,6 +153,7 @@ export default async function PanelCiudad({ params }: { params: Promise<{ slug: 
               corre={r?.estado === "corriendo"}
               credito={fraseCredito}
               vezPasada={vezPasada(r)}
+              apagadas={extra.parametros.fuentesFuera}
             />
           );
         })}

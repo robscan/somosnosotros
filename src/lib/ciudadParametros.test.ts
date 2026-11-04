@@ -24,8 +24,14 @@ describe("los parámetros de una ciudad (OL-429)", () => {
       radio_km: 500,
       guias: [{ nombre: "Sin enlace" }, { nombre: "Peligro", url: "javascript:alert(1)" }, { nombre: "Buena", url: "https://guia.example/" }, { nombre: "Repetida", url: "https://guia.example/" }],
     });
-    expect(p).toEqual({ alcaldias: ["Coyoacán"], radio_km: null, guias: [{ nombre: "Buena", url: "https://guia.example/" }] });
+    expect(p).toEqual({ alcaldias: ["Coyoacán"], radio_km: null, guias: [{ nombre: "Buena", url: "https://guia.example/" }], fuentes_fuera: [] });
     expect(leerParametrosCiudad({ radio_km: "8" }).radio_km).toBe(8);
+  });
+
+  it("fuentes_fuera (OL-509): las claves de fuentes apagadas, limpias y sin repetir; lo demás se ignora", () => {
+    expect(leerParametrosCiudad({ fuentes_fuera: ["universidades-museos", "web"] }).fuentes_fuera).toEqual(["universidades-museos", "web"]);
+    expect(leerParametrosCiudad({ fuentes_fuera: [" WEB ", "web", 3, "", "x", "a b", null] }).fuentes_fuera).toEqual(["web"]);
+    expect(leerParametrosCiudad({ fuentes_fuera: "web" }).fuentes_fuera).toEqual([]);
   });
 
   it("nombraAlcaldia: por palabras enteras, sin acentos ni mayúsculas", () => {

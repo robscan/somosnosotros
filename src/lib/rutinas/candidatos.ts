@@ -64,6 +64,46 @@ export function textoLimpio(v: unknown, tope: number): string {
 }
 const texto = textoLimpio;
 
+const CORREO = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)+/gu;
+const URL_SUELTA = /\b(?:https?:\/\/|www\.)[^\s,;)]+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|mx|org|net|info|gle|ly|link|store|shop)(?:\.mx)?\/[^\s,;)]*/gi;
+/** Un número de teléfono: diez dígitos (o doce con el 52) con espacios, puntos, guiones o paréntesis entre ellos. */
+const TELEFONO = /(?<![\d$])(?:\+?52[\s.-]*)?(?:\(\d{2,3}\)|\d{2,3})[\s.-]*\d{3,4}[\s.-]*\d{2}[\s.-]*\d{2}(?!\d)/g;
+/** «informes al …», «reservaciones en …», «boletos: …», «inscripciones al …», «llama al …», «WhatsApp …»: hasta el punto (sin él). */
+const FRASE_CONTACTO =
+  /(?:^|(?<=[\s;,.:(¡!—–-]))(?:para\s+)?(?:m[aá]s\s+)?(?:informes|informaci[oó]n|info|reservaciones|reservas|boletos|venta\s+de\s+boletos|inscripciones|registro|contacto|whats\s?app|tel[eé]fonos?|tels?\.?|cel(?:ular)?\.?|ll[aá]manos|llam[ae]r?|marca|escr[ií]benos)\s*(?:y\s+\p{L}+\s*)?(?:al|a\s+los|en|por|:)(?=[\s:]|$)[^.!?¡¿\n]*/giu;
+
+/**
+ * Una descripción de evento sin datos de contacto (OL-509): el 2 de noviembre dos eventos publicaron un teléfono («…; inscripciones al 444 …»).
+ * Quita correos, direcciones web sueltas, teléfonos (diez dígitos o más, con o sin separadores) y las frases «informes / reservaciones /
+ * boletos / inscripciones al … / en … / : …» hasta el punto. Lo que queda, sin signos colgando, termina en punto si terminaba así.
+ */
+export function limpiarDescripcion(v: unknown): string {
+  if (typeof v !== "string") return "";
+  let t = v.replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  // Primero lo que lleva puntos dentro (correos, direcciones web, teléfonos con puntos): así la frase de contacto termina en el punto de verdad.
+  t = t.replace(CORREO, " ").replace(URL_SUELTA, " ");
+  t = t.replace(TELEFONO, (m) => {
+    const digitos = m.replace(/\D/g, "").replace(/^52(?=\d{10}$)/, "").length;
+    return digitos === 10 ? " " : m;
+  });
+  t = t.replace(FRASE_CONTACTO, " ");
+  // El rótulo que se quedó sin su número («(WhatsApp )», «Tel.:»).
+  t = t.replace(/(?:^|(?<=[\s(;,]))(?:whats\s?app|tel[eé]fonos?|tels?|cel(?:ular)?)\.?\s*:?\s*(?=[).,;]|$)/giu, " ");
+  t = t
+    .replace(/\(\s*\)/g, " ")
+    .replace(/\s+([,;:.!?])/g, "$1")
+    .replace(/([,;:])(?=[.!?]|$)/g, "")
+    .replace(/[,;:]\s*([.!?])/g, "$1")
+    .replace(/([.!?])\s*[.,;:]+/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[\s,;:.\-–—]+/, "")
+    .replace(/[\s,;:\-–—]+$/, "")
+    .trim();
+  return t;
+}
+
 /**
  * Una dirección sin el rótulo con el que la escriben algunas páginas de Cultura («Dirección:, Av. Carranza 1815» o «Domicilio: …») ni comas
  * sueltas al principio o al final (OL-429).

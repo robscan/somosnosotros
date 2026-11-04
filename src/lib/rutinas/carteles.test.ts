@@ -147,7 +147,7 @@ function apiFalsa() {
 function dependencias(base: ReturnType<typeof mundo>, api: ClienteApi | null | undefined = undefined) {
   const red = redFalsa();
   const falsa = apiFalsa();
-  const dep: Dependencias = { db: base.db, api: api === undefined ? falsa.api : api, mapbox: null, pedir: red.pedir, ahora: () => AHORA, plazoMs: 45_000 };
+  const dep: Dependencias = { db: base.db, api: api === undefined ? falsa.api : api, mapbox: null, pedir: red.pedir, dormir: async () => undefined, ahora: () => AHORA, plazoMs: 45_000 };
   return { dep, create: falsa.create, pedidas: red.pedidas };
 }
 const laCorrida = (base: ReturnType<typeof mundo>, id = "c") => base.tablas.rutinas_corridas.find((c) => c.id === id)! as Fila & { resumen: Record<string, unknown> };
@@ -166,7 +166,9 @@ describe("«Buscar carteles» (OL-444)", () => {
     expect(R.descartados).toMatchObject({ ya_propuesto: 1 });
     expect(R.solo_redes).toEqual([{ lugar: "Galería Solo IG", redes: ["https://www.instagram.com/galeriasoloig/"], eventos: 2 }]);
     expect(R.avisos).toEqual(["2 eventos de lugares solo con Instagram o Facebook: se revisan a mano"]);
-    expect(R.paso).toBe("1 de 2 búsquedas");
+    // OL-509: antes de pagar, la página del evento que la tiene (E5) se lee gratis.
+    expect(R.paso).toBe("páginas de los eventos: 1 por leer");
+    expect((R.cursor as { paginas: { id: string; enlace: string }[] }).paginas.map((p) => [p.id, p.enlace])).toEqual([["E5", "https://agendacultural.mx/lectura"]]);
     expect((R.cursor as { tareas: { lugar: string; eventos: { id: string }[] }[] }).tareas.map((t) => [t.lugar, t.eventos.map((e) => e.id)])).toEqual([
       ["Foro Sitio", ["E1", "E2", "E12"]],
       ["Casa Sin Redes", ["E5", "E11", "E13"]],
@@ -231,8 +233,7 @@ describe("«Buscar carteles» (OL-444)", () => {
   it("el tope: si la siguiente llamada no cabe, para con «Llegó al tope» sin llamar a la API", async () => {
     const base = mundo([corrida("c", { tope_usd: 0.3 })]);
     const { dep, create } = dependencias(base);
-    await correrUnPaso(dep);
-    await correrUnPaso(dep);
+    for (let i = 0; i < 3; i++) await correrUnPaso(dep);
     expect(create).not.toHaveBeenCalled();
     expect(laCorrida(base)).toMatchObject({ estado: "terminada", resumen: { tope: true, propuestos: 0 } });
   });
@@ -240,8 +241,7 @@ describe("«Buscar carteles» (OL-444)", () => {
   it("sin llave de la API, termina diciendo que no buscó", async () => {
     const base = mundo();
     const { dep } = dependencias(base, null);
-    await correrUnPaso(dep);
-    await correrUnPaso(dep);
+    for (let i = 0; i < 3; i++) await correrUnPaso(dep);
     expect(laCorrida(base).estado).toBe("terminada");
     expect(laCorrida(base).resumen.avisos).toContain("Sin llave de la API: no se buscaron los carteles");
   });
@@ -253,6 +253,63 @@ describe("«Buscar carteles» (OL-444)", () => {
     await correrUnPaso(dep);
     expect(create).not.toHaveBeenCalled();
     expect(laCorrida(base)).toMatchObject({ estado: "terminada", resumen: { paso: "sin eventos que buscar", eventos_sin_cartel: 0, propuestos: 0 } });
+  });
+});
+
+describe("carteles gratis antes de pagar (OL-509)", () => {
+  const PAGINA = (img: string | null) => `<html><head><meta property="og:title" content="x">${img ? `<meta property="og:image" content="${img}">` : ""}</head><body></body></html>`;
+  let grande: Buffer;
+  let chica: Buffer;
+  beforeAll(async () => {
+    grande = await sharp({ create: { width: 800, height: 1000, channels: 3, background: "#aa2244" } }).jpeg().toBuffer();
+    chica = await sharp({ create: { width: 300, height: 375, channels: 3, background: "#22aa44" } }).webp().toBuffer();
+  });
+  function red() {
+    const pedidas: string[] = [];
+    const pedir = vi.fn(async (url: string) => {
+      pedidas.push(url);
+      const html = (t: string) => new Response(t, { headers: { "content-type": "text/html; charset=utf-8" } });
+      if (url === "https://teatro.example.mx/obra") return html(PAGINA("/media/obra-cartel.jpg"));
+      if (url === "https://teatro.example.mx/media/obra-cartel.jpg") return new Response(new Uint8Array(grande));
+      if (url === "https://teatro.example.mx/chica") return html(PAGINA("https://teatro.example.mx/media/mini.webp"));
+      if (url === "https://teatro.example.mx/media/mini.webp") return new Response(new Uint8Array(chica));
+      if (url === "https://teatro.example.mx/sin-imagen") return html(PAGINA(null));
+      return new Response("no", { status: 404 });
+    }) as unknown as typeof fetch;
+    return { pedir, pedidas };
+  }
+
+  it("og:image de 600 px o más: propuesta gratis (sin la API) y fuera de las llamadas pagadas; chica o sin og:image, a la búsqueda pagada", async () => {
+    const base = mundo();
+    base.tablas.eventos = [
+      evento("G1", "L3", "Obra con cartel", dias(1), { enlace: "https://teatro.example.mx/obra" }),
+      evento("G2", "L3", "Obra con miniatura", dias(2), { enlace: "https://teatro.example.mx/chica" }),
+      evento("G3", "L3", "Obra sin imagen", dias(3), { enlace: "https://teatro.example.mx/sin-imagen" }),
+    ];
+    const { dep, create } = dependencias(base);
+    const r = red();
+    dep.pedir = r.pedir;
+    await correrUnPaso(dep); // la lista
+    await correrUnPaso(dep); // las páginas, gratis
+    expect(create).not.toHaveBeenCalled();
+    let C = laCorrida(base);
+    expect(C.gasto_usd).toBe(0);
+    expect(C.resumen).toMatchObject({ gratis: 1, propuestos: 1, paso: "1 de 1 búsqueda" });
+    const [p] = nuevas(base);
+    expect(p).toMatchObject({ tipo: "cartel", fuente: "Página del evento" });
+    expect(p.datos).toMatchObject({ evento_id: "G1", imagen: "https://teatro.example.mx/media/obra-cartel.jpg", pagina: "https://teatro.example.mx/obra", gratis: true });
+    // La búsqueda pagada ya no pide G1: solo la miniatura y la que no tenía og:image.
+    for (let i = 0; i < 3 && laCorrida(base).estado !== "terminada"; i++) await correrUnPaso(dep);
+    expect(create).toHaveBeenCalledTimes(1);
+    const pedido = String((create.mock.calls[0] as [Anthropic.MessageCreateParams])[0].messages[0].content);
+    expect(pedido).not.toContain("G1");
+    expect(pedido).toContain("id G2");
+    expect(pedido).toContain("id G3");
+    C = laCorrida(base);
+    expect(C.estado).toBe("terminada");
+    expect(C.resumen.gratis).toBe(1);
+    // Solo se pidieron las tres páginas y sus imágenes (nada fuera de su sitio).
+    expect(r.pedidas.every((u) => u.startsWith("https://teatro.example.mx/"))).toBe(true);
   });
 });
 

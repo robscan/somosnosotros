@@ -220,8 +220,8 @@ describe("el panel de una ciudad (pantallas D, E y F)", () => {
     expect(cabeceraCiudad({ ...base, parametros: p({}) }, b({}), AHORA)).toBe("");
   });
   it("los parámetros que se leen: lo que no se entiende se ignora", () => {
-    expect(leerParametrosVista({ alcaldias: ["Cuauhtémoc", 3, " ", "Cuauhtémoc"], municipios: "x", radio_km: "12", abierta_en: "ayer" })).toEqual({ alcaldias: ["Cuauhtémoc"], municipios: [], radioKm: 12, abiertaEn: null });
-    expect(leerParametrosVista(null)).toEqual({ alcaldias: [], municipios: [], radioKm: null, abiertaEn: null });
+    expect(leerParametrosVista({ alcaldias: ["Cuauhtémoc", 3, " ", "Cuauhtémoc"], municipios: "x", radio_km: "12", abierta_en: "ayer" })).toEqual({ alcaldias: ["Cuauhtémoc"], municipios: [], radioKm: 12, abiertaEn: null, fuentesFuera: [] });
+    expect(leerParametrosVista(null)).toEqual({ alcaldias: [], municipios: [], radioKm: null, abiertaEn: null, fuentesFuera: [] });
   });
   it("«Por revisar»: de qué búsqueda y cuántas ya se decidieron", () => {
     const r = corrida({ por_revisar: 17, propuestas: 30, rechazadas: 13, creado_en: "2026-10-20T15:00:00Z" });

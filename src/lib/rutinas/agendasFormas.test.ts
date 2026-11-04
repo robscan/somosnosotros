@@ -147,7 +147,7 @@ function mundo() {
 
 async function correr(base: ReturnType<typeof mundo>) {
   const falsa = apiFalsa();
-  const dep: Dependencias = { db: base.db, api: falsa.api, mapbox, pedir: (async () => new Response("", { status: 404 })) as typeof fetch, ahora: () => AHORA, plazoMs: 45_000 };
+  const dep: Dependencias = { db: base.db, api: falsa.api, mapbox, pedir: (async () => new Response("", { status: 404 })) as typeof fetch, dormir: async () => undefined, ahora: () => AHORA, plazoMs: 45_000 };
   for (let i = 0; i < 30; i++) if ((await correrUnPaso(dep)).estado !== "corriendo") break;
   return falsa;
 }
@@ -182,7 +182,8 @@ describe("la rutina de agendas entiende festivales, talleres y exposiciones (OL-
     // Lo de fuera de la ciudad: las cuatro lecturas en el Tamuantzán (el mapa no lo encuentra en San Luis) y «Cd. Valles» en el texto.
     expect(c.resumen.descartados).toMatchObject({ ya_existe: 2, fuera_de_la_ciudad: 5, unido: 1, ya_propuesto: 0, de_mas: 0 });
     expect(c.resumen).toMatchObject({ propuestos: 14, festivales: 1, actos: 6, sesiones: 5, series: 1 });
-    expect(JSON.stringify(c.resumen)).not.toMatch(/Xantolo|Tamuant|Meza|Otoño|Raíces/);
+    // `resumen.trozos` nombra la agenda por su archivo («Programa_Xantolo_2026.pdf», OL-509): es la fuente, no un evento.
+    expect(JSON.stringify({ ...c.resumen, trozos: null })).not.toMatch(/Xantolo|Tamuant|Meza|Otoño|Raíces/);
 
     // Los actos de Xantolo cuelgan del festival registrado; «Fiesta de Luz», tres noches seguidas, es UNA propuesta con sus tres sesiones.
     for (const t of ["Tzompantli", "Macario, Xantolo camino al Mictlán", "Entre elementos y almas", "Fiesta de Luz"]) expect(propuesta(base, t)?.datos.marco, t).toEqual({ id: XANTOLO, titulo: "Xantolo 2026" });

@@ -1,3 +1,4 @@
+import { leerFuentesFuera } from "./fuentesFuera";
 import { normalizarNombre } from "./lugares";
 import { urlSegura } from "./propuestas";
 
@@ -11,16 +12,22 @@ import { urlSegura } from "./propuestas";
  *   · `guias`: guías culturales que ya existen ({ nombre, url }). Son la primera fuente de «Buscar lugares» y una de las «agendas conocidas»
  *     de «Buscar agendas y eventos»; se leen con la herramienta de lectura web.
  *   · `radio_km`: el radio del área de la ciudad; manda sobre el que se deduce del zoom.
+ *   · `fuentes_fuera` (OL-509): las fuentes de «Buscar agendas y eventos» que no se leen en esta ciudad, por su clave (`agenda-cultura`,
+ *     `guias`, `universidades-museos`, `web`). La corrida las salta con el aviso «Fuente apagada para esta ciudad: …» y la hoja de la
+ *     administración las muestra sin su marca, con la nota «apagada para esta ciudad». En San Luis Potosí (desde que lee el catálogo de
+ *     Cultura y los eventos de Turismo sin la API), el JSON exacto que se pone con SQL es: { "fuentes_fuera": ["universidades-museos", "web"] }
+ *     (se suma a lo que ya tenga `parametros`, p. ej. `parametros || '{"fuentes_fuera": ["universidades-museos", "web"]}'::jsonb`).
  * Ejemplo (Ciudad de México): { "alcaldias": ["Cuauhtémoc", "Miguel Hidalgo", "Coyoacán", "Benito Juárez", "Álvaro Obregón"], "radio_km": 12,
  *   "guias": [{ "nombre": "Cartelera de la Secretaría de Cultura de la Ciudad de México", "url": "https://cartelera.cdmx.gob.mx/" }, …] }.
  */
 
 export type GuiaCultural = { nombre: string; url: string };
-export type ParametrosCiudad = { alcaldias: string[]; guias: GuiaCultural[]; radio_km: number | null };
+export type ParametrosCiudad = { alcaldias: string[]; guias: GuiaCultural[]; radio_km: number | null; fuentes_fuera?: string[] };
 
-export const SIN_PARAMETROS: ParametrosCiudad = { alcaldias: [], guias: [], radio_km: null };
+export const SIN_PARAMETROS: ParametrosCiudad = { alcaldias: [], guias: [], radio_km: null, fuentes_fuera: [] };
 const MAX_ALCALDIAS = 30;
 const MAX_GUIAS = 12;
+export { leerFuentesFuera };
 
 const texto = (v: unknown, tope: number): string => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, tope) : "");
 const objeto = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
@@ -41,7 +48,7 @@ export function leerParametrosCiudad(v: unknown): ParametrosCiudad {
   }
   const r = typeof p.radio_km === "number" ? p.radio_km : typeof p.radio_km === "string" && p.radio_km.trim() ? Number(p.radio_km) : NaN;
   const radio_km = Number.isFinite(r) && r >= 0.5 && r <= 100 ? r : null;
-  return { alcaldias, guias, radio_km };
+  return { alcaldias, guias, radio_km, fuentes_fuera: leerFuentesFuera(p.fuentes_fuera) };
 }
 
 /** ¿Alguno de estos textos (municipio, dirección) nombra una de las alcaldías? Por palabras enteras, sin acentos ni mayúsculas. */

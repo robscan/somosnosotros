@@ -11,7 +11,10 @@ import { diaLocal, localAIso } from "../fechas";
 import { LIMITES_EVENTO } from "../limites";
 import { normalizarNombre } from "../lugares";
 import { urlSegura } from "../propuestas";
+import { limpiarDescripcion } from "./candidatos";
+import { filasDeCatalogo, leerFichaCatalogo, leerListaCatalogo, NOMBRE_FUENTE_CATALOGO, URL_CATALOGO_SLP, urlFichaCatalogo, urlPaginaCatalogo } from "./catalogoCultura";
 import { llamarConEntrega } from "./claude";
+import { filaDeTribe, leerPaginaTribe, URL_TRIBE_SLP, urlPaginaTribe, type FilaTribe } from "./eventosTribe";
 import {
   clienteCartelera,
   cruceDeRecinto,
@@ -83,6 +86,22 @@ import { lugaresDeCiudad, publicarAceptadasSinFicha, type CiudadDeEvento, type L
  * eventos lo nombran en `datos.lugar_propuesto` (al publicar, si ya se aceptó, el evento queda en ese lugar por su nombre). Todo con la fuente
  * «Cartelera de la Ciudad de México». `parametros.solo_cartelera` (el guion de la Mac, `scripts/instituciones/cartelera-cdmx.ts`): solo esta
  * tarea, sin publicar lo aceptado ni tocar las agendas guardadas.
+ *
+ * OL-509 (revisión de la corrida de San Luis del 2 de noviembre: 87 % de precisión, pero se saltó el trozo del 3 al 8 del PDF con `errores` 0,
+ * dio por vacía la página `/eventos/` de Cultura y pagó por fuentes que no rindieron):
+ *   · cada trozo leído con la API queda en `resumen.trozos` ({ fuente: archivo del PDF o dominio, desde, hasta, parte?, leidos: los eventos que
+ *     entregó la API, propuestos, reintentado?: true }; los últimos 60, sin nombres de eventos). Un trozo de un PDF del mes que sale vacío sin
+ *     error ni corte se vuelve a pedir UNA vez al frente de la fila, con una línea que pide revisar también las páginas finales («Varios»,
+ *     «Talleres», «Exposiciones»); si vuelve vacío, «Trozo sin eventos: <archivo> del <desde> al <hasta>» y `resumen.trozos_vacios`. El encargo
+ *     de todo PDF dice que esas páginas finales por tipo también valen para las fechas pedidas.
+ *   · fuentes que se leen gratis desde el servidor, con la calma de la cartelera: `catalogo` (el catálogo de eventos de Cultura de San Luis,
+ *     `catalogoCultura.ts`, una ficha por petición) y `tribe` (la API de un sitio con «The Events Calendar», `eventosTribe.ts`; Turismo de San
+ *     Luis). Sus filas pasan por el mismo `proponer` con su ficha como `url` y `datos.ficha_fuente` (no se vuelve a pedir en la corrida
+ *     siguiente) y su imagen como cartel al aceptar; lo suyo cuenta en `resumen.libres` por dominio. Son semillas de San Luis: en el primer paso
+ *     de cada corrida se añade la que falte a lo guardado y lo guardado de otra forma se convierte (`completarConSemillas`). Las guardadas con
+ *     clave `guias` se leen con las guías de los parámetros.
+ *   · `ciudades.parametros.fuentes_fuera` apaga fuentes por ciudad: se saltan con «Fuente apagada para esta ciudad: …» (y la hoja las muestra así).
+ *   · toda descripción propuesta pasa por `limpiarDescripcion` (sin teléfonos, correos, direcciones web ni «informes al …»).
  */
 
 export type ClaveAgenda = "agenda-cultura" | "guias" | "universidades-museos" | "web";
@@ -97,25 +116,78 @@ export const NOMBRE_FUENTE_AGENDA: Record<ClaveAgenda, string> = {
   web: "Búsqueda web",
 };
 
-/** Una agenda guardada: un PDF (de un mes, o suelto), una página que lista eventos, o un índice que publica los PDF de cada mes. */
-export type FuenteAgenda = { url: string; nombre: string; tipo: "pdf" | "html" | "indice"; clave: ClaveAgenda; mes: string | null; leida?: string | null };
+/**
+ * Una agenda guardada: un PDF (de un mes, o suelto), una página que lista eventos, un índice que publica los PDF de cada mes, o una fuente que
+ * se lee gratis desde el servidor (OL-509): `catalogo`, el catálogo de eventos de Cultura de San Luis (`catalogoCultura.ts`), y `tribe`, la API
+ * de un sitio con «The Events Calendar» (`eventosTribe.ts`; la URL guardada es su base `…/wp-json/tribe/events/v1/events`).
+ */
+export type TipoFuente = "pdf" | "html" | "indice" | "catalogo" | "tribe";
+export type FuenteAgenda = { url: string; nombre: string; tipo: TipoFuente; clave: ClaveAgenda; mes: string | null; leida?: string | null };
+const TIPOS_FUENTE: readonly TipoFuente[] = ["pdf", "html", "indice", "catalogo", "tribe"];
 
 /** La clave en `configuracion` (solo minúsculas, números y guiones bajos). */
 export const claveConfiguracion = (slug: string): string => `agendas_${slug.replace(/[^a-z0-9]+/g, "_")}`;
 
-/** Lo que se siembra si la ciudad todavía no tiene agendas guardadas (sin migración: lo escribe la rutina). */
+/**
+ * Lo que se siembra en las agendas guardadas de la ciudad (sin migración: lo escribe la rutina). OL-509: no solo la primera vez; en el primer paso
+ * de cada corrida se añade la semilla que falte y se convierte la que ya estaba guardada de otra forma (`completarConSemillas`).
+ */
 export const SEMILLAS: Readonly<Record<string, readonly FuenteAgenda[]>> = {
   "san-luis-potosi": [
     { url: "https://cultura.slp.gob.mx/agenda-cultural/", nombre: "Agenda Cultural de la Secretaría de Cultura de San Luis Potosí", tipo: "indice", clave: "agenda-cultura", mes: null },
+    { url: URL_CATALOGO_SLP, nombre: NOMBRE_FUENTE_CATALOGO, tipo: "catalogo", clave: "agenda-cultura", mes: null },
+    { url: URL_TRIBE_SLP, nombre: "Eventos de Turismo de San Luis Potosí", tipo: "tribe", clave: "guias", mes: null },
   ],
 };
+
+/** ¿Esta guardada es la misma fuente que la semilla, aunque se haya guardado de otra forma? El catálogo, por su página `/eventos/`; tribe, por su sitio. */
+function esLaSemilla(g: FuenteAgenda, s: FuenteAgenda): boolean {
+  if (g.url === s.url) return true;
+  try {
+    const a = new URL(g.url);
+    const b = new URL(s.url);
+    if (a.hostname.replace(/^www\./, "") !== b.hostname.replace(/^www\./, "")) return false;
+    if (s.tipo === "tribe") return true;
+    if (s.tipo === "catalogo") return a.pathname.replace(/\/+$/, "") === b.pathname.replace(/\/+$/, "");
+  } catch {
+    return false;
+  }
+  return false;
+}
+
+/**
+ * Las guardadas con la semilla de la ciudad al día (OL-509): la que falta se añade; la que ya estaba guardada de otra forma se convierte a la
+ * semilla (tipo, clave, URL y nombre). En producción, el catálogo de Cultura estaba guardado como `html` de «universidades-museos» y Turismo como
+ * `html` de «web» (su portada): sin convertirlas, al apagar esas fuentes en la ciudad se perderían las dos. `cambio`: si hay que guardarlas.
+ */
+export function completarConSemillas(guardadas: readonly FuenteAgenda[], semillas: readonly FuenteAgenda[]): { fuentes: FuenteAgenda[]; cambio: boolean } {
+  let fuentes = [...guardadas];
+  let cambio = false;
+  for (const s of semillas) {
+    const iguales = fuentes.filter((g) => esLaSemilla(g, s));
+    if (!iguales.length) {
+      fuentes.push({ ...s });
+      cambio = true;
+      continue;
+    }
+    const [primera, ...sobran] = iguales;
+    const convertir = primera.url !== s.url || primera.tipo !== s.tipo || primera.clave !== s.clave;
+    if (convertir || sobran.length) {
+      cambio = true;
+      fuentes = fuentes.filter((g) => !sobran.includes(g)).map((g) => (g === primera && convertir ? { ...s } : g));
+    }
+  }
+  return { fuentes, cambio };
+}
 
 type ClaveBusqueda = Exclude<ClaveAgenda, "guias">;
 export type TareaAgenda =
   | { paso: "buscar"; clave: ClaveBusqueda; indice?: string }
   | { paso: "indice"; fuente: FuenteAgenda }
-  | { paso: "leer"; fuente: FuenteAgenda; desde: string; hasta: string; parte?: number }
-  | { paso: "cartelera" };
+  | { paso: "leer"; fuente: FuenteAgenda; desde: string; hasta: string; parte?: number; reintento?: boolean }
+  | { paso: "cartelera" }
+  | { paso: "catalogo"; fuente: FuenteAgenda }
+  | { paso: "tribe"; fuente: FuenteAgenda };
 
 /** Un sitio fuera del directorio ya buscado en el mapa en esta corrida: su punto dentro de la ciudad, o null si no está en ella. */
 type SitioUbicado = { lat: number; lng: number; direccion: string } | null;
@@ -136,7 +208,20 @@ export type EstadoCartelera = {
   /** Los recintos ya decididos en esta corrida, por su id en la cartelera: la propuesta de lugar (o null si no se propone). OL-451. */
   propuestos?: Record<string, string | null>;
 };
-export type CursorAgendas = { tareas: TareaAgenda[]; total: number; claves: ClaveAgenda[]; fallidas: string[]; sitios?: Record<string, SitioUbicado>; cartelera?: EstadoCartelera };
+/**
+ * Lo que la lectura de una fuente gratis (OL-509: el catálogo de Cultura o la API de tribe) lleva de un paso al siguiente: de qué fuente es, la
+ * página de la lista que sigue (null: la lista ya se leyó), las fichas por leer, cuándo terminó la última petición (la calma) y los fallos seguidos.
+ */
+export type EstadoLibre = { url: string; pagina: number | null; paginas: number | null; pendientes: string[]; ultima: number; fallos: number };
+export type CursorAgendas = {
+  tareas: TareaAgenda[];
+  total: number;
+  claves: ClaveAgenda[];
+  fallidas: string[];
+  sitios?: Record<string, SitioUbicado>;
+  cartelera?: EstadoCartelera;
+  libre?: EstadoLibre;
+};
 
 /** El dominio de la cartelera: su guía de gobierno ya no se le da a la API (la lee `carteleraCdmx.ts`). */
 const DOMINIO_CARTELERA = "cartelera.cdmx.gob.mx";
@@ -151,6 +236,27 @@ export type MotivoEvento = "ya_existe" | "ya_propuesto" | "rechazado_antes" | "f
 export const MOTIVOS_EVENTO: readonly MotivoEvento[] = ["ya_existe", "ya_propuesto", "rechazado_antes", "fuera_de_la_ciudad", "pasado", "sin_hora", "unido", "de_mas"];
 /** Cuántos sitios guarda la corrida ya buscados en el mapa (para no volver a buscarlos en cada trozo de la agenda). */
 const SITIOS_EN_CURSOR = 300;
+
+/** Un trozo de una agenda leído con la API (OL-509, `resumen.trozos`): contadores, nunca nombres de eventos. */
+export type TrozoLeido = { fuente: string; desde: string; hasta: string; parte?: number; leidos: number; propuestos: number; reintentado?: true };
+/** Cuántos trozos guarda el resumen (los últimos). */
+export const TROZOS_EN_RESUMEN = 60;
+/** «Trozo sin eventos: oct_2026.pdf del 2026-10-03 al 2026-10-09»: un trozo de un PDF del mes que salió vacío dos veces (OL-509). */
+export const avisoTrozoVacio = (fuente: string, desde: string, hasta: string): string => `Trozo sin eventos: ${fuente} del ${desde} al ${hasta}`;
+/** «Fuente apagada para esta ciudad: Universidades y museos» (OL-509, `ciudades.parametros.fuentes_fuera`). */
+export const avisoFuenteApagada = (clave: ClaveAgenda): string => `Fuente apagada para esta ciudad: ${NOMBRE_FUENTE_AGENDA[clave]}`;
+/** El nombre corto de una fuente en `resumen.trozos`: el archivo de un PDF; si no, su dominio. */
+export function nombreCorto(f: Pick<FuenteAgenda, "url" | "tipo">): string {
+  if (f.tipo === "pdf") {
+    try {
+      const archivo = decodeURIComponent(new URL(f.url).pathname.split("/").pop() ?? "");
+      if (archivo) return archivo.slice(0, 80);
+    } catch {
+      // abajo, el dominio
+    }
+  }
+  return dominioDe(f.url);
+}
 
 /** Un PDF se lee por trozos de tantos días (una respuesta corta cabe en el paso); si un trozo se corta por tiempo, se parte en dos. */
 export const DIAS_POR_TROZO = 7;
@@ -237,9 +343,14 @@ const AgendaEntregada = z.object({ nombre: z.string(), url: z.string(), tipo: z.
 const Entrega = z.object({ eventos: z.array(EventoEntregado).max(200), agendas: z.array(AgendaEntregada).max(20) });
 export type EventoEntregado = z.infer<typeof EventoEntregado>;
 /** Una fila de la cartelera (OL-448) con lo que trae además de lo que entrega la API, y el recinto propuesto si no está en el directorio. */
-export type FilaConExtras = EventoEntregado & Partial<Pick<FilaCartelera, "url" | "imagen" | "lat" | "lng" | "clase" | "visita" | "cartelera_id">> & { lugar_propuesto?: string | null };
-/** Lo que queda de esa fila para la propuesta: su ficha, su imagen, si es una exposición abierta, su id y el recinto propuesto. */
-type ExtrasDeFila = { url: string; imagen: string | null; visita: boolean; cartelera_id: string | null; lugar_propuesto: string | null };
+export type FilaConExtras = EventoEntregado &
+  Partial<Pick<FilaCartelera, "url" | "imagen" | "lat" | "lng" | "clase" | "visita" | "cartelera_id">> & {
+    lugar_propuesto?: string | null;
+    /** OL-509: la ficha de una fuente gratis (el catálogo de Cultura, tribe), que queda en `datos.ficha_fuente` para no volver a pedirla. */
+    ficha_fuente?: string | null;
+  };
+/** Lo que queda de esa fila para la propuesta: su ficha, su imagen, si es una exposición abierta, su id, el recinto propuesto y su ficha libre. */
+type ExtrasDeFila = { url: string; imagen: string | null; visita: boolean; cartelera_id: string | null; lugar_propuesto: string | null; ficha_fuente: string | null };
 
 /** Las reglas de siempre (iguales en cada llamada: así la API reutiliza su caché con el PDF de la agenda). */
 export const SISTEMA_AGENDAS = `Lees agendas culturales de una ciudad de México (PDF de la Secretaría de Cultura, carteleras, guías, páginas de universidades y museos) y sacas sus eventos para una agenda pública. Lo que entregues no se publica solo: la administración lo revisa uno por uno.
@@ -269,7 +380,7 @@ const lista = <T = unknown>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) :
 const texto = (v: unknown, tope: number): string => (typeof v === "string" ? v.replace(/<[^>]*>/g, " ").replace(/[\p{Cc}\p{Cf}]/gu, " ").replace(/\s+/g, " ").trim().slice(0, tope) : "");
 const sumarDias = (dia: string, n: number): string => new Date(Date.parse(`${dia}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const ultimoDelMes = (mes: string): string => sumarDias(`${mesSiguiente(mes)}-01`, -1);
-const usaApi = (t: TareaAgenda) => t.paso !== "indice" && t.paso !== "cartelera";
+const usaApi = (t: TareaAgenda) => t.paso === "buscar" || t.paso === "leer";
 const esDeLaCartelera = (url: string) => dominioDe(url) === DOMINIO_CARTELERA;
 const esDeGobierno = (url: string) => /(^|\.)gob\.mx$/i.test(dominioDe(url));
 
@@ -277,7 +388,7 @@ const esDeGobierno = (url: string) => /(^|\.)gob\.mx$/i.test(dominioDe(url));
 function leerFuente(v: unknown): FuenteAgenda | null {
   const f = objeto(v);
   const url = urlSegura(f.url);
-  const tipo = f.tipo === "pdf" || f.tipo === "html" || f.tipo === "indice" ? f.tipo : null;
+  const tipo = TIPOS_FUENTE.includes(f.tipo as TipoFuente) ? (f.tipo as TipoFuente) : null;
   if (!url || !tipo || !esClaveAgenda(f.clave)) return null;
   const mes = typeof f.mes === "string" && /^\d{4}-\d{2}$/.test(f.mes) ? f.mes : null;
   return { url, nombre: texto(f.nombre, 120) || dominioDe(url), tipo, clave: f.clave, mes, leida: typeof f.leida === "string" ? f.leida : null };
@@ -295,6 +406,16 @@ export function leerCursorAgendas(v: unknown): CursorAgendas | null {
   const cursor: CursorAgendas = { tareas: c.tareas as TareaAgenda[], total: Math.max(1, numero(c.total)), claves: lista(c.claves).filter(esClaveAgenda), fallidas: lista<string>(c.fallidas).filter((x) => typeof x === "string"), sitios };
   const cartelera = leerEstadoCartelera(c.cartelera);
   if (cartelera) cursor.cartelera = cartelera;
+  const libre = objeto(c.libre);
+  if (typeof libre.url === "string")
+    cursor.libre = {
+      url: libre.url,
+      pagina: libre.pagina == null ? null : Math.max(1, numero(libre.pagina)),
+      paginas: libre.paginas == null ? null : Math.max(1, numero(libre.paginas)),
+      pendientes: lista<string>(libre.pendientes).filter((x) => typeof x === "string"),
+      ultima: numero(libre.ultima),
+      fallos: numero(libre.fallos),
+    };
   return cursor;
 }
 
@@ -342,6 +463,8 @@ export async function guardarAgendas(db: SupabaseClient, slug: string, fuentes: 
 /** Las tareas de lectura de una agenda: un PDF por trozos de días (del mes, o de hoy a 31 días si no tiene mes); una página, una sola (45 días). */
 export function tareasDeLectura(fuente: FuenteAgenda, hoy: string): TareaAgenda[] {
   if (fuente.tipo === "indice") return [{ paso: "indice", fuente }];
+  if (fuente.tipo === "catalogo") return [{ paso: "catalogo", fuente }];
+  if (fuente.tipo === "tribe") return [{ paso: "tribe", fuente }];
   const desde = fuente.mes && `${fuente.mes}-01` > hoy ? `${fuente.mes}-01` : hoy;
   const hasta = fuente.mes ? ultimoDelMes(fuente.mes) : sumarDias(hoy, fuente.tipo === "pdf" ? DIAS_ADELANTE_PDF : DIAS_ADELANTE);
   if (hasta < desde) return [];
@@ -374,7 +497,13 @@ export function planDeAgendas(
     sinCartelera(guias.filter((g) => esDeGobierno(g.url) === gobierno)).map((g) => ({ url: g.url, nombre: g.nombre, tipo: "html", clave: gobierno ? "agenda-cultura" : "guias", mes: null }));
   for (const clave of claves) {
     if (clave === "guias") {
-      for (const g of deGuias(false)) tareas.push(...tareasDeLectura(g, hoy));
+      // Las guías de los parámetros y las guardadas con esa clave (OL-509: los eventos de Turismo de San Luis, por su API).
+      const vistas = new Set<string>();
+      for (const g of [...sinCartelera(guardadas.filter((f) => f.clave === "guias")), ...deGuias(false)]) {
+        if (vistas.has(g.url) || yaNoSeLee(g, hoy)) continue;
+        vistas.add(g.url);
+        tareas.push(...tareasDeLectura(g, hoy));
+      }
       continue;
     }
     const propias = sinCartelera(guardadas.filter((f) => f.clave === clave));
@@ -408,7 +537,14 @@ type Contadores = {
   en_espera: number;
   /** OL-448: lo de la cartelera de Ciudad de México (sin nombres): eventos listados, fichas leídas y fallidas, propuestas, recintos nuevos y por tipo. */
   cartelera: ContadoresCartelera | null;
+  /** OL-509: cada trozo leído con la API (los últimos `TROZOS_EN_RESUMEN`) y cuántos trozos de un PDF del mes salieron vacíos dos veces. */
+  trozos: TrozoLeido[];
+  trozos_vacios: number;
+  /** OL-509: lo de las fuentes que se leen gratis (el catálogo de Cultura y la API de tribe), sin nombres. */
+  libres: Record<string, ContadoresLibre>;
 };
+/** Lo de una fuente gratis (OL-509), por su nombre corto: fichas o eventos listados, leídos, fallidos, ya propuestos antes y los que no son evento. */
+export type ContadoresLibre = { listados: number; leidos: number; fallidos: number; ya_propuestos: number; sin_hora: number; no_evento: number; propuestos: number };
 export type ContadoresCartelera = {
   eventos: number;
   leidas: number;
@@ -459,7 +595,24 @@ function leerContadores(r: Record<string, unknown>): Contadores {
     series: numero(r.series),
     en_espera: numero(r.en_espera),
     cartelera: leerContadoresCartelera(r.cartelera),
+    trozos: lista<unknown>(r.trozos).map(leerTrozo).filter((t): t is TrozoLeido => !!t),
+    trozos_vacios: numero(r.trozos_vacios),
+    libres: Object.fromEntries(
+      Object.entries(objeto(r.libres)).map(([k, v]) => {
+        const o = objeto(v);
+        return [k.slice(0, 80), { listados: numero(o.listados), leidos: numero(o.leidos), fallidos: numero(o.fallidos), ya_propuestos: numero(o.ya_propuestos), sin_hora: numero(o.sin_hora), no_evento: numero(o.no_evento), propuestos: numero(o.propuestos) }];
+      }),
+    ),
   };
+}
+
+function leerTrozo(v: unknown): TrozoLeido | null {
+  const o = objeto(v);
+  if (typeof o.fuente !== "string" || typeof o.desde !== "string" || typeof o.hasta !== "string") return null;
+  const t: TrozoLeido = { fuente: o.fuente.slice(0, 80), desde: o.desde.slice(0, 10), hasta: o.hasta.slice(0, 10), leidos: numero(o.leidos), propuestos: numero(o.propuestos) };
+  if (typeof o.parte === "number") t.parte = o.parte;
+  if (o.reintentado === true) t.reintentado = true;
+  return t;
 }
 
 const ciudadDeEvento = (ctx: Contexto): CiudadDeEvento => ({
@@ -518,8 +671,12 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
     const pedidas = lista(ctx.corrida.parametros.fuentes);
     if (pedidas.some((f) => !esClaveAgenda(f))) avisos.add("Hay fuentes que esta rutina no lee");
     const guias = ctx.ciudad.parametros.guias;
-    const pedidasValidas = pedidas.filter(esClaveAgenda);
-    if (!pedidasValidas.length) throw new FalloCorrida("La corrida no dice qué fuentes leer");
+    const todasLasPedidas = pedidas.filter(esClaveAgenda);
+    if (!todasLasPedidas.length) throw new FalloCorrida("La corrida no dice qué fuentes leer");
+    // OL-509: las fuentes apagadas para esta ciudad (`ciudades.parametros.fuentes_fuera`) se saltan y se dice.
+    const fuera = new Set(soloCartelera ? [] : (ctx.ciudad.parametros.fuentes_fuera ?? []));
+    for (const c of ORDEN_AGENDAS) if (fuera.has(c) && (todasLasPedidas.includes(c) || c === "guias")) avisos.add(avisoFuenteApagada(c));
+    const pedidasValidas = todasLasPedidas.filter((c) => !fuera.has(c));
     const conCartelera = esCiudadDeMexico(ctx.ciudad) && pedidasValidas.includes("agenda-cultura");
     if (soloCartelera) {
       // El guion de la Mac (OL-448): solo la cartelera; no publica lo aceptado ni toca las agendas guardadas.
@@ -527,12 +684,15 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
       cursor = { tareas: [{ paso: "cartelera" }], total: 1, claves: ["agenda-cultura"], fallidas: [] };
       return { resumen: resumenDe(cont, cursor, tope, avisos, false), terminada: false };
     }
-    const claves = ORDEN_AGENDAS.filter((c) => (c === "guias" ? guias.some((g) => !esDeGobierno(g.url)) : pedidasValidas.includes(c)));
     const publicadas = await publicarAceptadasSinFicha({ db: ctx.db, mapbox: ctx.mapbox, ahora }, ciudad, lugares, corridas);
     cont.publicados += publicadas.publicados;
     cont.sin_publicar += publicadas.sin_publicar;
     cont.en_espera = publicadas.en_espera;
-    if (guardadas === null) await actualizarGuardadas(() => [...(SEMILLAS[ctx.ciudad.slug] ?? [])]);
+    // La semilla: la primera vez, entera; después, lo que falte y lo guardado de otra forma, convertido (OL-509).
+    const alDia = completarConSemillas(guardadas ?? [], SEMILLAS[ctx.ciudad.slug] ?? []);
+    if (guardadas === null || alDia.cambio) await actualizarGuardadas(() => alDia.fuentes);
+    const conGuias = guias.some((g) => !esDeGobierno(g.url)) || (guardadas ?? []).some((f) => f.clave === "guias");
+    const claves = ORDEN_AGENDAS.filter((c) => !fuera.has(c) && (c === "guias" ? conGuias : pedidasValidas.includes(c)));
     const tareas = planDeAgendas(claves, guardadas ?? [], guias, hoy, { cartelera: conCartelera });
     cursor = { tareas, total: Math.max(1, tareas.length), claves, fallidas: [] };
     return { resumen: resumenDe(cont, cursor, tope, avisos, false), terminada: !tareas.length };
@@ -732,14 +892,22 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
         direccion,
         municipio,
         precio: precioDeAgenda(texto(e.precio, 120)),
-        descripcion: texto(e.descripcion, LIMITES_EVENTO.descripcion),
+        // OL-509: sin teléfonos, correos ni direcciones web (lo de cualquier fuente: la API, la cartelera, el catálogo, tribe).
+        descripcion: limpiarDescripcion(texto(e.descripcion, LIMITES_EVENTO.descripcion * 2)).slice(0, LIMITES_EVENTO.descripcion),
         programa: programaDeAgenda(e.programa, lugar?.nombre ?? donde),
         termina,
         clase: e.clase ?? claseDeLaAgenda(titulo, termina),
       };
       if (e.url) {
         // Una fila de la cartelera (OL-448): su ficha, su imagen y el punto de su recinto (si no está en el directorio, no se busca en el mapa).
-        fila.extra = { url: e.url, imagen: e.imagen ?? null, visita: !!e.visita && !!termina, cartelera_id: e.cartelera_id ?? null, lugar_propuesto: e.lugar_propuesto ?? null };
+        fila.extra = {
+          url: e.url,
+          imagen: e.imagen ?? null,
+          visita: !!e.visita && !!termina,
+          cartelera_id: e.cartelera_id ?? null,
+          lugar_propuesto: e.lugar_propuesto ?? null,
+          ficha_fuente: e.ficha_fuente ?? null,
+        };
         if (!lugar && typeof e.lat === "number" && typeof e.lng === "number") fila.punto = { lat: e.lat, lng: e.lng, direccion: direccion ?? "" };
         if (fila.clase === "exposicion" && !termina) fila.clase = "puntual";
       }
@@ -905,6 +1073,7 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
       if (f.extra) {
         if (f.extra.imagen) datos.imagen = f.extra.imagen;
         if (f.extra.cartelera_id) datos.cartelera_id = f.extra.cartelera_id;
+        if (f.extra.ficha_fuente) datos.ficha_fuente = f.extra.ficha_fuente;
         if (f.extra.lugar_propuesto && !f.lugar) datos.lugar_propuesto = f.extra.lugar_propuesto;
         if (f.extra.visita && f.clase === "exposicion") datos.visita = true;
       }
@@ -1132,9 +1301,23 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
     }
   }
 
+  /** Un trozo leído con la API, en `resumen.trozos` (OL-509): de qué fuente, qué días, cuántos eventos entregó la API y cuántos se propusieron. */
+  function anotarTrozo(t: Extract<TareaAgenda, { paso: "leer" }>, leidos: number, propuestos: number) {
+    const trozo: TrozoLeido = { fuente: nombreCorto(t.fuente), desde: t.desde, hasta: t.hasta, leidos, propuestos };
+    if (t.parte !== undefined) trozo.parte = t.parte;
+    if (t.reintento) trozo.reintentado = true;
+    cont.trozos = [...cont.trozos, trozo].slice(-TROZOS_EN_RESUMEN);
+  }
+
   async function leer(t: Extract<TareaAgenda, { paso: "leer" }>) {
     const { fuente } = t;
-    const encargo = `${sobreLaCiudad()}\n\nSaca de esta agenda («${fuente.nombre}») los eventos del ${t.desde} al ${t.hasta}, ambos incluidos.`;
+    const lineas = [`${sobreLaCiudad()}\n\nSaca de esta agenda («${fuente.nombre}») los eventos del ${t.desde} al ${t.hasta}, ambos incluidos.`];
+    if (fuente.tipo === "pdf") {
+      // OL-509: en noviembre seis eventos de trozos leídos se perdieron porque venían en las páginas finales del PDF, agrupadas por tipo.
+      lineas.push("Las páginas finales del PDF que agrupan por tipo («Talleres», «Exposiciones», «Varios») también valen: saca de ellas lo que caiga en estas fechas.");
+      if (t.reintento) lineas.push("La lectura anterior de estas mismas fechas no entregó ningún evento: revisa con cuidado todo el PDF, también sus páginas finales («Varios», «Talleres», «Exposiciones»).");
+    }
+    const encargo = lineas.join("\n");
     if (fuente.tipo !== "pdf") {
       const { r, como } = await leerHtml(t, encargo);
       if (!r) {
@@ -1149,7 +1332,9 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
       }
       if (!r.dato.eventos.length && !cursor!.tareas.some((x) => x.paso === "leer" && x.fuente.url === fuente.url))
         avisos.add(avisoSinEventos(fuente.url, r.lecturasFallidas ? "la lectura web no la abrió" : como === "fichas" ? "sus fichas no traían eventos de estas fechas" : null));
+      const antesHtml = cont.propuestos;
       await proponer(r.dato.eventos, fuente.clave, fuente, t.desde, t.hasta);
+      anotarTrozo(t, r.dato.eventos.length, cont.propuestos - antesHtml);
       if (!cursor!.tareas.some((x) => x.paso === "leer" && x.fuente.url === fuente.url)) cont.agendas_leidas++;
       return;
     }
@@ -1182,7 +1367,20 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
       cursor!.fallidas = [...new Set([...cursor!.fallidas, fuente.url])];
       return;
     }
+    const leidos = r.dato.eventos.length;
+    const antes = cont.propuestos;
     await proponer(r.dato.eventos, fuente.clave, fuente, t.desde, t.hasta);
+    anotarTrozo(t, leidos, cont.propuestos - antes);
+    // OL-509: un trozo de un PDF del mes que sale vacío sin error ni corte se vuelve a pedir UNA vez, al frente de la fila; si vuelve vacío, se dice.
+    if (!leidos && fuente.tipo === "pdf" && fuente.mes && !r.error && !r.cortada) {
+      if (!t.reintento) {
+        cursor!.tareas.unshift({ ...t, reintento: true });
+        cursor!.total += 1;
+      } else {
+        cont.trozos_vacios++;
+        avisos.add(avisoTrozoVacio(nombreCorto(fuente), t.desde, t.hasta));
+      }
+    }
     const quedan = cursor!.tareas.some((x) => x.paso === "leer" && x.fuente.url === fuente.url);
     if (!quedan) {
       cont.agendas_leidas++;
@@ -1395,6 +1593,159 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
     }
   }
 
+  // ---------- las fuentes que se leen gratis (OL-509): el catálogo de Cultura de San Luis y la API de «The Events Calendar» ----------
+  const libreDe = (f: FuenteAgenda): ContadoresLibre =>
+    (cont.libres[nombreCorto(f)] ??= { listados: 0, leidos: 0, fallidos: 0, ya_propuestos: 0, sin_hora: 0, no_evento: 0, propuestos: 0 });
+  /** El estado de la lectura de esa fuente en el cursor (si el que hay es de otra, empieza de nuevo). */
+  const estadoLibre = (f: FuenteAgenda): EstadoLibre =>
+    cursor!.libre?.url === f.url ? cursor!.libre : (cursor!.libre = { url: f.url, pagina: 1, paginas: null, pendientes: [], ultima: 0, fallos: 0 });
+  /** Las fichas ya propuestas antes desde una fuente gratis (cualquier estado): no se vuelven a pedir ni a proponer. */
+  const fichasPropuestas = () => new Set(conocidas.map((p) => p.datos.ficha_fuente).filter((x): x is string => typeof x === "string"));
+  /** El cliente con la calma de la cartelera (una petición a la vez, 1,5 s entre una y otra, reintentos ante 429 y 5xx). */
+  const clienteLibre = (est: EstadoLibre) => {
+    const cliente = clienteCartelera({ pedir: ctx.pedir, dormir: ctx.dormir, ultima: est.ultima });
+    const caben = peticionesPorPaso(ctx.hasta - Date.now());
+    return { cliente, hayTiempo: () => cliente.peticiones() < caben && ctx.hasta - Date.now() > RESERVA_PASO_MS + MS_POR_PETICION };
+  };
+
+  /**
+   * Un paso del catálogo de Cultura (OL-509), sin la API: las páginas de la lista y luego las fichas, tantas como caben con la calma; cada ficha
+   * se propone en seguida por el `proponer` de siempre, con su ficha como `url` y `ficha_fuente` y su `og:image` como cartel. true si terminó.
+   */
+  async function catalogo(t: Extract<TareaAgenda, { paso: "catalogo" }>): Promise<boolean> {
+    const est = estadoLibre(t.fuente);
+    const c = libreDe(t.fuente);
+    const { cliente, hayTiempo } = clienteLibre(est);
+    const ya = fichasPropuestas();
+    try {
+      while (est.pagina !== null) {
+        if (!hayTiempo()) return false;
+        const r = await cliente.traer(urlPaginaCatalogo(t.fuente.url, est.pagina));
+        if (!r.ok) {
+          if (cliente.limitada()) {
+            avisos.add("El catálogo de Cultura pidió esperar: se sigue en el siguiente paso");
+            return false;
+          }
+          if (est.pagina > 1 && r.estado === 404) {
+            est.pagina = null;
+            break;
+          }
+          if (++est.fallos < 3) return false;
+          avisos.add(est.pagina > 1 ? `El catálogo no respondió: se leyó su lista hasta la página ${est.pagina - 1}` : avisoSinEventos(t.fuente.url, "no respondió"));
+          est.pagina = null;
+          break;
+        }
+        est.fallos = 0;
+        const pagina = leerListaCatalogo(r.texto, t.fuente.url, est.pagina);
+        for (const url of pagina.fichas) {
+          if (est.pendientes.includes(url)) continue;
+          c.listados++;
+          if (ya.has(url)) {
+            c.ya_propuestos++;
+            descartar("ya_propuesto");
+            continue;
+          }
+          est.pendientes.push(url);
+        }
+        est.pagina = pagina.siguiente;
+      }
+      while (est.pendientes.length && hayTiempo()) {
+        const url = est.pendientes[0];
+        const r = await cliente.traer(url);
+        if (!r.ok && cliente.limitada()) {
+          avisos.add("El catálogo de Cultura pidió esperar: se sigue en el siguiente paso");
+          break;
+        }
+        est.pendientes.shift();
+        if (!r.ok) {
+          c.fallidos++;
+          continue;
+        }
+        c.leidos++;
+        const ficha = leerFichaCatalogo(r.texto, urlFichaCatalogo(url, t.fuente.url) ?? url);
+        const { filas, motivo } = ficha ? filasDeCatalogo(ficha, hoy) : { filas: [], motivo: "listado" as const };
+        if (!filas.length) {
+          // Sin hora, o una ficha que solo junta lo de otro («Cartelera de la Cineteca Alameda»): no es un evento con día y hora propios.
+          if (motivo === "pasado") descartar("pasado");
+          else {
+            descartar("sin_hora");
+            if (motivo === "sin_hora") c.sin_hora++;
+            else c.no_evento++;
+          }
+          continue;
+        }
+        const antes = cont.propuestos;
+        const fechas = filas.map((f) => f.fecha).sort();
+        await proponer(filas, t.fuente.clave, { nombre: t.fuente.nombre, url: null, etiqueta: t.fuente.nombre }, fechas[0], fechas.at(-1)!, Number.POSITIVE_INFINITY);
+        c.propuestos += cont.propuestos - antes;
+      }
+      const termino = est.pagina === null && !est.pendientes.length;
+      if (termino) cont.agendas_leidas++;
+      return termino;
+    } finally {
+      est.ultima = cliente.ultima();
+    }
+  }
+
+  /**
+   * Un paso de la API de «The Events Calendar» (OL-509), sin la API de Anthropic: sus páginas de hoy a 45 días, cada una propuesta en seguida por
+   * el `proponer` de siempre (lo de otro municipio queda fuera por el camino de siempre). true si terminó.
+   */
+  async function tribe(t: Extract<TareaAgenda, { paso: "tribe" }>): Promise<boolean> {
+    const est = estadoLibre(t.fuente);
+    const c = libreDe(t.fuente);
+    const { cliente, hayTiempo } = clienteLibre(est);
+    const ya = fichasPropuestas();
+    const hasta = sumarDias(hoy, DIAS_ADELANTE);
+    try {
+      while (est.pagina !== null && (est.paginas === null || est.pagina <= est.paginas)) {
+        if (!hayTiempo()) return false;
+        const r = await cliente.traer(urlPaginaTribe(t.fuente.url, hoy, hasta, est.pagina), { headers: { accept: "application/json" } });
+        const pagina = r.ok ? leerPaginaTribe(r.texto) : null;
+        if (!pagina) {
+          if (!r.ok && cliente.limitada()) {
+            avisos.add(`${t.fuente.nombre} pidió esperar: se sigue en el siguiente paso`);
+            return false;
+          }
+          if (++est.fallos < 3) return false;
+          avisos.add(est.pagina > 1 ? `${t.fuente.nombre} no respondió: se leyó hasta la página ${est.pagina - 1}` : avisoSinEventos(t.fuente.url, "no respondió"));
+          break;
+        }
+        est.fallos = 0;
+        est.paginas = pagina.paginas;
+        const filas: FilaTribe[] = [];
+        for (const e of pagina.eventos) {
+          c.listados++;
+          if (e.url && ya.has(e.url)) {
+            c.ya_propuestos++;
+            descartar("ya_propuesto");
+            continue;
+          }
+          const { fila, motivo } = filaDeTribe(e);
+          if (!fila) {
+            if (motivo === "sin_hora") {
+              c.sin_hora++;
+              descartar("sin_hora");
+            } else c.no_evento++;
+            continue;
+          }
+          c.leidos++;
+          filas.push(fila);
+        }
+        if (filas.length) {
+          const antes = cont.propuestos;
+          await proponer(filas, t.fuente.clave, { nombre: t.fuente.nombre, url: null, etiqueta: t.fuente.nombre }, hoy, hasta, Number.POSITIVE_INFINITY);
+          c.propuestos += cont.propuestos - antes;
+        }
+        est.pagina++;
+      }
+      cont.agendas_leidas++;
+      return true;
+    } finally {
+      est.ultima = cliente.ultima();
+    }
+  }
+
   if (cursor.tareas.length) {
     const tarea = cursor.tareas[0];
     if (usaApi(tarea) && (!ctx.api || !cabe())) {
@@ -1409,6 +1760,9 @@ export async function pasoAgendas(ctx: Contexto): Promise<SalidaPaso> {
       cursor.tareas.shift();
       if (tarea.paso === "cartelera") {
         if (await cartelera()) delete cursor.cartelera;
+        else cursor.tareas.unshift(tarea);
+      } else if (tarea.paso === "catalogo" || tarea.paso === "tribe") {
+        if (await (tarea.paso === "catalogo" ? catalogo(tarea) : tribe(tarea))) delete cursor.libre;
         else cursor.tareas.unshift(tarea);
       } else if (tarea.paso === "buscar") await buscar(tarea);
       else if (tarea.paso === "indice") await indice(tarea);
@@ -1546,6 +1900,10 @@ function resumenDe(cont: Contadores, cursor: CursorAgendas, tope: boolean, aviso
   for (const k of ["festivales", "actos", "sesiones", "series", "en_espera"] as const) if (cont[k]) resumen[k] = cont[k];
   if (cont.cortadas) resumen.cortadas = cont.cortadas;
   if (cont.cartelera) resumen.cartelera = cont.cartelera;
+  // OL-509: cada trozo leído con la API, los vacíos dos veces y lo de las fuentes gratis (contadores, nunca nombres de eventos).
+  if (cont.trozos.length) resumen.trozos = cont.trozos;
+  if (cont.trozos_vacios) resumen.trozos_vacios = cont.trozos_vacios;
+  if (Object.keys(cont.libres).length) resumen.libres = cont.libres;
   if (tope) resumen.tope = true;
   // 12 (antes 8): una por agenda leída sin eventos cabe junto a las demás (OL-444).
   if (avisos.size) resumen.avisos = [...avisos].slice(0, 12);
