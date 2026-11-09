@@ -1,8 +1,29 @@
-# 544 · OL-511 · Revisión completa de la plataforma · parte B: experiencia, maquetación y calidad
+# 544 · OL-511 · Revisión completa de la plataforma (seguridad y riesgos · experiencia, maquetación y calidad)
 
 **Fecha:** 2026-11-09. **Rama:** `revision-plataforma` (desde `origin/main` `c57f7269`). **Quién:** operador B del Gestor de cambios IX, por el pedido del founder del 9 de noviembre («una revisión completa sobre toda la plataforma para identificar brechas de seguridad, o riesgos además de áreas de oportunidad dentro de la experiencia, la maquetación o cualquier otro elemento que identifiques»). **Solo lectura: no cambia ni una línea de código, CSS ni scripts. Sin migración.** La parte A (seguridad y riesgos) va aparte y fuera del repo; de esta parte salió **1 nota pasada a seguridad**.
 
-## Cómo se revisó
+## Parte A · Seguridad y riesgos (resumen público; el informe completo es privado)
+
+Revisión de solo lectura hecha el mismo día por un operador aparte (base de datos y sus permisos, Storage, rutas del servidor, llaves y variables, sesión, dependencias, apps de la tienda, cabeceras, y riesgos que no son brechas). **El informe completo, con evidencia y pasos para comprobar cada cosa, vive fuera del repositorio** (regla 10 de `GESTION_DE_CAMBIOS.md`: el repo es público); aquí solo quedan las cuentas y nombres llanos que no sirven de mapa. El gestor repitió por su cuenta las comprobaciones de los dos P1 y de tres P2 antes de darlos por buenos.
+
+**Hallazgos: 0 P0 · 2 P1 · 9 P2 · 13 P3** (24, de los que 5 son riesgos que no son brechas). Ninguno permite hoy leer ni escribir lo ajeno: en producción, en transacciones deshechas, las pruebas como visitante sin sesión y como cuenta normal fueron rechazadas en todos los casos; todas las tablas llevan RLS y las funciones con permisos elevados tienen su ruta de búsqueda fijada; no hay secretos en el repo ni en su historial; las vistas previas de Vercel no llevan secretos de producción.
+
+- **P1 (esta semana):** un dato de la cuenta que se ve donde no debería (afecta a una parte de las cuentas que entraron con código y no dieron nombre; arreglo chico más una decisión del founder sobre las cuentas existentes); no hay copia de la base fuera del proveedor desde septiembre ni respaldo de la computadora del founder (arreglo chico y mediano).
+- **P2 (conviene):** una llave pública que se puede usar desde cualquier sitio; una descarga automática que no revisa a dónde va; la app del iPhone abre por dentro páginas que no son nuestras; falta una defensa de fondo del navegador (CSP); llaves viejas que siguen puestas (incluye pasar la app a las llaves nuevas de Supabase); una llave guardada con su contraseña al lado (fuera del repo); gasto de la API sin tope mensual en el código; todo cuelga de las cuentas personales del founder; rutinas que escriben solas en producción sin aviso si fallan.
+- **P3 (notas):** 13, entre ellas: el aviso de privacidad se quedó atrás respecto a lo que la app hace hoy; al borrar la cuenta quedan archivos; una lista que no mira si el evento está oculto; un regreso sin validar; dependencias de desarrollo con avisos (producción limpia); cabeceras por afinar; rutas que dibujan imágenes sin límite de frecuencia.
+- **Sigue cerrado** lo de las revisiones anteriores (356, 482, OL-328 a OL-332, OL-483 a OL-485); de la 482 siguen abiertos cinco puntos ya conocidos, recogidos arriba.
+- **Por comprobar con el founder en los paneles** (Supabase, Vercel, Apple, Google, Meta, Mapbox, Anthropic, GitHub, Resend): 12 preguntas, en el informe privado.
+- **No se revisó:** los paneles, escrituras en Storage, el binario de la tienda en un teléfono, y los bancos locales de regresión de la revisión 356.
+
+**Nota de B para A:** dos contactos distintos entre Ayuda y el aviso de privacidad (por confirmar con el founder cuál va en el aviso).
+
+## Lo que el gestor comprobó al revisar las dos entregas
+- Parte A: los dos P1 repetidos en producción (consulta de solo lectura con el mismo resultado; la función de alta de perfil leída en `pg_proc`; respaldos y Time Machine en la Mac) y tres P2 (la llave pública desde un sitio ajeno, las variables en Vercel por nombre, las cabeceras del dominio).
+- Parte B: rama `revision-plataforma` creada desde `origin/main`, diff solo con esta bitácora y las capturas, sin código tocado; capturas 03, 11 y 46 abiertas y miradas (coinciden con lo descrito); B-01 contrastado con la bitácora 265 (punto 5): «el campo no lleva ✕ para borrar» fue una decisión de implementación de OL-237 (el prototipo firmado solo traía la ✕ de cerrar), anterior a la regla del founder del 4 de octubre («todo campo de texto, sobre todo buscadores»); se mantiene P1 y se le pregunta al founder.
+
+## Parte B · Experiencia, maquetación y calidad
+
+### Cómo se revisó
 - La app compilada contra el respaldo local (datos inventados, reloj fijo el miércoles 7 de octubre de 2026 a las 10:00), en el árbol sin `.env`, con el Chrome real de la Mac (playwright-core) a 390×844 (2×), y las principales a 768×1024 y 1280×800. Sin sesión, con la sesión inventada de Ana (y la de Marcos mirando a Ana) y como administración inventada. Toques reales por coordenadas para los recorridos (filtro, volver de una ficha, Buscar, hojas, «+» sin sesión, Atrás desde un enlace directo), estados de carga (respuestas de React retrasadas 4 s), sin conexión (contexto sin red), letra del sistema al doble (`Page.setFontSizes`).
 - Producción pública **sin sesión** (somosnosotros.org), solo mirando: Inicio de San Luis, Ciudad de México y Aguascalientes, Agenda, Lugares, Artistas y Buscar. Nunca perfiles ni Administración.
 - Datos de producción: consultas de solo lectura (`begin read only; … rollback;`); aquí van solo cuentas.
