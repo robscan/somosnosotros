@@ -2,12 +2,13 @@ import { createECDH, randomBytes, randomUUID } from 'node:crypto';
 
 export async function run({ query, check, as, expectError }) {
   // El cierre debe estar aplicado por la migración, antes del ensayo reversible.
-  const publicas = new Set(['id','nombre','foto','colonia','bio','rol','reservado']);
+  // OL-512: sin sesión, `rol` tampoco se lee (seis columnas); con sesión, las siete.
   for (const rol of ['anon','authenticated']) {
+    const publicas = new Set(['id','nombre','foto','colonia','bio','reservado', ...(rol === 'authenticated' ? ['rol'] : [])]);
     check(!(await query("select has_table_privilege($1,'public.perfiles','SELECT') ok",[rol])).rows[0].ok,
       `${rol}: no conserva SELECT general en el candidato final`);
     const columnas=(await query("select attname,has_column_privilege($1,attrelid,attnum,'SELECT') ok from pg_attribute where attrelid='public.perfiles'::regclass and attnum>0 and not attisdropped",[rol])).rows;
-    check(columnas.every(c=>c.ok===publicas.has(c.attname)), `${rol}: únicamente siete columnas públicas legibles`);
+    check(columnas.every(c=>c.ok===publicas.has(c.attname)), `${rol}: únicamente ${publicas.size} columnas públicas legibles`);
     await as(rol,null,()=>expectError(()=>query('select avisos_push from public.perfiles limit 0'),'42501',`${rol}: cierre real antes del ensayo`));
   }
   const firmas = ['public.mi_perfil()', 'public.mi_push_activo(text,text)', 'public.activar_mis_avisos_push()'];
@@ -19,7 +20,8 @@ export async function run({ query, check, as, expectError }) {
   }
   const titular = randomUUID(), otra = randomUUID(), admin = randomUUID();
   await query("insert into public.admin_correos(correo) values ('ol260-admin@example.com')");
-  await query("insert into auth.users(id,email) values ($1,'ol260-titular@example.com'),($2,'ol260-otra@example.com'),($3,'ol260-admin@example.com')", [titular,otra,admin]);
+  // Cuentas con el correo confirmado (OL-512: un perfil sin confirmar no se lee en público).
+  await query("insert into auth.users(id,email,email_confirmed_at) values ($1,'ol260-titular@example.com',now()),($2,'ol260-otra@example.com',now()),($3,'ol260-admin@example.com',now())", [titular,otra,admin]);
   const propia = () => query('select public.mi_perfil() p');
   const endpoint = 'https://fcm.googleapis.com/fcm/send/ol260', token = randomBytes(32).toString('hex');
   const ecdh = createECDH('prime256v1'); ecdh.generateKeys();

@@ -1,4 +1,5 @@
 import { IconoPersona } from "./ui/Iconos";
+import { inicialDe } from "@/lib/perfil";
 import { usuarioDeLaBarra } from "./usuarioDeLaBarra";
 import styles from "./NavSecciones.module.css";
 
@@ -13,5 +14,5 @@ export default async function PerfilEnNav() {
   const { foto, nombre } = actual.perfil;
   // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
   if (foto) return <img src={foto} alt="" className={styles.avatar} />;
-  return <span className={styles.avatar}>{(nombre || "?").slice(0, 1).toUpperCase()}</span>;
+  return <span className={styles.avatar}>{inicialDe(nombre)}</span>;
 }

@@ -10,6 +10,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { cargarPersona, estaBloqueada, relacionDe } from "../consultas";
 import { MARCA, tituloDePagina } from "@/lib/marca";
+import { nombreVisible } from "@/lib/perfil";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -26,11 +27,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const descripcion = `${n === 0 ? `Está en ${MARCA}` : n === 1 ? "Va a 1 evento próximo" : `Va a ${n} eventos próximos`}`;
   const imagen = d.perfil.foto ?? undefined;
   return {
-    title: tituloDePagina(d.perfil.nombre),
+    title: tituloDePagina(nombreVisible(d.perfil.nombre)),
     description: descripcion,
     robots: { index: false, follow: false },
-    openGraph: { title: d.perfil.nombre, description: descripcion, url: `${ORIGEN}/personas/${d.perfil.id}`, type: "profile", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: MARCA },
-    twitter: { card: "summary", title: d.perfil.nombre, description: descripcion, images: imagen ? [imagen] : undefined },
+    openGraph: { title: nombreVisible(d.perfil.nombre), description: descripcion, url: `${ORIGEN}/personas/${d.perfil.id}`, type: "profile", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: MARCA },
+    twitter: { card: "summary", title: nombreVisible(d.perfil.nombre), description: descripcion, images: imagen ? [imagen] : undefined },
   };
 }
 
@@ -49,10 +50,10 @@ export default async function PaginaPersona({ params }: Params) {
   const bloqueada = actual && !soyYo ? await estaBloqueada((await clienteServidor())!, actual.perfil.id, id) : false;
   return (
     <main className={`${plantilla.raizSinNav} ${ficha.persona}`}>
-      <BarraFicha solida volver={{ href: soyYo ? "/perfil" : "/", texto: soyYo ? "Mi perfil" : "Agenda" }} titulo={d.perfil.nombre}>
+      <BarraFicha solida volver={{ href: soyYo ? "/perfil" : "/", texto: soyYo ? "Mi perfil" : "Agenda" }} titulo={nombreVisible(d.perfil.nombre)}>
         {!soyYo && !bloqueada && (
           <li>
-            <Bloquear personaId={id} nombre={d.perfil.nombre} volver={`/personas/${id}`} conSesion={!!actual} />
+            <Bloquear personaId={id} nombre={nombreVisible(d.perfil.nombre)} volver={`/personas/${id}`} conSesion={!!actual} />
           </li>
         )}
       </BarraFicha>
