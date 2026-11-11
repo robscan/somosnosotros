@@ -9,7 +9,7 @@ vi.mock("@/lib/supabase/servidor", () => ({ clienteServidor: async () => ({
     if (tabla === "perfiles") {
       // Simula la prohibición efectiva de columnas privadas, también para ficha propia.
       if (/avisos|novedades/.test(columnas)) throw new Error("42501");
-      return { eq: () => ({ maybeSingle: async () => ({ data: { id, nombre: "Persona", foto: null, colonia: null, bio: null, rol: "usuario", reservado: true } }) }) };
+      return { eq: () => ({ maybeSingle: async () => ({ data: { id, nombre: "Persona", foto: null, colonia: null, bio: null, reservado: true } }) }) };
     }
     const q = { eq: () => q, or: () => q, limit: async () => ({ data: [] }) };
     return q;
@@ -19,7 +19,9 @@ vi.mock("@/lib/supabase/servidor", () => ({ clienteServidor: async () => ({
 it("la ficha conserva identidad y reserva sin pedir preferencias ajenas", async () => {
   const persona = await cargarPersona(id);
   expect(persona?.perfil).toMatchObject({ id, nombre: "Persona", reservado: true });
-  expect(Object.keys(persona!.perfil).sort()).toEqual(["id", "nombre", "foto", "colonia", "bio", "rol", "reservado"].sort());
-  expect(m.select).toHaveBeenCalledWith("perfiles", "id, nombre, foto, colonia, bio, rol, reservado");
+  expect(Object.keys(persona!.perfil).sort()).toEqual(["id", "nombre", "foto", "colonia", "bio", "reservado"].sort());
+  expect(m.select).toHaveBeenCalledWith("perfiles", "id, nombre, foto, colonia, bio, reservado");
+  // OL-512: sin sesión no se lee el rol; la ficha pública no lo pide.
+  expect(m.select.mock.calls.filter(([tabla]) => tabla === "perfiles").every(([, columnas]) => !/\brol\b/.test(columnas))).toBe(true);
   expect(persona?.eventos).toEqual([]);
 });

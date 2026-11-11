@@ -53,13 +53,13 @@ export type PerfilPublico = {
   foto: string | null;
   colonia: string | null;
   bio: string | null;
-  rol: "admin" | "usuario";
   /** Ficha reservada: a qué va y qué sigue solo lo ve ella (migración 0020). */
   reservado?: boolean;
 };
 
-/** Estado de la cuenta: solo se obtiene por la sesión de su titular. */
+/** Estado de la cuenta: solo se obtiene por la sesión de su titular. El rol no es público (OL-512: sin sesión no se lee). */
 export type Perfil = PerfilPublico & {
+  rol: "admin" | "usuario";
   avisos_correo?: boolean;
   avisos_push?: boolean;
   avisos_preguntado?: boolean;

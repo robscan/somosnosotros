@@ -2,6 +2,27 @@ import { limpiar } from "./formulario";
 import { MARCA } from "./marca";
 export const LIMITES = { nombre: 60, colonia: 60, bio: 140 } as const;
 
+/**
+ * Cómo sale en pantalla una persona que todavía no puso su nombre (OL-512): las cuentas nuevas ya no toman el nombre de su correo y nacen con
+ * él vacío. Una sola constante para la ficha, quién va, compartir y los metadatos; su inicial es «?» (`inicialDe`).
+ */
+export const NOMBRE_SIN_PONER = "Persona nueva";
+
+/** El nombre para pintar: el suyo o «Persona nueva». */
+export function nombreVisible(nombre: string | null | undefined): string {
+  return nombre?.trim() || NOMBRE_SIN_PONER;
+}
+
+/** La inicial del avatar sin foto: la del nombre, o «?» si no lo tiene. */
+export function inicialDe(nombre: string | null | undefined): string {
+  return (nombre?.trim() || "?").slice(0, 1).toUpperCase();
+}
+
+/** ¿Le falta el nombre a la ficha? (sin nombre se le pide una vez al entrar y su ficha lo recuerda). */
+export function faltaNombre(nombre: string | null | undefined): boolean {
+  return !nombre?.trim();
+}
+
 export type DatosPerfil = { nombre: string; colonia: string; bio: string; foto: string | null };
 export type ErroresPerfil = Partial<Record<"nombre" | "colonia" | "bio" | "foto", string>>;
 

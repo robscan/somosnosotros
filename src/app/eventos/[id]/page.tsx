@@ -9,6 +9,7 @@ import { HojaInstagramDeFicha, RenglonPublicarInstagram } from "@/components/ins
 import { sePuedePublicar } from "@/lib/instagram/elegir";
 import { crearDesdeEvento } from "@/app/admin/obras-colectivas/acciones";
 import Link from "next/link";
+import { nombreVisible } from "@/lib/perfil";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Borrar from "@/components/Borrar";
@@ -987,7 +988,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </Suspense>
         )}
 
-        <p className={ficha.pie}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}</p>
+        <p className={ficha.pie}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{nombreVisible(e.autor.nombre)}</Link> : "una cuenta borrada"}</p>
       </div>
 
       {!consultaTrasFin && (

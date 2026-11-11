@@ -115,6 +115,11 @@ export const EVENTOS = {
    * mandar en ese momento: la página deja una marca y se manda en la siguiente carga buena (`cargaFallida.ts`). Nunca cuál pantalla.
    */
   carga_fallida: { app: ["pwa", "tienda"], motivo: ["red", "servidor"] },
+  /**
+   * Alguien borró su cuenta (OL-512): sus fotos de perfil se borraron con ella, no tenía o no se pudieron borrar (la cuenta se borra igual; la
+   * administración las quita a mano si hace falta). Nunca de quién.
+   */
+  cuenta_borrada: { fotos: ["borradas", "sin_fotos", "fallo"] },
 } as const satisfies Record<string, Record<string, readonly string[]>>;
 
 export type NombreEvento = keyof typeof EVENTOS;

@@ -1,5 +1,6 @@
 import { cache, Suspense } from "react";
 import Link from "next/link";
+import { nombreVisible } from "@/lib/perfil";
 import { enlaceAltaEvento } from "@/lib/armazon";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
@@ -308,7 +309,7 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar, horario }
       )}
 
       {/* Sin pie de origen para las fichas del catálogo (decisión del founder, 2026-09-14): solo se dice quién la publicó cuando hay quién. */}
-      {!(lugar.origen && !lugar.autor) && <p className={ficha.pie}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}</p>}
+      {!(lugar.origen && !lugar.autor) && <p className={ficha.pie}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{nombreVisible(lugar.autor.nombre)}</Link> : "una cuenta borrada"}</p>}
       {/* Quien lleva el espacio de verdad puede pedir la ficha: al final, discreto y solo con sesión (sin sesión
           no se ofrece, para no invitar a reclamos ajenos). El origen se dice dentro de la hoja, no en la ficha. */}
       {actual && !puedeEditar && <EsMiEspacio lugarId={lugar.id} nombre={lugar.nombre} correo={correoDe(actual)} origen={lugar.origen ? ORIGENES[lugar.origen].nombre : undefined} />}
