@@ -16,7 +16,14 @@ import limpiar from "@/components/ui/Limpiar.module.css";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 
-type Props = { perfil: Perfil; correo: string };
+type Props = {
+  perfil: Perfil;
+  correo: string;
+  /** Llegó a pedir el nombre (OL-512): el renglón Nombre ya abierto, con el campo enfocado. */
+  pideNombre?: boolean;
+  /** A dónde vuelve al guardar (una ruta interna; el servidor la vuelve a comprobar). */
+  volver?: string;
+};
 type Renglon = "nombre" | "colonia" | "bio";
 
 /**
@@ -25,7 +32,7 @@ type Renglon = "nombre" | "colonia" | "bio";
  * cambio; el botón dice solo su acción, y si falta el nombre la ayuda va bajo el renglón Nombre (founder,
  * 2026-09-21: canon ampliado para todos los formularios, docs/rediseno/26).
  */
-export default function FormularioPerfil({ perfil, correo }: Props) {
+export default function FormularioPerfil({ perfil, correo, pideNombre = false, volver = "/ajustes" }: Props) {
   const [resultado, guardar, guardando] = useActionState<ResultadoGuardar | null, FormData>(guardarPerfil, null);
   // Guardado: de vuelta a Ajustes sin dejar la edición en el historial; mientras vuelve, el botón sigue ocupado.
   const terminar = useTerminar();
@@ -41,7 +48,7 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
   const subida = useSubidaDeFoto();
   const subiendo = !!subida.subiendo;
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
-  const [abierto, setAbierto] = useState<Renglon | null>(null);
+  const [abierto, setAbierto] = useState<Renglon | null>(pideNombre ? "nombre" : null);
 
   // La espera es la de toda la app (`useSubidaDeFoto`, OL-353): la foto elegida late en el sitio del avatar hasta que la subida se ve.
   const alElegirFoto = (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -131,6 +138,7 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
         </li>
       </ul>
       <input type="hidden" name="foto" value={foto ?? ""} />
+      <input type="hidden" name="volver" value={volver} />
       {resultado && !resultado.ok && resultado.general && (
         <p className="aviso-error" role="alert">
           {resultado.general}

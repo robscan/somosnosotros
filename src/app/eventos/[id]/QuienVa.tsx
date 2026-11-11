@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { resumenAsistentes, type Asistente } from "@/lib/comunidad";
+import { inicialDe, nombreVisible } from "@/lib/perfil";
 import { IconoCaret, IconoChevronDerecha } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
@@ -58,7 +59,7 @@ export default function QuienVa({ van, total, interesados, conSesion, pasado = f
                 <li key={a.id}>
                   <Link href={`/personas/${a.id}`} className={renglon.dato}>
                     <Avatar a={a} enLista />
-                    <b>{a.nombre}</b>
+                    <b>{nombreVisible(a.nombre)}</b>
                     <IconoChevronDerecha />
                   </Link>
                 </li>
@@ -78,6 +79,6 @@ function Avatar({ a, enLista = false }: { a: Asistente; enLista?: boolean }) {
     // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
     <img src={a.foto} alt="" className={styles.avatar} />
   ) : (
-    <span className={enLista ? `${styles.avatar} ${styles.inicialEnLista}` : styles.avatar}>{(a.nombre || "?").slice(0, 1).toUpperCase()}</span>
+    <span className={enLista ? `${styles.avatar} ${styles.inicialEnLista}` : styles.avatar}>{inicialDe(a.nombre)}</span>
   );
 }

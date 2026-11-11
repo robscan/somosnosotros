@@ -66,7 +66,7 @@ export default function Privacidad() {
 
         <h2>Tus derechos</h2>
         <p>
-          Puedes ver y cambiar tus datos en «Mi perfil», apagar los avisos ahí mismo o desde cualquier correo, y borrar tu cuenta con un toque: se borra tu correo, tu perfil, lo que sigues y a qué vas. Lo que publicaste (lugares, eventos) se queda para la comunidad, sin tu nombre. Para acceder, rectificar, cancelar u oponerte al uso de tus datos (derechos ARCO), escríbenos a {RESPONSABLE.contacto} y te respondemos en un máximo de 20 días hábiles.
+          Puedes ver y cambiar tus datos en «Mi perfil», apagar los avisos ahí mismo o desde cualquier correo, y borrar tu cuenta con un toque: se borra tu correo, tu perfil con su foto, lo que sigues y a qué vas. Lo que publicaste (lugares, eventos) se queda para la comunidad, sin tu nombre. Para acceder, rectificar, cancelar u oponerte al uso de tus datos (derechos ARCO), escríbenos a {RESPONSABLE.contacto} y te respondemos en un máximo de 20 días hábiles.
         </p>
 
         <h2>Cookies</h2>

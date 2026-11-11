@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { correoValido, textoAvisos, textoCompartirPersona, validarPerfil } from "./perfil";
+import { NOMBRE_SIN_PONER, correoValido, faltaNombre, inicialDe, nombreVisible, textoAvisos, textoCompartirPersona, validarPerfil } from "./perfil";
 import { MARCA } from "./marca";
 
 describe("validarPerfil", () => {
@@ -44,5 +44,19 @@ describe("textoCompartirPersona", () => {
     expect(textoCompartirPersona("Rosa", 2, false)).toBe("Rosa va a 2 eventos próximos. Mira cuáles:");
     expect(textoCompartirPersona("Rosa", 1, true)).toBe("Voy a 1 evento próximo. Mira cuál:");
     expect(textoCompartirPersona("Rosa", 0, false)).toContain(`Rosa está en ${MARCA}`);
+  });
+});
+
+describe("perfil sin nombre (OL-512)", () => {
+  it("se pinta «Persona nueva» con la inicial «?»", () => {
+    expect(NOMBRE_SIN_PONER).toBe("Persona nueva");
+    expect(nombreVisible("")).toBe("Persona nueva");
+    expect(nombreVisible("   ")).toBe("Persona nueva");
+    expect(nombreVisible(null)).toBe("Persona nueva");
+    expect(nombreVisible(" Ana ")).toBe("Ana");
+    expect(inicialDe("")).toBe("?");
+    expect(inicialDe("ana")).toBe("A");
+    expect(faltaNombre(" ")).toBe(true);
+    expect(faltaNombre("Ana")).toBe(false);
   });
 });

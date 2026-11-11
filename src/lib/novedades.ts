@@ -62,9 +62,12 @@ export function queCambio(detalle: string | null): string {
 }
 
 /** "Van a lo mismo · Ana y Luis" · "Van a lo mismo · Ana, Luis y 2 más". */
-export function queJuntos(nombres: string[]): string {
+export function queJuntos(todos: string[]): string {
+  // Quien no puso su nombre (OL-512) cuenta en «y N más» sin dejar un hueco en la lista.
+  const nombres = todos.map((n) => n.trim()).filter(Boolean);
+  if (!nombres.length) return `Van a lo mismo · ${todos.length === 1 ? "1 persona" : `${todos.length} personas`}`;
   const primeros = nombres.slice(0, 2);
-  const resto = nombres.length - primeros.length;
+  const resto = todos.length - primeros.length;
   const lista = resto > 0 ? `${primeros.join(", ")} y ${resto} más` : primeros.length === 2 ? `${primeros[0]} y ${primeros[1]}` : primeros[0] ?? "";
   return `Van a lo mismo · ${lista}`;
 }
