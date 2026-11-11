@@ -37,7 +37,8 @@ export const ADMIN_SIN = "77777777-7777-4777-8777-777777777777";
 const perfilAdmin = { id: ADMIN, nombre: "Admin de prueba", foto: null, colonia: null, bio: null, rol: "admin", avisos_correo: false, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: hace(1) };
 const perfiles = [
   // OL-480: con `RESPALDO_SIN_PREGUNTAR=1` a Ana todavía no se le preguntó por los avisos: el primer «Voy» o «Seguir» abre la hoja.
-  { id: ANA, nombre: "Ana Rentería", foto: null, colonia: "Barrio de San Miguelito", bio: null, rol: "usuario", avisos_correo: true, avisos_push: false, avisos_preguntado: process.env.RESPALDO_SIN_PREGUNTAR !== "1", reservado: false, novedades_vistas_en: hace(1) },
+  // OL-512: con `RESPALDO_SIN_NOMBRE=1` Ana es una cuenta nueva sin nombre (ya no sale del correo): «Persona nueva» y el pedido al entrar.
+  { id: ANA, nombre: process.env.RESPALDO_SIN_NOMBRE === "1" ? "" : "Ana Rentería", foto: null, colonia: "Barrio de San Miguelito", bio: null, rol: "usuario", avisos_correo: true, avisos_push: false, avisos_preguntado: process.env.RESPALDO_SIN_PREGUNTAR !== "1", reservado: false, novedades_vistas_en: hace(1) },
   { id: MARCOS, nombre: "Marcos Ledesma", foto: null, colonia: "Centro", bio: null, rol: "usuario", avisos_correo: false, avisos_push: false, avisos_preguntado: true, reservado: false, novedades_vistas_en: null },
 ];
 

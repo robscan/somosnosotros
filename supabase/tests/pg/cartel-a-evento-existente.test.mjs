@@ -89,9 +89,9 @@ export async function run({ as, check, expectError, query, connection }) {
   await query("update public.eventos set visible = false where id = $1", [oculto]);
   await expectError(() => poner(ANA, oculto, cartel(ANA, 5)), "P0002", "a uno oculto no");
   await expectError(() => poner(ANA, randomUUID(), cartel(ANA, 6)), "P0002", "a uno que no existe no");
-  await expectError(() => poner(ANA, finRaro, "http://otro.sitio/cartel.jpg", null, true), "42501", "otra persona tampoco cambia uno de Marcos con otra imagen");
+  await expectError(() => poner(ANA, finRaro, cartel(ANA, 10), null, true), "42501", "otra persona tampoco cambia uno de Marcos con otra imagen");
   const sinCartel = await alta(MARCOS, { ...base, titulo: "Sin cartel todavía" });
-  await expectError(() => poner(ANA, sinCartel, "https://otro.sitio/cartel.jpg"), "23514", "una imagen que no es del almacenamiento de la app no entra");
+  await expectError(() => poner(ANA, sinCartel, "https://otro.sitio/cartel.jpg"), "22023", "una imagen que no es del almacenamiento de la app no entra (OL-512: ni de la carpeta propia)");
   await expectError(() => poner(ANA, sinCartel, "  "), "22023", "sin imagen no");
   check((await fila(sinCartel)).imagen === null, "los rechazos no dejan nada");
   const bloqueado = await alta(BETO, { ...base, titulo: "De alguien bloqueado" });

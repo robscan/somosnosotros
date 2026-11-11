@@ -7,6 +7,7 @@ import { fueraDeInstagram } from "@/app/admin/instagram/semana";
 import FueraDeInstagram from "@/components/instagram/FueraDeInstagram";
 import ContarVistaFicha from "@/components/ContarVistaFicha";
 import Link from "next/link";
+import { nombreVisible } from "@/lib/perfil";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Borrar from "@/components/Borrar";
@@ -461,7 +462,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         {porConfirmar ? (
           actual && !puedeEditar && <EsMiNombre artistaId={a.id} slug={a.slug} nombre={a.nombre} conSesion correo={correo} origen={ORIGENES[a.origen!].nombre} discreto />
         ) : (
-          <p className={ficha.pie}>Registrado por {a.autor ? <Link href={`/personas/${a.autor.id}`}>{a.autor.nombre}</Link> : "una cuenta borrada"}</p>
+          <p className={ficha.pie}>Registrado por {a.autor ? <Link href={`/personas/${a.autor.id}`}>{nombreVisible(a.autor.nombre)}</Link> : "una cuenta borrada"}</p>
         )}
       </div>
 

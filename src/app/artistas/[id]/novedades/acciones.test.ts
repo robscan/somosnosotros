@@ -280,8 +280,19 @@ describe("borrarNovedadArtista", () => {
     expect(m.revalidar).toHaveBeenCalledWith(VOLVER);
     expect(m.redirigir).toHaveBeenCalledWith(VOLVER);
   });
+
+  it.each(["https://otro.sitio/", "//otro.sitio/x", "javascript:alert(1)", "/\\otro.sitio"])("OL-512: un regreso que no es una ruta interna (%s) vuelve a la ficha del artista", async (volver) => {
+    await borrarNovedadArtista(ARTISTA_ID, NOVEDAD_ID, volver);
+    expect(m.redirigir).toHaveBeenCalledWith(`/artistas/${ARTISTA_ID}`);
+    expect(m.revalidar).not.toHaveBeenCalledWith(volver);
+  });
 });
 
+it("OL-512: publicar y editar devuelven solo una ruta interna", async () => {
+  const fd = formulario({ url: URL_YT });
+  expect(await publicarNovedadArtista(ARTISTA_ID, "https://otro.sitio/", null, fd)).toEqual({ ok: true, volver: `/artistas/${ARTISTA_ID}` });
+  expect(await actualizarNovedadArtista(ARTISTA_ID, NOVEDAD_ID, "//otro.sitio", null, fd)).toEqual({ ok: true, volver: `/artistas/${ARTISTA_ID}` });
+});
 
 it.each(["publicar", "editar", "borrar"] as const)("%s revalida la ficha, Inicio y Artistas", async (accion) => {
   const fd = formulario({ url: URL_YT });

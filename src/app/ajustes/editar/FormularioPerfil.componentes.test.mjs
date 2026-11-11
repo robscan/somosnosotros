@@ -48,7 +48,9 @@ before(async () => {
       import './src/app/globals.css';
       window.qa = {real:true, verSubida:true, ...window.qaInicial};
       createRoot(document.getElementById('root')).render(
-        <main style={{padding:16}}><FormularioPerfil perfil={{id:'ana', nombre:'Ana', colonia:'Centro', bio:null, foto:null}} correo="ana@ejemplo.org" /></main>
+        <main style={{padding:16}}>{window.qa.pideNombre
+          ? <FormularioPerfil perfil={{id:'ana', nombre:'', colonia:null, bio:null, foto:null}} correo="ana@ejemplo.org" pideNombre volver="/eventos/noche" />
+          : <FormularioPerfil perfil={{id:'ana', nombre:'Ana', colonia:'Centro', bio:null, foto:null}} correo="ana@ejemplo.org" />}</main>
       );
     `,
     },
@@ -123,4 +125,15 @@ test("si Storage falla, la espera se quita, no queda foto y la cámara vuelve, c
   assert.equal(await p.locator("li img").count(), 0);
   assert.equal(await p.getByText("Sin foto").count(), 1);
   assert.equal(await p.locator("input[type=file]").isEnabled(), true);
+});
+
+test("al pedir el nombre (OL-512) el renglón Nombre llega abierto con el campo enfocado, Guardar espera al nombre y vuelve a donde iba", TOPE, async (t) => {
+  const p = await pagina(t, { pideNombre: true });
+  const campo = p.getByRole("textbox", { name: "Nombre" });
+  await campo.waitFor();
+  assert.equal(await campo.evaluate((e) => e === document.activeElement), true);
+  assert.equal(await p.getByRole("button", { name: "Guardar" }).isDisabled(), true);
+  await campo.fill("Ana");
+  assert.equal(await p.getByRole("button", { name: "Guardar" }).isEnabled(), true);
+  assert.equal(await p.locator('input[type=hidden][name="volver"]').inputValue(), "/eventos/noche");
 });

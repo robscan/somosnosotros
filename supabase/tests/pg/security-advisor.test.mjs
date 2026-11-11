@@ -84,6 +84,7 @@ const ANON_PERMITIDAS = new Map([
   ["public.lugares_parecidos(text,double precision,double precision,uuid)", "«¿Es este?» del alta de lugar; invoker con RLS"],
   ["public.normalizar_nombre(text)", "función pura de las búsquedas públicas"],
   ["public.novedades_recientes_artistas(text,uuid[])", "carril público de novedades; definer que solo devuelve lo visible"],
+  ["public.perfil_legible(uuid)", "la evalúa la política de lectura de perfiles, también para anon (OL-512): definer para leer auth.users y el rol sin volver a la política; solo responde sí o no"],
   ["public.pincel_activo()", "la pared y el mando la consultan desde el servidor, también sin sesión; invoker, falla cerrado"],
   ["public.push_endpoint_permitido(text)", "check de push_suscripciones; función pura"],
   ["public.registrar_ciudad_vista(text)", "Inicio y Lugares la llaman sin sesión; suma 1 a una ciudad existente, sin persona y con techo"],

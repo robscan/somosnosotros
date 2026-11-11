@@ -7,6 +7,7 @@ import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./bloqueados.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { tituloDePagina } from "@/lib/marca";
+import { inicialDe, nombreVisible } from "@/lib/perfil";
 
 export const metadata = { title: tituloDePagina("Personas bloqueadas"), robots: { index: false, follow: false } };
 
@@ -31,10 +32,10 @@ export default async function PersonasBloqueadas() {
                 <img src={p.foto} alt="" className={styles.avatar} />
               ) : (
                 <span className={`${styles.avatar} ${styles.avatarVacio}`} aria-hidden="true">
-                  {(p.nombre || "?").slice(0, 1).toUpperCase()}
+                  {inicialDe(p.nombre)}
                 </span>
               )}
-              <span className={styles.nombre}>{p.nombre}</span>
+              <span className={styles.nombre}>{nombreVisible(p.nombre)}</span>
               <Desbloquear personaId={p.id} />
             </li>
           ))}

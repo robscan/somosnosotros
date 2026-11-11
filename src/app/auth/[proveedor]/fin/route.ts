@@ -1,7 +1,7 @@
 import { createClient, type User } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { configPublica } from "@/lib/config";
-import { COOKIE_ENTRAR, decidirVuelta, esProveedor, leerCampos, leerIntento, nombreDeApple, nombrePorDefecto, urlAppError, urlAppTrasEntrar, urlEntrar } from "@/lib/entrarCon";
+import { COOKIE_ENTRAR, decidirVuelta, esProveedor, leerCampos, leerIntento, nombreDeApple, nombresPorDefecto, urlAppError, urlAppTrasEntrar, urlEntrar } from "@/lib/entrarCon";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { medirServidor } from "@/lib/medirServidor";
 import { clienteServidor, esAdminDeSesion } from "@/lib/supabase/servidor";
@@ -75,7 +75,7 @@ async function urlVueltaAlApp(usuario: User, siguiente: string, origen: string):
 
 /**
  * Apple no pone el nombre en la identidad: lo manda aparte y solo la primera vez. Sin esto la ficha se llamaría como
- * el correo que Apple inventa al ocultarlo ("qx8r7mbn2k"). Solo cambia el nombre que puso la base, nunca uno elegido.
+ * «Persona nueva» (antes de OL-512, como el correo que Apple inventa al ocultarlo). Solo cambia el nombre que puso la base, nunca uno elegido.
  * Con la sesión recién emitida y explícita, para no depender de que las cookies de esta misma petición ya se lean.
  */
 async function ponerNombreDeApple(usuario: User, token: string, user: string | undefined) {
@@ -86,6 +86,6 @@ async function ponerNombreDeApple(usuario: User, token: string, user: string | u
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { error } = await conSesion.from("perfiles").update({ nombre }).eq("id", usuario.id).eq("nombre", nombrePorDefecto(usuario.email));
+  const { error } = await conSesion.from("perfiles").update({ nombre }).eq("id", usuario.id).in("nombre", nombresPorDefecto(usuario.email));
   if (error) console.error(`nombre de Apple: ${error.message}`);
 }
