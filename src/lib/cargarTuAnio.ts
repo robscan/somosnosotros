@@ -7,6 +7,7 @@ import { cargarHitos } from "./cargarHitos";
 import { esUuid } from "./formulario";
 import type { EventoPasado } from "./historialFichas";
 import { hrefLugar } from "./lugares";
+import { nombreVisible } from "./perfil";
 import { clienteServidor, usuarioActual } from "./supabase/servidor";
 import { anioDe, nombreTuAnio, resumirTuAnio, zonaDelAnio, type ResumenTuAnio, type SujetoTuAnio } from "./tuAnio";
 
@@ -81,7 +82,7 @@ export async function cargarTuAnio(que: SujetoTuAnio, id?: string | null, ahora:
   if (que === "persona") {
     const eventos = await cargarPasadosPersona(actual.perfil.id);
     const zona = zonaDelAnio(eventos);
-    const resumen = resumirTuAnio({ tipo: "persona", id: actual.perfil.id, nombre: actual.perfil.nombre, foto: actual.perfil.foto, eventos, ahora, zona });
+    const resumen = resumirTuAnio({ tipo: "persona", id: actual.perfil.id, nombre: nombreVisible(actual.perfil.nombre), foto: actual.perfil.foto, eventos, ahora, zona });
     if (resumen.protagonista.n === 0) return null;
     return { resumen, id: actual.perfil.id, volver: "/perfil", archivo: nombreTuAnio(anioDe(ahora, zona)) };
   }

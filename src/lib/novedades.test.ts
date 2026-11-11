@@ -30,6 +30,10 @@ describe("novedades", () => {
   it("escribe quién más va y sabe qué es nuevo", () => {
     expect(queJuntos(["Ana", "Luis"])).toBe("Van a lo mismo · Ana y Luis");
     expect(queJuntos(["Ana", "Luis", "Pepe", "Mar"])).toBe("Van a lo mismo · Ana, Luis y 2 más");
+    // OL-512: quien no puso su nombre cuenta sin dejar hueco.
+    expect(queJuntos(["Ana", ""])).toBe("Van a lo mismo · Ana y 1 más");
+    expect(queJuntos(["", " "])).toBe("Van a lo mismo · 2 personas");
+    expect(queJuntos([""])).toBe("Van a lo mismo · 1 persona");
     expect(esNueva("2026-09-15T14:00:00Z", null)).toBe(true);
     expect(esNueva("2026-09-15T14:00:00Z", "2026-09-15T15:00:00Z")).toBe(false);
   });

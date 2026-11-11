@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { validarTokenApns } from "@/lib/dispositivosApns";
+import { medirServidor } from "@/lib/medirServidor";
 import { validarPerfil, type ErroresPerfil } from "@/lib/perfil";
+import { rutaSegura } from "@/lib/rutas";
 import type { IdentidadPush, Suscripcion } from "@/lib/pushCliente";
 import { clienteServidor, type ClienteServidor } from "@/lib/supabase/servidor";
 import { endpointPushPermitido, validarSuscripcionPush } from "@/lib/suscripcionPush";
@@ -35,8 +37,10 @@ export async function guardarPerfil(_previo: ResultadoGuardar | null, formData: 
   revalidatePath("/perfil");
   revalidatePath("/ajustes");
   revalidatePath(`/personas/${user.id}`);
-  // Guardado: de vuelta a Ajustes, con la ficha releída (el formulario termina la tarea sin dejarla en el historial).
-  return { ok: true, volver: "/ajustes" };
+  // Guardado: de vuelta a Ajustes (o a donde iba, si se le pidió el nombre al entrar: OL-512), con la ficha releída (el formulario termina la
+  // tarea sin dejarla en el historial). Solo una ruta interna.
+  const volver = formData.get("volver");
+  return { ok: true, volver: rutaSegura(typeof volver === "string" ? volver : null, "/ajustes") };
 }
 
 /** Perfil público o reservado: se guarda al tocar el interruptor (migración 0020). */
@@ -61,11 +65,37 @@ export async function cerrarSesion() {
   redirect("/");
 }
 
+/**
+ * Las fotos de perfil de la cuenta (`fotos/perfiles/<id>/`), borradas con su propia sesión (la política de Storage ya se lo permite) antes de
+ * borrar la cuenta (OL-512). Nunca lanza: si no se pueden borrar, la cuenta se borra igual y queda anotado en la medición.
+ */
+async function borrarMisFotos(supabase: ClienteServidor, usuarioId: string): Promise<"borradas" | "sin_fotos" | "fallo"> {
+  try {
+    const carpeta = `perfiles/${usuarioId}`;
+    const fotos = supabase.storage.from("fotos");
+    const { data, error } = await fotos.list(carpeta, { limit: 1000 });
+    if (error) return "fallo";
+    // Solo archivos (las carpetas vienen sin id): la subida deja cada foto directo en la carpeta de la cuenta.
+    const rutas = (data ?? []).filter((f) => f.id && f.name).map((f) => `${carpeta}/${f.name}`);
+    if (!rutas.length) return "sin_fotos";
+    const { error: errorBorrar } = await fotos.remove(rutas);
+    return errorBorrar ? "fallo" : "borradas";
+  } catch {
+    return "fallo";
+  }
+}
+
 export async function borrarMiCuenta() {
   const supabase = await clienteServidor();
   if (!supabase) redirect("/");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const fotos = user ? await borrarMisFotos(supabase, user.id) : "sin_fotos";
+  if (fotos === "fallo") console.error("borrarMiCuenta: no se pudieron borrar las fotos de perfil");
   const { error } = await supabase.rpc("borrar_mi_cuenta");
   if (error) redirect("/ajustes?error=borrar");
+  await medirServidor("cuenta_borrada", { fotos });
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/?cuenta=borrada");

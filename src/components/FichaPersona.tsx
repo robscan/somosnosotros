@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import type { EventoAgenda } from "@/lib/agenda";
-import { textoCompartirPersona } from "@/lib/perfil";
+import { faltaNombre, inicialDe, nombreVisible, textoCompartirPersona } from "@/lib/perfil";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
-import type { Perfil } from "@/lib/supabase/servidor";
+import type { PerfilPublico } from "@/lib/supabase/servidor";
 import ActividadPersona, { type Gestos } from "./ActividadPersona";
 import BotonCompartir from "./BotonCompartir";
 import Boton from "./ui/Boton";
@@ -11,7 +11,7 @@ import { IconoCompartir, IconoEngrane, IconoPersona } from "./ui/Iconos";
 import styles from "./FichaPersona.module.css";
 
 type Props = {
-  perfil: Perfil;
+  perfil: PerfilPublico;
   /** Mi perfil: con el engrane de Ajustes bajo la colonia y el aviso de completar. */
   mia: boolean;
   eventos: EventoAgenda[];
@@ -40,7 +40,11 @@ type Props = {
  */
 export default function FichaPersona({ perfil, mia, eventos, interesan = [], lugares, artistas, gestos, origen, invitar, misArtistas, bloqueado }: Props) {
   const reservada = !mia && !!perfil.reservado;
-  const incompleto = mia && (!perfil.colonia || !perfil.bio);
+  // Sin nombre (OL-512: las cuentas nuevas ya no lo sacan del correo) se pinta «Persona nueva»; en la propia ficha, el renglón para ponerlo va
+  // primero y solo: una cosa a la vez.
+  const sinNombre = mia && faltaNombre(perfil.nombre);
+  const incompleto = mia && !sinNombre && (!perfil.colonia || !perfil.bio);
+  const nombre = nombreVisible(perfil.nombre);
 
   const cabeza = (
     <>
@@ -53,10 +57,10 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
             className={`${styles.avatar} ${styles.avatarVacio}`}
             aria-hidden="true"
           >
-            {(perfil.nombre || "?").slice(0, 1).toUpperCase()}
+            {inicialDe(perfil.nombre)}
           </span>
         )}
-        <h1 className={styles.nombre}>{perfil.nombre}</h1>
+        <h1 className={styles.nombre}>{nombre}</h1>
         {/* Las dos acciones de la ficha juntas, arriba a la derecha (corrección del founder, 2026-09-15). */}
         <div className={styles.acciones}>
           {mia && (
@@ -65,8 +69,8 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
             </BotonIcono>
           )}
           <BotonCompartir
-            titulo={perfil.nombre}
-            texto={textoCompartirPersona(perfil.nombre, eventos.length, mia)}
+            titulo={nombre}
+            texto={textoCompartirPersona(nombre, eventos.length, mia)}
             url={`${origen}/personas/${perfil.id}`}
             className={claseBotonIcono({ relieve: "contorno" })}
             ariaLabel="Compartir"
@@ -77,6 +81,15 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
         {perfil.colonia && <p className={styles.colonia}>{perfil.colonia}</p>}
       </div>
       {perfil.bio && <p className={styles.sobreMi}>{perfil.bio}</p>}
+      {sinNombre && (
+        <p className={styles.completa}>
+          <IconoPersona width={20} height={20} />
+          <span>Ponle nombre a tu perfil: así saldrá en lo que publiques.</span>
+          <Boton href="/ajustes/editar?pedir=nombre" forma="pildora" alto="control" ancho="contenido">
+            Ponerlo
+          </Boton>
+        </p>
+      )}
       {incompleto && (
         <p className={styles.completa}>
           <IconoPersona width={20} height={20} />

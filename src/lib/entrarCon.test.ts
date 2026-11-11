@@ -8,6 +8,7 @@ import {
   leerIntento,
   nombreDeApple,
   nombrePorDefecto,
+  nombresPorDefecto,
   nuevoIntento,
   paginaRelevo,
   sha256hex,
@@ -184,5 +185,8 @@ describe("nombre que manda Apple", () => {
   it("el nombre por defecto es el de la base: lo de antes de la @", () => {
     expect(nombrePorDefecto("qx8r7mbn2k@privaterelay.appleid.com")).toBe("qx8r7mbn2k");
     expect(nombrePorDefecto(null)).toBe("");
+    // OL-512: la cuenta nace sin nombre; el de antes (del correo) también cuenta como no elegido.
+    expect(nombresPorDefecto("qx8r7mbn2k@privaterelay.appleid.com")).toEqual(["", "qx8r7mbn2k"]);
+    expect(nombresPorDefecto(null)).toEqual([""]);
   });
 });

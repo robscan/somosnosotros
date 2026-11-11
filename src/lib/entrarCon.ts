@@ -199,7 +199,15 @@ export function nombreDeApple(user: string | undefined): string | null {
   }
 }
 
-/** El nombre que pone la base al crear la cuenta cuando nadie dio uno: lo de antes de la @ (función crear_perfil). */
+/**
+ * El nombre que ponía la base al crear la cuenta cuando nadie daba uno: lo de antes de la @ (`crear_perfil` hasta OL-512). Desde OL-512 la
+ * cuenta nace con el nombre vacío; esto queda para reconocer las cuentas de antes (`nombresPorDefecto`).
+ */
 export function nombrePorDefecto(correo: string | null | undefined): string {
   return (correo ?? "").split("@")[0].slice(0, 60);
+}
+
+/** Los nombres que no eligió nadie: vacío (desde OL-512) o el de antes, sacado del correo. Solo esos se cambian por el que manda Apple. */
+export function nombresPorDefecto(correo: string | null | undefined): string[] {
+  return [...new Set(["", nombrePorDefecto(correo)])];
 }

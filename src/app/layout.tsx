@@ -9,6 +9,7 @@ import NavSecciones from "@/components/NavSecciones";
 import PerfilEnNav from "@/components/PerfilEnNav";
 import AbrirEnlaceApp from "@/components/AbrirEnlaceApp";
 import AvisoAbierto from "@/components/AvisoAbierto";
+import PedirNombre from "@/components/PedirNombre";
 import AnalyticsGoogle from "@/components/AnalyticsGoogle";
 import AnalyticsVercel from "@/components/AnalyticsVercel";
 import MarcaAdmin from "@/components/MarcaAdmin";
@@ -111,6 +112,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Abrir la app desde un aviso al teléfono (`?desde=aviso&tipo=…`): se cuenta sin saber quién y se limpia la dirección (OL-480). */}
         <Suspense fallback={null}>
           <AvisoAbierto />
+        </Suspense>
+        {/* A quien no tiene nombre (OL-512), una vez por sesión, a ponerlo en su ficha: lee la sesión como la barra, sin frenar la pantalla. */}
+        <Suspense fallback={null}>
+          <PedirNombre />
         </Suspense>
         <TituloInstalada />
         {/* Speed Insights (OL-499): cuánto tarda cada pantalla en los teléfonos, anónimo y sin cookies. Fuera de `MarcaAdmin`: también

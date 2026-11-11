@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { esUuid } from "@/lib/formulario";
+import { rutaSegura } from "@/lib/rutas";
 import { embedIdDesdeOembedBandcamp } from "@/lib/incrustado";
 import { validarNovedadArtista, type ErroresNovedadArtista } from "@/lib/novedadesArtista";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
@@ -16,6 +17,11 @@ export type ResultadoNovedadArtista = { ok: true; volver: string } | { ok: false
 
 function leer(formData: FormData) {
   return { url: formData.get("url"), titulo: formData.get("titulo"), texto: formData.get("texto") };
+}
+
+/** A dónde se vuelve: solo una ruta interna (OL-512); si no, la ficha del artista. `volver` llega de la pantalla y no se usa tal cual. */
+function regresoSeguro(artistaId: string, volver: string): string {
+  return rutaSegura(volver, esUuid(artistaId) ? `/artistas/${artistaId}` : "/artistas");
 }
 
 /** La misma publicación cambia la ficha, el directorio y el carril de Inicio. */
@@ -69,7 +75,8 @@ async function embedIdBandcamp(url: string): Promise<string | null> {
  * verdad decide quién publica; aquí solo se valida la forma, se resuelve el `embed_id` de Bandcamp si aplica, y se
  * traduce el rechazo de la base a un aviso legible.
  */
-export async function publicarNovedadArtista(artistaId: string, volver: string, _previo: ResultadoNovedadArtista | null, formData: FormData): Promise<ResultadoNovedadArtista> {
+export async function publicarNovedadArtista(artistaId: string, volverPedido: string, _previo: ResultadoNovedadArtista | null, formData: FormData): Promise<ResultadoNovedadArtista> {
+  const volver = regresoSeguro(artistaId, volverPedido);
   if (!esUuid(artistaId)) return { ok: false, errores: {}, general: "No sé de qué artista es." };
   const { supabase, user } = await sesionOEntrar(`/artistas/${artistaId}/novedades/nueva`);
   const { datos, errores } = validarNovedadArtista(leer(formData));
@@ -109,7 +116,8 @@ const AVISO_GUARDAR = "No se pudo guardar. ¿Sigues con sesión y es tu ficha?";
  * `publicado_por`, `creado_en` y `visible` no se tocan aquí: la migración 20260925140000_novedades_editar.sql los
  * protege con un disparador, y esta acción tampoco los manda en el `update`.
  */
-export async function actualizarNovedadArtista(artistaId: string, novedadId: string, volver: string, _previo: ResultadoNovedadArtista | null, formData: FormData): Promise<ResultadoNovedadArtista> {
+export async function actualizarNovedadArtista(artistaId: string, novedadId: string, volverPedido: string, _previo: ResultadoNovedadArtista | null, formData: FormData): Promise<ResultadoNovedadArtista> {
+  const volver = regresoSeguro(artistaId, volverPedido);
   if (!esUuid(artistaId) || !esUuid(novedadId)) return { ok: false, errores: {}, general: "No sé de qué novedad es." };
   const { supabase } = await sesionOEntrar(`/artistas/${artistaId}/novedades/${novedadId}/editar`);
   const { datos, errores } = validarNovedadArtista(leer(formData));
@@ -147,7 +155,8 @@ export async function actualizarNovedadArtista(artistaId: string, novedadId: str
  * desde OL-175, bitácora 210 — aquí solo faltaba la pantalla). `artista_id` en el `eq` de más, aunque la RLS ya
  * decide quién borra: una novedad nunca se borra "por accidente" desde la ficha de otro artista.
  */
-export async function borrarNovedadArtista(artistaId: string, novedadId: string, volver: string): Promise<void> {
+export async function borrarNovedadArtista(artistaId: string, novedadId: string, volverPedido: string): Promise<void> {
+  const volver = regresoSeguro(artistaId, volverPedido);
   const { supabase } = await sesionOEntrar(`/artistas/${artistaId}/novedades/${novedadId}/editar`);
   await supabase.from("novedades_artista").delete().eq("id", novedadId).eq("artista_id", artistaId);
   revalidarNovedades(volver);

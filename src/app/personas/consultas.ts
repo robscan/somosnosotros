@@ -70,7 +70,7 @@ export function relacionDe(persona: Persona, sobre?: Persona): { decididas: Reco
 export async function cargarPersona(id: string, { conProximos: proximos = false }: { conProximos?: boolean } = {}): Promise<Persona | null> {
   const supabase = await clienteServidor();
   if (!supabase || !esUuid(id)) return null;
-  const { data: perfil } = await supabase.from("perfiles").select("id, nombre, foto, colonia, bio, rol, reservado").eq("id", id).maybeSingle();
+  const { data: perfil } = await supabase.from("perfiles").select("id, nombre, foto, colonia, bio, reservado").eq("id", id).maybeSingle();
   if (!perfil) return null;
   // Topes explícitos (una sola persona): de sobra para lo que sigue y a lo que va; guardan del corte silencioso
   // de PostgREST en 1 000 filas sin tocar lo que hoy se ve (revisión 2026-09-14, A1).
