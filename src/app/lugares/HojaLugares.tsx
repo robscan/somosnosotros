@@ -117,6 +117,10 @@ export default function HojaLugares({ resumen, orden, ficha, entrada, desde, alA
   const tocando = useRef(false);
   /** El dedo ya se levantó y la hoja sigue en movimiento (su inercia o su ajuste): hasta el reposo no se le quita el anclaje. */
   const enInercia = useRef(false);
+  /** Ya se detuvo en llena la inercia de la lista que bajaba de ella (`detener`): una vez por gesto. */
+  const detenida = useRef(false);
+  /** Con el dedo puesto, el anclaje ya volvió en este gesto (la hoja bajó de llena): no se vuelve a quitar hasta soltar. */
+  const anclaVolvio = useRef(false);
   /** La entrada o la salida en curso (o la última). */
   const enCurso = useRef<Animation | null>(null);
   /** La ficha se está yendo con su salida: al cerrarse, la lista entra igual desde abajo. */
@@ -188,6 +192,16 @@ export default function HojaLugares({ resumen, orden, ficha, entrada, desde, alA
     return m;
   }, [medir]);
 
+  /** Detiene la inercia en `y`, una sola vez por gesto: sin desplazamiento (`overflow: hidden`) el navegador la suelta, la hoja se pone en `y` y dos
+   *  cuadros después vuelve a desplazar (con uno, Chrome no se entera y la inercia sigue; bitácora 550). Escribir `scrollTop` solo la mueve. */
+  const detener = useCallback((y: number) => {
+    const h = hoja.current!;
+    detenida.current = true;
+    h.style.overflowY = "hidden";
+    h.scrollTop = y;
+    requestAnimationFrame(() => requestAnimationFrame(() => (h.style.overflowY = "")));
+  }, []);
+
   /** Pone en el DOM lo que dice el desplazamiento: la altura (para el CSS) y la cabecera compacta de la ficha; y le cuenta al armazón si la hoja llena. */
   const pintar = useCallback((y: number) => {
     const { detentes, compactaDesde } = medidas.current;
@@ -198,10 +212,19 @@ export default function HojaLugares({ resumen, orden, ficha, entrada, desde, alA
     // Llena el anclaje se quita, para que el contenido tenga su inercia entera. Con el dedo puesto o en reposo cambia con la posición; a media inercia no: la
     // que sube y pasa por llena sin el dedo debe parar en ella (el anclaje sigue puesto), y la de la lista que baja de llena se detiene arriba de la lista
     // en vez de seguir con una hoja que ya no tiene anclaje (Safari la dejaría entre dos alturas).
+    // Un solo dueño del movimiento (OL-517): esa inercia se detiene una vez, y no se escribe el desplazamiento en cada cuadro contra ella —escribir
+    // `scrollTop` no la para, sigue desde ahí y la hoja temblaba en llena hasta que se agotaba—; y con el dedo puesto el anclaje vuelve una sola vez por
+    // gesto: si al volver el navegador reanclara la hoja en llena, quitarlo otra vez y volver a ponerlo la haría ir y venir bajo el dedo.
     const llenaYa = detentes.llena !== undefined && y >= detentes.llena - 1;
     const h = hoja.current!;
-    if (!enInercia.current) h.toggleAttribute("data-libre", !panel && llenaYa);
-    else if (h.hasAttribute("data-libre") && !llenaYa) h.scrollTop = detentes.llena!;
+    const libre = h.hasAttribute("data-libre");
+    if (!enInercia.current) {
+      const quiere = !panel && llenaYa;
+      if (quiere !== libre && !(quiere && tocando.current && anclaVolvio.current)) {
+        h.toggleAttribute("data-libre", quiere);
+        if (!quiere && tocando.current) anclaVolvio.current = true;
+      }
+    } else if (libre && !llenaYa && !detenida.current) detener(detentes.llena!);
     cuerpo.current!.querySelector("[data-ficha-hoja]")?.toggleAttribute("data-compacta", cabeceraCompacta(y, compactaDesde, detente, panel));
     // Más de una pantalla de lista desplazada, sin ficha: desde ahí la pantalla ofrece volver arriba (como una lista de la ventana).
     const lejos = !habiaFicha.current && y - (detentes.llena ?? 0) > window.innerHeight;
@@ -216,7 +239,7 @@ export default function HojaLugares({ resumen, orden, ficha, entrada, desde, alA
       llenaAvisada.current = llena;
       avisarHoja(llena ? { llena, pagina: habiaFicha.current, y: y - (detentes.llena ?? 0), alFinal: y + h.clientHeight >= h.scrollHeight - 4 } : { llena });
     }
-  }, []);
+  }, [detener]);
 
   /** En reposo, el mapa recibe los toques del hueco (se recorta la hoja desde un poco arriba del cuerpo); en movimiento, no. */
   const recortar = useCallback((enReposo: boolean) => {
@@ -417,6 +440,9 @@ export default function HojaLugares({ resumen, orden, ficha, entrada, desde, alA
           enCurso.current?.finish(); // el gesto gana: una entrada a medias termina de golpe y el dedo sigue desde su altura
           tocando.current = true;
           enInercia.current = false;
+          detenida.current = false;
+          anclaVolvio.current = false;
+          hoja.current!.style.overflowY = ""; // si el dedo llega en el cuadro en que se detenía la inercia, desplaza igual
           pintar(hoja.current!.scrollTop);
           pendiente.current = null;
           recortar(false);

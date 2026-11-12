@@ -396,6 +396,87 @@ pruebaConCuarentena("al soltar, la hoja va directo a su altura: un jalón rápid
   // ...y la que baja de llena termina en una altura, nunca entre dos (en Safari se detiene en llena; Chrome sigue y se ancla en la de abajo).
   const vuelve = await jalar(page, cdp, { y0: 300, dy: 300, ms: 120 });
   assert.ok([asoma, LLENA].some((altura) => Math.abs(vuelve.final - altura) <= 2), `terminó en ${vuelve.final}`);
+  // OL-517, el gesto del founder: la lista llena desplazada a media lista y un jalón fuerte hacia abajo; la inercia cruza llena. Se detiene en llena una
+  // sola vez (antes la hoja escribía `scrollTop = llena` en cada cuadro contra la inercia, que seguía: 40 escrituras y la hoja temblando en el tope).
+  await page.evaluate(() => { const h = document.querySelector('[role="region"][aria-label="Lugares"]'); h.toggleAttribute("data-libre", true); h.scrollTop = 1200; });
+  await page.waitForTimeout(700);
+  await contarEscrituras(page);
+  const tope = await jalar(page, cdp, { y0: 250, dy: 450, ms: 110 });
+  cerca(tope.final, LLENA, 2);
+  assert.ok((await escrituras(page)) <= 1, `la hoja escribió el desplazamiento ${await escrituras(page)} veces`);
+  // El otro camino, con el dedo puesto: si al volver el anclaje el navegador reanclara la hoja en llena (se imita aquí), el anclaje no va y viene
+  // bajo el dedo, y el dedo que sigue jalando desde el principio de la lista baja la hoja.
+  await page.evaluate(() => {
+    const h = document.querySelector('[role="region"][aria-label="Lugares"]');
+    h.toggleAttribute("data-libre", true);
+    h.scrollTop = 900;
+    window.__ancla = { cambios: 0, dedo: false };
+    h.addEventListener("touchstart", () => (window.__ancla.dedo = true));
+    h.addEventListener("touchend", () => (window.__ancla.dedo = false));
+    new MutationObserver(() => {
+      window.__ancla.cambios++;
+      if (!h.hasAttribute("data-libre") && window.__ancla.dedo) h.scrollTop = 660;
+    }).observe(h, { attributes: true, attributeFilter: ["data-libre"] });
+  });
+  await page.waitForTimeout(700);
+  await jalar(page, cdp, { y0: 150, dy: 600, ms: 1400, quieto: 200 });
+  assert.ok((await page.evaluate(() => window.__ancla.cambios)) <= 2, "el anclaje cambia una vez con el dedo puesto");
+  await alturas(asoma, "asoma: el gesto bajó la hoja"); // la traza de `jalar` no alcanza a cubrir un arrastre tan largo: se mira la hoja
+  assert.deepEqual(page.errores, []);
+});
+
+/** Cuenta las escrituras de `scrollTop` que hace la hoja (las de la inercia simulada no: van con `__sim`). */
+const contarEscrituras = (page) =>
+  page.evaluate(() => {
+    const hoja = document.querySelector('[role="region"][aria-label="Lugares"]');
+    const propia = Object.getOwnPropertyDescriptor(Element.prototype, "scrollTop");
+    window.__escrituras = 0;
+    Object.defineProperty(hoja, "scrollTop", {
+      configurable: true,
+      get() { return propia.get.call(this); },
+      set(v) { if (!window.__sim) window.__escrituras++; propia.set.call(this, v); },
+    });
+  });
+const escrituras = (page) => page.evaluate(() => window.__escrituras);
+
+test("la inercia de la lista llena que cruza llena hacia abajo se detiene en llena una sola vez, sin escribir el desplazamiento en cada cuadro (OL-517)", async () => {
+  const page = await abrir(390, 844, false, "?renglones=30");
+  await page.evaluate(() => { const h = document.querySelector('[role="region"][aria-label="Lugares"]'); h.toggleAttribute("data-libre", true); h.scrollTop = 1500; });
+  await page.waitForTimeout(700);
+  await contarEscrituras(page);
+  // Una inercia como la del iPhone: escribir `scrollTop` no la detiene (sigue desde donde quede la hoja); solo la detiene que la hoja deje de desplazar.
+  const pasada = await page.evaluate(async () => {
+    const h = document.querySelector('[role="region"][aria-label="Lugares"]');
+    h.dispatchEvent(new Event("touchstart", { bubbles: true }));
+    h.dispatchEvent(new Event("touchend", { bubbles: true }));
+    let v = -4;
+    let antes = performance.now();
+    let menor = Infinity;
+    await new Promise((fin) => {
+      const cuadro = (ahora) => {
+        const dt = Math.min(32, ahora - antes);
+        antes = ahora;
+        window.__sim = true;
+        h.scrollTop += v * dt;
+        window.__sim = false;
+        menor = Math.min(menor, h.scrollTop);
+        v *= Math.pow(0.998, dt);
+        if (getComputedStyle(h).overflowY === "hidden") v = 0;
+        if (Math.abs(v) > 0.02) requestAnimationFrame(cuadro);
+        else fin();
+      };
+      requestAnimationFrame(cuadro);
+    });
+    return menor;
+  });
+  await page.waitForTimeout(600);
+  const final = await estado(page);
+  assert.ok((await escrituras(page)) <= 1, `la hoja escribió el desplazamiento ${await escrituras(page)} veces contra la inercia`);
+  assert.equal(final.hoja, "llena");
+  cerca(final.y, 660, 1);
+  assert.ok(pasada < 660, "la inercia sí cruzó llena");
+  assert.equal(await page.evaluate(() => document.querySelector('[role="region"][aria-label="Lugares"]').hasAttribute("data-libre")), true, "llena, la lista sigue libre");
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('[role="region"][aria-label="Lugares"]')).overflowY), "auto", "y vuelve a desplazar");
   assert.deepEqual(page.errores, []);
 });
 
