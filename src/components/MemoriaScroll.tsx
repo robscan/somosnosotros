@@ -114,6 +114,11 @@ export default function MemoriaScroll() {
     const objetivo = leerScroll(clave) ?? 0;
     const inicio = performance.now();
     let temporizador = 0;
+    // El gesto gana (OL-517): si la persona ya desplaza, la vigilancia termina; si no, devolvería la página a `objetivo` cada 50 ms contra su dedo.
+    let tocada = false;
+    const alTocar = () => (tocada = true);
+    window.addEventListener("touchstart", alTocar, { capture: true, passive: true });
+    window.addEventListener("wheel", alTocar, { capture: true, passive: true });
     const intentar = () => {
       const cargando = document.querySelector('[aria-busy="true"]');
       const alcanza = document.documentElement.scrollHeight - window.innerHeight >= objetivo;
@@ -122,6 +127,10 @@ export default function MemoriaScroll() {
           // Si el contenido cambia de alto justo después (fotos, tipografía), la posición se vuelve a poner.
           const fin = performance.now() + VIGILANCIA_MS;
           const vigilar = () => {
+            if (tocada) {
+              pendiente = false;
+              return;
+            }
             if (Math.abs(window.scrollY - objetivo) > 1 && document.documentElement.scrollHeight - window.innerHeight >= objetivo) window.scrollTo({ top: objetivo, behavior: "instant" });
             if (performance.now() < fin) temporizador = window.setTimeout(vigilar, PASO_MS);
             else pendiente = false;
@@ -135,6 +144,8 @@ export default function MemoriaScroll() {
     intentar();
     return () => {
       if (temporizador) window.clearTimeout(temporizador);
+      window.removeEventListener("touchstart", alTocar, { capture: true });
+      window.removeEventListener("wheel", alTocar, { capture: true });
     };
   }, [ruta, consulta]);
 

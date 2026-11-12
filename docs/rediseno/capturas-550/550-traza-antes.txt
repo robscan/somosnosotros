@@ -1,0 +1,1647 @@
+
+## Chromium CDP · A · lista llena desplazada (1500), jalón fuerte hacia abajo y soltar con impulso (la inercia cruza llena)
+escrituras de scrollTop hechas por la hoja: 40
+cuadro	0	1500	llena	libre
+touchstart	19	1500	llena	libre
+scroll	84	1451	llena	libre
+cuadro	84	1451	llena	libre
+scroll	84	1354	llena	libre
+cuadro	84	1354	llena	libre
+scroll	117	1290	llena	libre
+cuadro	118	1290	llena	libre
+scroll	151	1226	llena	libre
+cuadro	151	1226	llena	libre
+scroll	184	1161	llena	libre
+cuadro	184	1161	llena	libre
+scroll	217	1097	llena	libre
+cuadro	217	1097	llena	libre
+scroll	251	1033	llena	libre
+cuadro	251	1033	llena	libre
+touchend	284	1033	llena	libre
+scroll	284	968	llena	libre
+cuadro	284	968	llena	libre
+scroll	301	912	llena	libre
+cuadro	301	912	llena	libre
+scroll	317	855	llena	libre
+cuadro	317	855	llena	libre
+scroll	334	801	llena	libre
+cuadro	334	801	llena	libre
+scroll	351	751	llena	libre
+cuadro	351	751	llena	libre
+scroll	367	703	llena	libre
+cuadro	368	703	llena	libre
+scroll	384	659	llena	libre
+cuadro	384	659	llena	libre
+scroll	401	618	llena	libre
+ESCRIBE	401	660
+cuadro	401	660	llena	libre
+scroll	418	621	llena	libre
+ESCRIBE	418	660
+scroll	434	624	llena	libre
+ESCRIBE	434	660
+scroll	451	626	llena	libre
+ESCRIBE	451	660
+scroll	467	629	llena	libre
+ESCRIBE	467	660
+scroll	484	630	llena	libre
+ESCRIBE	484	660
+scroll	501	632	llena	libre
+ESCRIBE	501	660
+scroll	517	634	llena	libre
+ESCRIBE	517	660
+scroll	534	636	llena	libre
+ESCRIBE	534	660
+scroll	551	638	llena	libre
+ESCRIBE	551	660
+scroll	567	639	llena	libre
+ESCRIBE	567	660
+scroll	584	640	llena	libre
+ESCRIBE	584	660
+scroll	601	642	llena	libre
+ESCRIBE	601	660
+scroll	617	643	llena	libre
+ESCRIBE	617	660
+scroll	634	644	llena	libre
+ESCRIBE	634	660
+scroll	651	646	llena	libre
+ESCRIBE	651	660
+scroll	667	646	llena	libre
+ESCRIBE	667	660
+scroll	684	647	llena	libre
+ESCRIBE	684	660
+scroll	701	649	llena	libre
+ESCRIBE	701	660
+scroll	717	649	llena	libre
+ESCRIBE	717	660
+scroll	734	650	llena	libre
+ESCRIBE	734	660
+scroll	751	651	llena	libre
+ESCRIBE	751	660
+scroll	768	651	llena	libre
+ESCRIBE	768	660
+scroll	784	652	llena	libre
+ESCRIBE	784	660
+scroll	802	653	llena	libre
+ESCRIBE	802	660
+scroll	817	654	llena	libre
+ESCRIBE	818	660
+scroll	834	654	llena	libre
+ESCRIBE	834	660
+scroll	851	654	llena	libre
+ESCRIBE	851	660
+scroll	868	655	llena	libre
+ESCRIBE	868	660
+scroll	884	656	llena	libre
+ESCRIBE	884	660
+scroll	901	655	llena	libre
+ESCRIBE	901	660
+scroll	917	657	llena	libre
+ESCRIBE	918	660
+scroll	934	656	llena	libre
+ESCRIBE	934	660
+scroll	951	658	llena	libre
+ESCRIBE	951	660
+scroll	968	657	llena	libre
+ESCRIBE	968	660
+scroll	984	658	llena	libre
+ESCRIBE	984	660
+scroll	1001	658	llena	libre
+ESCRIBE	1001	660
+scroll	1017	658	llena	libre
+ESCRIBE	1018	660
+scroll	1034	659	llena	libre
+cuadro	1034	659	llena	libre
+scroll	1051	658	llena	libre
+ESCRIBE	1051	660
+cuadro	1051	660	llena	libre
+scroll	1067	659	llena	libre
+cuadro	1068	659	llena	libre
+scroll	1084	658	llena	libre
+ESCRIBE	1084	660
+cuadro	1084	660	llena	libre
+scroll	1101	660	llena	libre
+scroll	1117	659	llena	libre
+cuadro	1118	659	llena	libre
+final: y=659 llena libre
+
+## Chromium CDP · B · lista llena desplazada (900), arrastre lento que pasa el principio de la lista con el dedo puesto, y soltar quieto
+escrituras de scrollTop hechas por la hoja: 0
+cuadro	8	900	llena	libre
+touchstart	9	900	llena	libre
+touchstart	9	900	llena	libre
+scroll	174	895	llena	libre
+scroll	174	895	llena	libre
+cuadro	174	895	llena	libre
+scroll	175	885	llena	libre
+scroll	175	885	llena	libre
+cuadro	175	885	llena	libre
+scroll	209	878	llena	libre
+scroll	209	878	llena	libre
+cuadro	209	878	llena	libre
+scroll	241	871	llena	libre
+scroll	242	871	llena	libre
+cuadro	242	871	llena	libre
+scroll	275	864	llena	libre
+scroll	275	864	llena	libre
+cuadro	275	864	llena	libre
+scroll	308	857	llena	libre
+scroll	308	857	llena	libre
+cuadro	308	857	llena	libre
+scroll	342	851	llena	libre
+scroll	342	851	llena	libre
+cuadro	342	851	llena	libre
+scroll	375	844	llena	libre
+scroll	375	844	llena	libre
+cuadro	375	844	llena	libre
+scroll	409	837	llena	libre
+scroll	409	837	llena	libre
+cuadro	409	837	llena	libre
+scroll	441	830	llena	libre
+scroll	441	830	llena	libre
+cuadro	441	830	llena	libre
+scroll	475	823	llena	libre
+scroll	475	823	llena	libre
+cuadro	475	823	llena	libre
+scroll	509	817	llena	libre
+scroll	509	817	llena	libre
+cuadro	509	817	llena	libre
+scroll	542	810	llena	libre
+scroll	542	810	llena	libre
+cuadro	542	810	llena	libre
+scroll	575	803	llena	libre
+scroll	575	803	llena	libre
+cuadro	575	803	llena	libre
+scroll	609	796	llena	libre
+scroll	609	796	llena	libre
+cuadro	609	796	llena	libre
+scroll	642	789	llena	libre
+scroll	642	789	llena	libre
+cuadro	642	789	llena	libre
+scroll	675	782	llena	libre
+scroll	675	782	llena	libre
+cuadro	675	782	llena	libre
+scroll	709	776	llena	libre
+scroll	709	776	llena	libre
+cuadro	709	776	llena	libre
+scroll	741	769	llena	libre
+scroll	741	769	llena	libre
+cuadro	741	769	llena	libre
+scroll	775	762	llena	libre
+scroll	775	762	llena	libre
+cuadro	775	762	llena	libre
+scroll	809	755	llena	libre
+scroll	809	755	llena	libre
+cuadro	809	755	llena	libre
+scroll	842	748	llena	libre
+scroll	842	748	llena	libre
+cuadro	842	748	llena	libre
+scroll	875	742	llena	libre
+scroll	875	742	llena	libre
+cuadro	875	742	llena	libre
+scroll	909	735	llena	libre
+scroll	909	735	llena	libre
+cuadro	909	735	llena	libre
+scroll	942	728	llena	libre
+scroll	942	728	llena	libre
+cuadro	942	728	llena	libre
+scroll	975	721	llena	libre
+scroll	975	721	llena	libre
+cuadro	975	721	llena	libre
+scroll	1009	714	llena	libre
+scroll	1009	714	llena	libre
+cuadro	1009	714	llena	libre
+scroll	1042	707	llena	libre
+scroll	1042	707	llena	libre
+cuadro	1042	707	llena	libre
+scroll	1074	701	llena	libre
+scroll	1074	701	llena	libre
+cuadro	1075	701	llena	libre
+scroll	1109	694	llena	libre
+scroll	1109	694	llena	libre
+cuadro	1109	694	llena	libre
+scroll	1142	687	llena	libre
+scroll	1142	687	llena	libre
+cuadro	1142	687	llena	libre
+scroll	1175	680	llena	libre
+scroll	1175	680	llena	libre
+cuadro	1175	680	llena	libre
+scroll	1209	673	llena	libre
+scroll	1209	673	llena	libre
+cuadro	1209	673	llena	libre
+scroll	1242	667	llena	libre
+scroll	1242	667	llena	libre
+cuadro	1242	667	llena	libre
+scroll	1275	660	llena	libre
+scroll	1275	660	llena	libre
+cuadro	1275	660	llena	libre
+scroll	1309	653	llena	libre
+scroll	1309	653	llena	libre
+cuadro	1309	653	llena	ancla
+scroll	1341	646	llena	ancla
+scroll	1341	646	llena	ancla
+cuadro	1341	646	llena	ancla
+scroll	1374	639	llena	ancla
+scroll	1374	639	llena	ancla
+cuadro	1374	639	llena	ancla
+scroll	1409	632	llena	ancla
+scroll	1409	632	llena	ancla
+cuadro	1409	632	llena	ancla
+scroll	1442	626	llena	ancla
+scroll	1442	626	llena	ancla
+cuadro	1442	626	llena	ancla
+scroll	1475	619	llena	ancla
+scroll	1475	619	llena	ancla
+cuadro	1475	619	llena	ancla
+scroll	1509	612	llena	ancla
+scroll	1509	612	llena	ancla
+cuadro	1509	612	llena	ancla
+scroll	1541	605	llena	ancla
+scroll	1541	605	llena	ancla
+cuadro	1541	605	llena	ancla
+scroll	1575	598	llena	ancla
+scroll	1575	598	llena	ancla
+cuadro	1575	598	llena	ancla
+scroll	1609	592	llena	ancla
+scroll	1609	592	llena	ancla
+cuadro	1609	592	llena	ancla
+scroll	1642	585	llena	ancla
+scroll	1642	585	llena	ancla
+cuadro	1642	585	llena	ancla
+scroll	1675	578	llena	ancla
+scroll	1675	578	llena	ancla
+cuadro	1675	578	llena	ancla
+scroll	1709	571	llena	ancla
+scroll	1709	571	llena	ancla
+cuadro	1709	571	llena	ancla
+scroll	1742	564	llena	ancla
+scroll	1742	564	llena	ancla
+cuadro	1742	564	llena	ancla
+scroll	1775	557	llena	ancla
+scroll	1775	557	llena	ancla
+cuadro	1775	557	llena	ancla
+scroll	1808	551	llena	ancla
+scroll	1808	551	llena	ancla
+cuadro	1808	551	llena	ancla
+scroll	1842	544	llena	ancla
+scroll	1842	544	llena	ancla
+cuadro	1842	544	llena	ancla
+scroll	1875	537	llena	ancla
+scroll	1875	537	llena	ancla
+cuadro	1875	537	llena	ancla
+scroll	1908	530	llena	ancla
+scroll	1908	530	llena	ancla
+cuadro	1908	530	llena	ancla
+scroll	1942	523	llena	ancla
+scroll	1942	523	llena	ancla
+cuadro	1942	523	llena	ancla
+scroll	1975	517	llena	ancla
+scroll	1975	517	llena	ancla
+cuadro	1975	517	llena	ancla
+scroll	2009	510	llena	ancla
+scroll	2009	510	llena	ancla
+cuadro	2009	510	llena	ancla
+scroll	2042	503	llena	ancla
+scroll	2042	503	llena	ancla
+cuadro	2042	503	llena	ancla
+scroll	2075	496	llena	ancla
+scroll	2075	496	llena	ancla
+cuadro	2075	496	llena	ancla
+scroll	2108	489	llena	ancla
+scroll	2108	489	llena	ancla
+cuadro	2108	489	llena	ancla
+scroll	2142	482	llena	ancla
+scroll	2142	482	llena	ancla
+cuadro	2142	482	llena	ancla
+scroll	2175	476	llena	ancla
+scroll	2175	476	llena	ancla
+cuadro	2175	476	llena	ancla
+scroll	2209	469	llena	ancla
+scroll	2209	469	llena	ancla
+cuadro	2209	469	llena	ancla
+scroll	2241	462	llena	ancla
+scroll	2241	462	llena	ancla
+cuadro	2241	462	llena	ancla
+scroll	2275	455	llena	ancla
+scroll	2275	455	llena	ancla
+cuadro	2276	455	asoma	ancla
+scroll	2325	448	asoma	ancla
+scroll	2325	448	asoma	ancla
+cuadro	2325	448	asoma	ancla
+scroll	2374	442	asoma	ancla
+scroll	2375	442	asoma	ancla
+cuadro	2375	442	asoma	ancla
+scroll	2424	435	asoma	ancla
+scroll	2424	435	asoma	ancla
+cuadro	2424	435	asoma	ancla
+scroll	2475	428	asoma	ancla
+scroll	2475	428	asoma	ancla
+cuadro	2475	428	asoma	ancla
+scroll	2508	421	asoma	ancla
+scroll	2508	421	asoma	ancla
+cuadro	2508	421	asoma	ancla
+scroll	2541	414	asoma	ancla
+scroll	2541	414	asoma	ancla
+cuadro	2541	414	asoma	ancla
+scroll	2575	407	asoma	ancla
+scroll	2575	407	asoma	ancla
+cuadro	2575	407	asoma	ancla
+scroll	2609	401	asoma	ancla
+scroll	2609	401	asoma	ancla
+cuadro	2609	401	asoma	ancla
+scroll	2642	394	asoma	ancla
+scroll	2642	394	asoma	ancla
+cuadro	2642	394	asoma	ancla
+scroll	2675	387	asoma	ancla
+scroll	2675	387	asoma	ancla
+cuadro	2675	387	asoma	ancla
+scroll	2708	380	asoma	ancla
+scroll	2708	380	asoma	ancla
+cuadro	2708	380	asoma	ancla
+scroll	2741	373	asoma	ancla
+scroll	2741	373	asoma	ancla
+cuadro	2741	373	asoma	ancla
+scroll	2775	367	asoma	ancla
+scroll	2775	367	asoma	ancla
+cuadro	2775	367	asoma	ancla
+scroll	2808	360	asoma	ancla
+scroll	2808	360	asoma	ancla
+cuadro	2808	360	asoma	ancla
+scroll	2842	353	asoma	ancla
+scroll	2842	353	asoma	ancla
+cuadro	2842	353	asoma	ancla
+scroll	2875	346	asoma	ancla
+scroll	2875	346	asoma	ancla
+cuadro	2875	346	asoma	ancla
+scroll	2909	339	asoma	ancla
+scroll	2909	339	asoma	ancla
+cuadro	2909	339	asoma	ancla
+scroll	2942	332	asoma	ancla
+scroll	2942	332	asoma	ancla
+cuadro	2942	332	asoma	ancla
+scroll	2975	326	asoma	ancla
+scroll	2975	326	asoma	ancla
+cuadro	2975	326	asoma	ancla
+scroll	3008	319	asoma	ancla
+scroll	3008	319	asoma	ancla
+cuadro	3009	319	asoma	ancla
+scroll	3042	312	asoma	ancla
+scroll	3042	312	asoma	ancla
+cuadro	3042	312	asoma	ancla
+touchend	3275	312	asoma	ancla
+touchend	3275	312	asoma	ancla
+scroll	3308	309	asoma	ancla
+scroll	3308	309	asoma	ancla
+cuadro	3308	309	asoma	ancla
+scroll	3325	304	asoma	ancla
+scroll	3325	304	asoma	ancla
+cuadro	3325	304	asoma	ancla
+scroll	3342	298	asoma	ancla
+scroll	3342	298	asoma	ancla
+cuadro	3342	298	asoma	ancla
+scroll	3358	290	asoma	ancla
+scroll	3358	290	asoma	ancla
+cuadro	3358	290	asoma	ancla
+scroll	3375	281	asoma	ancla
+scroll	3375	281	asoma	ancla
+cuadro	3375	281	asoma	ancla
+scroll	3392	272	asoma	ancla
+scroll	3392	272	asoma	ancla
+cuadro	3392	272	asoma	ancla
+scroll	3408	264	asoma	ancla
+scroll	3408	264	asoma	ancla
+cuadro	3408	264	asoma	ancla
+scroll	3425	258	asoma	ancla
+scroll	3425	258	asoma	ancla
+cuadro	3425	258	asoma	ancla
+scroll	3442	253	asoma	ancla
+scroll	3442	253	asoma	ancla
+cuadro	3442	253	asoma	ancla
+scroll	3458	251	asoma	ancla
+scroll	3458	251	asoma	ancla
+cuadro	3458	251	asoma	ancla
+scroll	3475	250	asoma	ancla
+scroll	3475	250	asoma	ancla
+cuadro	3475	250	asoma	ancla
+final: y=250 asoma ancla
+
+## Chromium CDP · C · como B, con un reanclaje imitado al volver el anclaje con el dedo puesto
+escrituras de scrollTop hechas por la hoja: 0
+cuadro	0	900	llena	libre
+touchstart	3	900	llena	libre
+touchstart	3	900	llena	libre
+touchstart	3	900	llena	libre
+scroll	154	895	llena	libre
+scroll	154	895	llena	libre
+scroll	154	895	llena	libre
+cuadro	154	895	llena	libre
+scroll	154	884	llena	libre
+scroll	154	884	llena	libre
+scroll	154	884	llena	libre
+cuadro	154	884	llena	libre
+scroll	187	878	llena	libre
+scroll	187	878	llena	libre
+scroll	187	878	llena	libre
+cuadro	187	878	llena	libre
+scroll	220	871	llena	libre
+scroll	220	871	llena	libre
+scroll	220	871	llena	libre
+cuadro	220	871	llena	libre
+scroll	253	864	llena	libre
+scroll	253	864	llena	libre
+scroll	253	864	llena	libre
+cuadro	253	864	llena	libre
+scroll	287	857	llena	libre
+scroll	287	857	llena	libre
+scroll	287	857	llena	libre
+cuadro	287	857	llena	libre
+scroll	319	850	llena	libre
+scroll	319	850	llena	libre
+scroll	319	850	llena	libre
+cuadro	319	850	llena	libre
+scroll	353	843	llena	libre
+scroll	353	843	llena	libre
+scroll	353	843	llena	libre
+cuadro	353	843	llena	libre
+scroll	387	837	llena	libre
+scroll	387	837	llena	libre
+scroll	387	837	llena	libre
+cuadro	387	837	llena	libre
+scroll	420	830	llena	libre
+scroll	420	830	llena	libre
+scroll	420	830	llena	libre
+cuadro	421	830	llena	libre
+scroll	454	823	llena	libre
+scroll	454	823	llena	libre
+scroll	454	823	llena	libre
+cuadro	454	823	llena	libre
+scroll	487	816	llena	libre
+scroll	487	816	llena	libre
+scroll	487	816	llena	libre
+cuadro	487	816	llena	libre
+scroll	520	809	llena	libre
+scroll	520	809	llena	libre
+scroll	520	809	llena	libre
+cuadro	520	809	llena	libre
+scroll	553	803	llena	libre
+scroll	553	803	llena	libre
+scroll	553	803	llena	libre
+cuadro	553	803	llena	libre
+scroll	587	796	llena	libre
+scroll	587	796	llena	libre
+scroll	587	796	llena	libre
+cuadro	587	796	llena	libre
+scroll	620	789	llena	libre
+scroll	620	789	llena	libre
+scroll	620	789	llena	libre
+cuadro	621	789	llena	libre
+scroll	653	782	llena	libre
+scroll	653	782	llena	libre
+scroll	653	782	llena	libre
+cuadro	654	782	llena	libre
+scroll	687	775	llena	libre
+scroll	687	775	llena	libre
+scroll	687	775	llena	libre
+cuadro	687	775	llena	libre
+scroll	721	768	llena	libre
+scroll	721	768	llena	libre
+scroll	721	768	llena	libre
+cuadro	721	768	llena	libre
+scroll	754	762	llena	libre
+scroll	754	762	llena	libre
+scroll	754	762	llena	libre
+cuadro	754	762	llena	libre
+scroll	787	755	llena	libre
+scroll	787	755	llena	libre
+scroll	787	755	llena	libre
+cuadro	787	755	llena	libre
+scroll	821	748	llena	libre
+scroll	821	748	llena	libre
+scroll	821	748	llena	libre
+cuadro	821	748	llena	libre
+scroll	854	741	llena	libre
+scroll	854	741	llena	libre
+scroll	854	741	llena	libre
+cuadro	854	741	llena	libre
+scroll	887	734	llena	libre
+scroll	887	734	llena	libre
+scroll	887	734	llena	libre
+cuadro	887	734	llena	libre
+scroll	920	728	llena	libre
+scroll	920	728	llena	libre
+scroll	920	728	llena	libre
+cuadro	920	728	llena	libre
+scroll	954	721	llena	libre
+scroll	954	721	llena	libre
+scroll	954	721	llena	libre
+cuadro	954	721	llena	libre
+scroll	987	714	llena	libre
+scroll	987	714	llena	libre
+scroll	987	714	llena	libre
+cuadro	987	714	llena	libre
+scroll	1020	707	llena	libre
+scroll	1020	707	llena	libre
+scroll	1020	707	llena	libre
+cuadro	1021	707	llena	libre
+scroll	1053	700	llena	libre
+scroll	1053	700	llena	libre
+scroll	1053	700	llena	libre
+cuadro	1053	700	llena	libre
+scroll	1087	693	llena	libre
+scroll	1087	693	llena	libre
+scroll	1087	693	llena	libre
+cuadro	1087	693	llena	libre
+scroll	1120	687	llena	libre
+scroll	1120	687	llena	libre
+scroll	1120	687	llena	libre
+cuadro	1120	687	llena	libre
+scroll	1154	680	llena	libre
+scroll	1154	680	llena	libre
+scroll	1154	680	llena	libre
+cuadro	1154	680	llena	libre
+scroll	1187	673	llena	libre
+scroll	1187	673	llena	libre
+scroll	1187	673	llena	libre
+cuadro	1187	673	llena	libre
+scroll	1220	666	llena	libre
+scroll	1220	666	llena	libre
+scroll	1220	666	llena	libre
+cuadro	1220	666	llena	libre
+scroll	1254	659	llena	libre
+scroll	1254	659	llena	libre
+scroll	1254	659	llena	libre
+cuadro	1254	659	llena	libre
+scroll	1287	653	llena	libre
+scroll	1287	653	llena	libre
+scroll	1287	653	llena	libre
+cuadro	1287	660	llena	ancla
+scroll	1309	660	llena	ancla
+scroll	1309	660	llena	ancla
+scroll	1309	660	llena	ancla
+cuadro	1309	660	llena	libre
+scroll	1337	653	llena	libre
+scroll	1337	653	llena	libre
+scroll	1337	653	llena	libre
+cuadro	1337	660	llena	ancla
+scroll	1359	660	llena	ancla
+scroll	1359	660	llena	ancla
+scroll	1359	660	llena	ancla
+cuadro	1359	660	llena	libre
+scroll	1387	653	llena	libre
+scroll	1387	653	llena	libre
+scroll	1387	653	llena	libre
+cuadro	1387	660	llena	ancla
+scroll	1408	660	llena	ancla
+scroll	1408	660	llena	ancla
+scroll	1408	660	llena	ancla
+cuadro	1408	660	llena	libre
+scroll	1437	653	llena	libre
+scroll	1437	653	llena	libre
+scroll	1437	653	llena	libre
+cuadro	1437	660	llena	ancla
+scroll	1458	660	llena	ancla
+scroll	1458	660	llena	ancla
+scroll	1458	660	llena	ancla
+cuadro	1458	660	llena	libre
+scroll	1487	653	llena	libre
+scroll	1487	653	llena	libre
+scroll	1487	653	llena	libre
+cuadro	1487	660	llena	ancla
+scroll	1509	660	llena	ancla
+scroll	1509	660	llena	ancla
+scroll	1509	660	llena	ancla
+cuadro	1509	660	llena	libre
+scroll	1537	653	llena	libre
+scroll	1537	653	llena	libre
+scroll	1537	653	llena	libre
+cuadro	1537	660	llena	ancla
+scroll	1558	660	llena	ancla
+scroll	1558	660	llena	ancla
+scroll	1558	660	llena	ancla
+cuadro	1558	660	llena	libre
+scroll	1587	654	llena	libre
+scroll	1587	654	llena	libre
+scroll	1587	654	llena	libre
+cuadro	1587	660	llena	ancla
+scroll	1608	660	llena	ancla
+scroll	1608	660	llena	ancla
+scroll	1608	660	llena	ancla
+cuadro	1608	660	llena	libre
+scroll	1637	653	llena	libre
+scroll	1637	653	llena	libre
+scroll	1637	653	llena	libre
+cuadro	1637	660	llena	ancla
+scroll	1658	660	llena	ancla
+scroll	1658	660	llena	ancla
+scroll	1658	660	llena	ancla
+cuadro	1658	660	llena	libre
+scroll	1686	653	llena	libre
+scroll	1686	653	llena	libre
+scroll	1686	653	llena	libre
+cuadro	1687	660	llena	ancla
+scroll	1708	660	llena	ancla
+scroll	1708	660	llena	ancla
+scroll	1708	660	llena	ancla
+cuadro	1708	660	llena	libre
+scroll	1737	653	llena	libre
+scroll	1737	653	llena	libre
+scroll	1737	653	llena	libre
+cuadro	1737	660	llena	ancla
+scroll	1758	660	llena	ancla
+scroll	1758	660	llena	ancla
+scroll	1758	660	llena	ancla
+cuadro	1758	660	llena	libre
+scroll	1787	653	llena	libre
+scroll	1787	653	llena	libre
+scroll	1787	653	llena	libre
+cuadro	1787	660	llena	ancla
+scroll	1809	660	llena	ancla
+scroll	1809	660	llena	ancla
+scroll	1809	660	llena	ancla
+cuadro	1809	660	llena	libre
+scroll	1837	654	llena	libre
+scroll	1837	654	llena	libre
+scroll	1837	654	llena	libre
+cuadro	1837	660	llena	ancla
+scroll	1858	660	llena	ancla
+scroll	1858	660	llena	ancla
+scroll	1858	660	llena	ancla
+cuadro	1858	660	llena	libre
+scroll	1887	653	llena	libre
+scroll	1887	653	llena	libre
+scroll	1887	653	llena	libre
+cuadro	1887	660	llena	ancla
+scroll	1908	660	llena	ancla
+scroll	1908	660	llena	ancla
+scroll	1908	660	llena	ancla
+cuadro	1908	660	llena	libre
+scroll	1936	653	llena	libre
+scroll	1936	653	llena	libre
+scroll	1936	653	llena	libre
+cuadro	1936	660	llena	ancla
+scroll	1959	660	llena	ancla
+scroll	1959	660	llena	ancla
+scroll	1959	660	llena	ancla
+cuadro	1959	660	llena	libre
+scroll	1987	653	llena	libre
+scroll	1987	653	llena	libre
+scroll	1987	653	llena	libre
+cuadro	1987	660	llena	ancla
+scroll	2008	660	llena	ancla
+scroll	2008	660	llena	ancla
+scroll	2008	660	llena	ancla
+cuadro	2008	660	llena	libre
+scroll	2037	653	llena	libre
+scroll	2037	653	llena	libre
+scroll	2037	653	llena	libre
+cuadro	2037	660	llena	ancla
+scroll	2058	660	llena	ancla
+scroll	2058	660	llena	ancla
+scroll	2058	660	llena	ancla
+cuadro	2058	660	llena	libre
+scroll	2087	653	llena	libre
+scroll	2087	653	llena	libre
+scroll	2087	653	llena	libre
+cuadro	2087	660	llena	ancla
+scroll	2108	660	llena	ancla
+scroll	2108	660	llena	ancla
+scroll	2108	660	llena	ancla
+cuadro	2108	660	llena	libre
+scroll	2137	654	llena	libre
+scroll	2137	654	llena	libre
+scroll	2137	654	llena	libre
+cuadro	2137	660	llena	ancla
+scroll	2159	660	llena	ancla
+scroll	2159	660	llena	ancla
+scroll	2159	660	llena	ancla
+cuadro	2159	660	llena	libre
+scroll	2187	653	llena	libre
+scroll	2187	653	llena	libre
+scroll	2187	653	llena	libre
+cuadro	2187	660	llena	ancla
+scroll	2209	660	llena	ancla
+scroll	2209	660	llena	ancla
+scroll	2209	660	llena	ancla
+cuadro	2209	660	llena	libre
+scroll	2237	653	llena	libre
+scroll	2237	653	llena	libre
+scroll	2237	653	llena	libre
+cuadro	2237	660	llena	ancla
+scroll	2258	660	llena	ancla
+scroll	2258	660	llena	ancla
+scroll	2258	660	llena	ancla
+cuadro	2258	660	llena	libre
+scroll	2287	653	llena	libre
+scroll	2287	653	llena	libre
+scroll	2287	653	llena	libre
+cuadro	2287	660	llena	ancla
+scroll	2308	660	llena	ancla
+scroll	2308	660	llena	ancla
+scroll	2308	660	llena	ancla
+cuadro	2308	660	llena	libre
+scroll	2336	653	llena	libre
+scroll	2336	653	llena	libre
+scroll	2336	653	llena	libre
+cuadro	2336	660	llena	ancla
+scroll	2358	660	llena	ancla
+scroll	2358	660	llena	ancla
+scroll	2358	660	llena	ancla
+cuadro	2358	660	llena	libre
+scroll	2387	654	llena	libre
+scroll	2387	654	llena	libre
+scroll	2387	654	llena	libre
+cuadro	2387	660	llena	ancla
+scroll	2408	660	llena	ancla
+scroll	2408	660	llena	ancla
+scroll	2408	660	llena	ancla
+cuadro	2409	660	llena	libre
+scroll	2437	653	llena	libre
+scroll	2437	653	llena	libre
+scroll	2437	653	llena	libre
+cuadro	2437	660	llena	ancla
+scroll	2459	660	llena	ancla
+scroll	2459	660	llena	ancla
+scroll	2459	660	llena	ancla
+cuadro	2459	660	llena	libre
+scroll	2487	653	llena	libre
+scroll	2487	653	llena	libre
+scroll	2487	653	llena	libre
+cuadro	2487	660	llena	ancla
+scroll	2508	660	llena	ancla
+scroll	2508	660	llena	ancla
+scroll	2508	660	llena	ancla
+cuadro	2508	660	llena	libre
+scroll	2537	653	llena	libre
+scroll	2537	653	llena	libre
+scroll	2537	653	llena	libre
+cuadro	2537	660	llena	ancla
+scroll	2558	660	llena	ancla
+scroll	2558	660	llena	ancla
+scroll	2558	660	llena	ancla
+cuadro	2558	660	llena	libre
+scroll	2586	653	llena	libre
+scroll	2586	653	llena	libre
+scroll	2586	653	llena	libre
+cuadro	2586	660	llena	ancla
+scroll	2608	660	llena	ancla
+scroll	2608	660	llena	ancla
+scroll	2608	660	llena	ancla
+cuadro	2608	660	llena	libre
+scroll	2636	653	llena	libre
+scroll	2636	653	llena	libre
+scroll	2636	653	llena	libre
+cuadro	2636	660	llena	ancla
+scroll	2658	660	llena	ancla
+scroll	2658	660	llena	ancla
+scroll	2658	660	llena	ancla
+cuadro	2658	660	llena	libre
+scroll	2687	654	llena	libre
+scroll	2687	654	llena	libre
+scroll	2687	654	llena	libre
+cuadro	2687	660	llena	ancla
+scroll	2709	660	llena	ancla
+scroll	2709	660	llena	ancla
+scroll	2709	660	llena	ancla
+cuadro	2709	660	llena	libre
+scroll	2737	653	llena	libre
+scroll	2737	653	llena	libre
+scroll	2737	653	llena	libre
+cuadro	2737	660	llena	ancla
+scroll	2758	660	llena	ancla
+scroll	2758	660	llena	ancla
+scroll	2758	660	llena	ancla
+cuadro	2758	660	llena	libre
+scroll	2787	653	llena	libre
+scroll	2787	653	llena	libre
+scroll	2787	653	llena	libre
+cuadro	2787	660	llena	ancla
+scroll	2808	660	llena	ancla
+scroll	2808	660	llena	ancla
+scroll	2808	660	llena	ancla
+cuadro	2808	660	llena	libre
+scroll	2837	653	llena	libre
+scroll	2837	653	llena	libre
+scroll	2837	653	llena	libre
+cuadro	2837	660	llena	ancla
+scroll	2858	660	llena	ancla
+scroll	2858	660	llena	ancla
+scroll	2858	660	llena	ancla
+cuadro	2858	660	llena	libre
+scroll	2886	653	llena	libre
+scroll	2886	653	llena	libre
+scroll	2886	653	llena	libre
+cuadro	2887	660	llena	ancla
+scroll	2908	660	llena	ancla
+scroll	2908	660	llena	ancla
+scroll	2908	660	llena	ancla
+cuadro	2908	660	llena	libre
+scroll	2936	654	llena	libre
+scroll	2936	654	llena	libre
+scroll	2936	654	llena	libre
+cuadro	2936	660	llena	ancla
+scroll	2958	660	llena	ancla
+scroll	2958	660	llena	ancla
+scroll	2958	660	llena	ancla
+cuadro	2958	660	llena	libre
+scroll	2986	653	llena	libre
+scroll	2986	653	llena	libre
+scroll	2986	653	llena	libre
+cuadro	2986	660	llena	ancla
+scroll	3008	660	llena	ancla
+scroll	3008	660	llena	ancla
+scroll	3008	660	llena	ancla
+cuadro	3008	660	llena	libre
+scroll	3037	653	llena	libre
+scroll	3037	653	llena	libre
+scroll	3037	653	llena	libre
+cuadro	3037	660	llena	ancla
+scroll	3058	660	llena	ancla
+scroll	3058	660	llena	ancla
+scroll	3058	660	llena	ancla
+cuadro	3058	660	llena	libre
+scroll	3087	653	llena	libre
+scroll	3087	653	llena	libre
+scroll	3087	653	llena	libre
+cuadro	3087	660	llena	ancla
+scroll	3108	660	llena	ancla
+scroll	3108	660	llena	ancla
+scroll	3108	660	llena	ancla
+cuadro	3108	660	llena	libre
+scroll	3136	653	llena	libre
+scroll	3136	653	llena	libre
+scroll	3136	653	llena	libre
+cuadro	3136	660	llena	ancla
+scroll	3158	660	llena	ancla
+scroll	3158	660	llena	ancla
+scroll	3158	660	llena	ancla
+cuadro	3158	660	llena	libre
+scroll	3187	653	llena	libre
+scroll	3187	653	llena	libre
+scroll	3187	653	llena	libre
+cuadro	3187	660	llena	ancla
+scroll	3208	660	llena	ancla
+scroll	3208	660	llena	ancla
+scroll	3208	660	llena	ancla
+cuadro	3208	660	llena	libre
+scroll	3236	654	llena	libre
+scroll	3236	654	llena	libre
+scroll	3236	654	llena	libre
+cuadro	3237	660	llena	ancla
+scroll	3258	660	llena	ancla
+scroll	3258	660	llena	ancla
+scroll	3258	660	llena	ancla
+cuadro	3258	660	llena	libre
+scroll	3286	653	llena	libre
+scroll	3286	653	llena	libre
+scroll	3286	653	llena	libre
+cuadro	3286	660	llena	ancla
+scroll	3308	660	llena	ancla
+scroll	3308	660	llena	ancla
+scroll	3308	660	llena	ancla
+cuadro	3308	660	llena	libre
+scroll	3337	653	llena	libre
+scroll	3337	653	llena	libre
+scroll	3337	653	llena	libre
+cuadro	3337	660	llena	ancla
+scroll	3359	660	llena	ancla
+scroll	3359	660	llena	ancla
+scroll	3359	660	llena	ancla
+cuadro	3359	660	llena	libre
+scroll	3387	653	llena	libre
+scroll	3387	653	llena	libre
+scroll	3387	653	llena	libre
+cuadro	3387	660	llena	ancla
+scroll	3408	660	llena	ancla
+scroll	3408	660	llena	ancla
+scroll	3408	660	llena	ancla
+cuadro	3408	660	llena	libre
+scroll	3437	653	llena	libre
+scroll	3437	653	llena	libre
+scroll	3437	653	llena	libre
+cuadro	3437	660	llena	ancla
+scroll	3458	660	llena	ancla
+scroll	3458	660	llena	ancla
+scroll	3458	660	llena	ancla
+cuadro	3458	660	llena	libre
+scroll	3487	653	llena	libre
+scroll	3487	653	llena	libre
+scroll	3487	653	llena	libre
+cuadro	3487	660	llena	ancla
+scroll	3508	660	llena	ancla
+scroll	3508	660	llena	ancla
+scroll	3508	660	llena	ancla
+cuadro	3508	660	llena	libre
+scroll	3537	654	llena	libre
+scroll	3537	654	llena	libre
+scroll	3537	654	llena	libre
+cuadro	3537	660	llena	ancla
+scroll	3558	660	llena	ancla
+scroll	3558	660	llena	ancla
+scroll	3558	660	llena	ancla
+cuadro	3558	660	llena	libre
+scroll	3587	653	llena	libre
+scroll	3587	653	llena	libre
+scroll	3587	653	llena	libre
+cuadro	3587	660	llena	ancla
+scroll	3608	660	llena	ancla
+scroll	3608	660	llena	ancla
+scroll	3608	660	llena	ancla
+cuadro	3608	660	llena	libre
+scroll	3637	653	llena	libre
+scroll	3637	653	llena	libre
+scroll	3637	653	llena	libre
+cuadro	3637	660	llena	ancla
+scroll	3658	660	llena	ancla
+scroll	3658	660	llena	ancla
+scroll	3658	660	llena	ancla
+cuadro	3658	660	llena	libre
+scroll	3687	653	llena	libre
+scroll	3687	653	llena	libre
+scroll	3687	653	llena	libre
+cuadro	3687	660	llena	ancla
+scroll	3708	660	llena	ancla
+scroll	3708	660	llena	ancla
+scroll	3708	660	llena	ancla
+cuadro	3708	660	llena	libre
+scroll	3737	653	llena	libre
+scroll	3737	653	llena	libre
+scroll	3737	653	llena	libre
+cuadro	3737	660	llena	ancla
+scroll	3758	660	llena	ancla
+scroll	3758	660	llena	ancla
+scroll	3758	660	llena	ancla
+cuadro	3758	660	llena	libre
+scroll	3787	654	llena	libre
+scroll	3787	654	llena	libre
+scroll	3787	654	llena	libre
+cuadro	3787	660	llena	ancla
+scroll	3808	660	llena	ancla
+scroll	3808	660	llena	ancla
+scroll	3808	660	llena	ancla
+cuadro	3808	660	llena	libre
+touchend	4004	660	llena	libre
+touchend	4004	660	llena	libre
+touchend	4004	660	llena	libre
+final: y=660 llena libre
+cambios de data-libre durante el gesto C (incluye el que pone el arreglo previo del gesto): 103
+
+## chromium · inercia simulada que no se detiene al escribir scrollTop (como la reporta el iPhone; solo la detiene overflow: hidden): de 1500 hacia abajo, cruza llena
+escrituras de scrollTop hechas por la hoja: 115
+cuadro	0	1500	llena	libre
+touchstart	1	1500	llena	libre
+touchend	1	1500	llena	libre
+scroll	21	1491	llena	libre
+cuadro	21	1491	llena	libre
+scroll	38	1424	llena	libre
+cuadro	38	1424	llena	libre
+scroll	55	1360	llena	libre
+cuadro	55	1360	llena	libre
+scroll	71	1298	llena	libre
+cuadro	71	1298	llena	libre
+scroll	88	1238	llena	libre
+cuadro	88	1238	llena	libre
+scroll	104	1180	llena	libre
+cuadro	104	1180	llena	libre
+scroll	120	1124	llena	libre
+cuadro	121	1124	llena	libre
+scroll	137	1069	llena	libre
+cuadro	138	1069	llena	libre
+scroll	154	1017	llena	libre
+cuadro	154	1017	llena	libre
+scroll	171	966	llena	libre
+cuadro	171	966	llena	libre
+scroll	188	917	llena	libre
+cuadro	188	917	llena	libre
+scroll	204	870	llena	libre
+cuadro	204	870	llena	libre
+scroll	221	824	llena	libre
+cuadro	221	824	llena	libre
+scroll	237	779	llena	libre
+cuadro	237	779	llena	libre
+scroll	255	736	llena	libre
+cuadro	255	736	llena	libre
+scroll	271	695	llena	libre
+cuadro	271	695	llena	libre
+scroll	288	655	llena	libre
+ESCRIBE	288	660
+cuadro	288	660	llena	libre
+scroll	305	621	llena	libre
+ESCRIBE	305	660
+scroll	321	623	llena	libre
+ESCRIBE	321	660
+scroll	337	624	llena	libre
+ESCRIBE	337	660
+scroll	355	625	llena	libre
+ESCRIBE	355	660
+scroll	371	626	llena	libre
+ESCRIBE	371	660
+scroll	388	627	llena	libre
+ESCRIBE	388	660
+scroll	405	628	llena	libre
+ESCRIBE	405	660
+scroll	421	629	llena	libre
+ESCRIBE	421	660
+scroll	438	630	llena	libre
+ESCRIBE	438	660
+scroll	454	631	llena	libre
+ESCRIBE	455	660
+scroll	471	632	llena	libre
+ESCRIBE	471	660
+scroll	488	633	llena	libre
+ESCRIBE	488	660
+scroll	505	634	llena	libre
+ESCRIBE	505	660
+scroll	521	635	llena	libre
+ESCRIBE	521	660
+scroll	538	636	llena	libre
+ESCRIBE	538	660
+scroll	555	636	llena	libre
+ESCRIBE	555	660
+scroll	571	637	llena	libre
+ESCRIBE	571	660
+scroll	588	638	llena	libre
+ESCRIBE	588	660
+scroll	604	639	llena	libre
+ESCRIBE	604	660
+scroll	621	639	llena	libre
+ESCRIBE	621	660
+scroll	638	640	llena	libre
+ESCRIBE	638	660
+scroll	654	641	llena	libre
+ESCRIBE	654	660
+scroll	671	641	llena	libre
+ESCRIBE	671	660
+scroll	688	642	llena	libre
+ESCRIBE	688	660
+scroll	705	642	llena	libre
+ESCRIBE	705	660
+scroll	721	643	llena	libre
+ESCRIBE	721	660
+scroll	738	644	llena	libre
+ESCRIBE	738	660
+scroll	754	644	llena	libre
+ESCRIBE	754	660
+scroll	771	645	llena	libre
+ESCRIBE	771	660
+scroll	788	645	llena	libre
+ESCRIBE	788	660
+scroll	805	646	llena	libre
+ESCRIBE	805	660
+scroll	821	646	llena	libre
+ESCRIBE	821	660
+scroll	838	647	llena	libre
+ESCRIBE	838	660
+scroll	854	647	llena	libre
+ESCRIBE	854	660
+scroll	871	648	llena	libre
+ESCRIBE	871	660
+scroll	888	648	llena	libre
+ESCRIBE	888	660
+scroll	904	648	llena	libre
+ESCRIBE	904	660
+scroll	921	649	llena	libre
+ESCRIBE	921	660
+scroll	938	649	llena	libre
+ESCRIBE	938	660
+scroll	954	649	llena	libre
+ESCRIBE	954	660
+scroll	971	650	llena	libre
+ESCRIBE	971	660
+scroll	987	650	llena	libre
+ESCRIBE	987	660
+scroll	1005	650	llena	libre
+ESCRIBE	1005	660
+scroll	1021	651	llena	libre
+ESCRIBE	1021	660
+scroll	1037	651	llena	libre
+ESCRIBE	1037	660
+scroll	1054	651	llena	libre
+ESCRIBE	1054	660
+scroll	1070	652	llena	libre
+ESCRIBE	1070	660
+scroll	1087	652	llena	libre
+ESCRIBE	1087	660
+scroll	1104	652	llena	libre
+ESCRIBE	1104	660
+scroll	1120	652	llena	libre
+ESCRIBE	1120	660
+scroll	1137	653	llena	libre
+ESCRIBE	1137	660
+scroll	1154	653	llena	libre
+ESCRIBE	1155	660
+scroll	1171	653	llena	libre
+ESCRIBE	1171	660
+scroll	1187	653	llena	libre
+ESCRIBE	1187	660
+scroll	1205	654	llena	libre
+ESCRIBE	1205	660
+scroll	1221	654	llena	libre
+ESCRIBE	1221	660
+scroll	1238	654	llena	libre
+ESCRIBE	1238	660
+scroll	1254	654	llena	libre
+ESCRIBE	1255	660
+scroll	1271	654	llena	libre
+ESCRIBE	1271	660
+scroll	1288	655	llena	libre
+ESCRIBE	1288	660
+scroll	1304	655	llena	libre
+ESCRIBE	1304	660
+scroll	1321	655	llena	libre
+ESCRIBE	1321	660
+scroll	1337	655	llena	libre
+ESCRIBE	1337	660
+scroll	1354	655	llena	libre
+ESCRIBE	1355	660
+scroll	1371	655	llena	libre
+ESCRIBE	1371	660
+scroll	1388	656	llena	libre
+ESCRIBE	1388	660
+scroll	1405	656	llena	libre
+ESCRIBE	1405	660
+scroll	1421	656	llena	libre
+ESCRIBE	1421	660
+scroll	1438	656	llena	libre
+ESCRIBE	1438	660
+scroll	1454	656	llena	libre
+ESCRIBE	1454	660
+scroll	1471	656	llena	libre
+ESCRIBE	1471	660
+scroll	1488	656	llena	libre
+ESCRIBE	1488	660
+scroll	1504	656	llena	libre
+ESCRIBE	1504	660
+scroll	1521	657	llena	libre
+ESCRIBE	1521	660
+scroll	1538	657	llena	libre
+ESCRIBE	1538	660
+scroll	1554	657	llena	libre
+ESCRIBE	1554	660
+scroll	1570	657	llena	libre
+ESCRIBE	1571	660
+scroll	1588	657	llena	libre
+ESCRIBE	1588	660
+scroll	1604	657	llena	libre
+ESCRIBE	1605	660
+scroll	1621	657	llena	libre
+ESCRIBE	1621	660
+scroll	1638	657	llena	libre
+ESCRIBE	1638	660
+scroll	1654	657	llena	libre
+ESCRIBE	1655	660
+scroll	1671	657	llena	libre
+ESCRIBE	1671	660
+scroll	1688	658	llena	libre
+ESCRIBE	1688	660
+scroll	1704	658	llena	libre
+ESCRIBE	1705	660
+scroll	1721	658	llena	libre
+ESCRIBE	1721	660
+scroll	1738	658	llena	libre
+ESCRIBE	1738	660
+scroll	1754	658	llena	libre
+ESCRIBE	1755	660
+scroll	1771	658	llena	libre
+ESCRIBE	1771	660
+scroll	1787	658	llena	libre
+ESCRIBE	1788	660
+scroll	1804	658	llena	libre
+ESCRIBE	1805	660
+scroll	1821	658	llena	libre
+ESCRIBE	1821	660
+scroll	1838	658	llena	libre
+ESCRIBE	1838	660
+scroll	1854	658	llena	libre
+ESCRIBE	1854	660
+scroll	1871	658	llena	libre
+ESCRIBE	1871	660
+scroll	1888	658	llena	libre
+ESCRIBE	1888	660
+scroll	1904	658	llena	libre
+ESCRIBE	1904	660
+scroll	1920	658	llena	libre
+ESCRIBE	1920	660
+scroll	1937	659	llena	libre
+cuadro	1937	659	llena	libre
+scroll	1954	658	llena	libre
+ESCRIBE	1954	660
+cuadro	1954	660	llena	libre
+scroll	1971	659	llena	libre
+cuadro	1971	659	llena	libre
+scroll	1988	658	llena	libre
+ESCRIBE	1988	660
+cuadro	1988	660	llena	libre
+scroll	2004	659	llena	libre
+cuadro	2005	659	llena	libre
+scroll	2021	658	llena	libre
+ESCRIBE	2021	660
+cuadro	2021	660	llena	libre
+scroll	2038	659	llena	libre
+cuadro	2038	659	llena	libre
+scroll	2054	658	llena	libre
+ESCRIBE	2054	660
+cuadro	2054	660	llena	libre
+scroll	2071	659	llena	libre
+cuadro	2071	659	llena	libre
+scroll	2088	658	llena	libre
+ESCRIBE	2088	660
+cuadro	2088	660	llena	libre
+scroll	2104	659	llena	libre
+cuadro	2104	659	llena	libre
+scroll	2121	658	llena	libre
+ESCRIBE	2121	660
+cuadro	2121	660	llena	libre
+scroll	2138	659	llena	libre
+cuadro	2138	659	llena	libre
+scroll	2153	658	llena	libre
+ESCRIBE	2154	660
+cuadro	2154	660	llena	libre
+scroll	2171	659	llena	libre
+cuadro	2171	659	llena	libre
+scroll	2188	658	llena	libre
+ESCRIBE	2188	660
+cuadro	2188	660	llena	libre
+scroll	2204	659	llena	libre
+cuadro	2204	659	llena	libre
+scroll	2221	658	llena	libre
+ESCRIBE	2221	660
+cuadro	2221	660	llena	libre
+scroll	2238	659	llena	libre
+cuadro	2238	659	llena	libre
+scroll	2255	658	llena	libre
+ESCRIBE	2255	660
+cuadro	2255	660	llena	libre
+scroll	2271	659	llena	libre
+cuadro	2271	659	llena	libre
+scroll	2287	658	llena	libre
+ESCRIBE	2287	660
+cuadro	2287	660	llena	libre
+scroll	2304	659	llena	libre
+cuadro	2305	659	llena	libre
+scroll	2321	658	llena	libre
+ESCRIBE	2321	660
+cuadro	2321	660	llena	libre
+scroll	2338	659	llena	libre
+cuadro	2338	659	llena	libre
+scroll	2354	658	llena	libre
+ESCRIBE	2354	660
+cuadro	2354	660	llena	libre
+scroll	2371	659	llena	libre
+cuadro	2371	659	llena	libre
+scroll	2388	658	llena	libre
+ESCRIBE	2388	660
+cuadro	2388	660	llena	libre
+scroll	2405	659	llena	libre
+cuadro	2405	659	llena	libre
+scroll	2421	658	llena	libre
+ESCRIBE	2421	660
+cuadro	2421	660	llena	libre
+scroll	2437	659	llena	libre
+cuadro	2437	659	llena	libre
+scroll	2455	658	llena	libre
+ESCRIBE	2455	660
+cuadro	2455	660	llena	libre
+scroll	2471	659	llena	libre
+cuadro	2471	659	llena	libre
+final: y=659 llena libre
+
+## webkit · inercia simulada que no se detiene al escribir scrollTop (como la reporta el iPhone; solo la detiene overflow: hidden): de 1500 hacia abajo, cruza llena
+escrituras de scrollTop hechas por la hoja: 127
+cuadro	0	1500	llena	libre
+touchstart	1	1500	llena	libre
+touchend	2	1500	llena	libre
+scroll	33	1444	llena	libre
+cuadro	33	1444	llena	libre
+scroll	49	1381	llena	libre
+cuadro	49	1381	llena	libre
+scroll	66	1316	llena	libre
+cuadro	66	1316	llena	libre
+scroll	83	1254	llena	libre
+cuadro	83	1254	llena	libre
+scroll	99	1197	llena	libre
+cuadro	99	1197	llena	libre
+scroll	116	1139	llena	libre
+cuadro	116	1139	llena	libre
+scroll	132	1083	llena	libre
+cuadro	133	1083	llena	libre
+scroll	149	1032	llena	libre
+cuadro	149	1032	llena	libre
+scroll	166	979	llena	libre
+cuadro	166	979	llena	libre
+scroll	182	928	llena	libre
+cuadro	183	928	llena	libre
+scroll	199	881	llena	libre
+cuadro	199	881	llena	libre
+scroll	216	833	llena	libre
+cuadro	216	833	llena	libre
+scroll	232	787	llena	libre
+cuadro	233	787	llena	libre
+scroll	249	745	llena	libre
+cuadro	249	745	llena	libre
+scroll	266	702	llena	libre
+cuadro	266	702	llena	libre
+scroll	283	660	llena	libre
+cuadro	283	660	llena	libre
+scroll	299	622	llena	libre
+ESCRIBE	299	660
+scroll	316	621	llena	libre
+ESCRIBE	316	660
+scroll	332	622	llena	libre
+ESCRIBE	333	660
+scroll	349	625	llena	libre
+ESCRIBE	349	660
+scroll	366	624	llena	libre
+ESCRIBE	366	660
+scroll	382	626	llena	libre
+ESCRIBE	383	660
+scroll	399	629	llena	libre
+ESCRIBE	399	660
+scroll	416	628	llena	libre
+ESCRIBE	416	660
+scroll	432	629	llena	libre
+ESCRIBE	433	660
+scroll	449	632	llena	libre
+ESCRIBE	449	660
+scroll	466	631	llena	libre
+ESCRIBE	466	660
+scroll	482	632	llena	libre
+ESCRIBE	483	660
+scroll	499	634	llena	libre
+ESCRIBE	499	660
+scroll	516	633	llena	libre
+ESCRIBE	516	660
+scroll	532	634	llena	libre
+ESCRIBE	532	660
+scroll	550	637	llena	libre
+ESCRIBE	550	660
+scroll	566	635	llena	libre
+ESCRIBE	566	660
+scroll	583	638	llena	libre
+ESCRIBE	583	660
+scroll	599	639	llena	libre
+ESCRIBE	599	660
+scroll	616	638	llena	libre
+ESCRIBE	616	660
+scroll	632	639	llena	libre
+ESCRIBE	633	660
+scroll	649	641	llena	libre
+ESCRIBE	649	660
+scroll	666	640	llena	libre
+ESCRIBE	666	660
+scroll	682	641	llena	libre
+ESCRIBE	683	660
+scroll	699	643	llena	libre
+ESCRIBE	699	660
+scroll	716	642	llena	libre
+ESCRIBE	716	660
+scroll	733	643	llena	libre
+ESCRIBE	733	660
+scroll	749	644	llena	libre
+ESCRIBE	749	660
+scroll	766	644	llena	libre
+ESCRIBE	766	660
+scroll	782	644	llena	libre
+ESCRIBE	783	660
+scroll	799	646	llena	libre
+ESCRIBE	799	660
+scroll	816	645	llena	libre
+ESCRIBE	816	660
+scroll	832	646	llena	libre
+ESCRIBE	833	660
+scroll	849	647	llena	libre
+ESCRIBE	849	660
+scroll	866	647	llena	libre
+ESCRIBE	866	660
+scroll	882	647	llena	libre
+ESCRIBE	883	660
+scroll	899	648	llena	libre
+ESCRIBE	899	660
+scroll	916	648	llena	libre
+ESCRIBE	916	660
+scroll	933	648	llena	libre
+ESCRIBE	933	660
+scroll	949	649	llena	libre
+ESCRIBE	949	660
+scroll	966	649	llena	libre
+ESCRIBE	966	660
+scroll	982	649	llena	libre
+ESCRIBE	983	660
+scroll	999	650	llena	libre
+ESCRIBE	999	660
+scroll	1016	650	llena	libre
+ESCRIBE	1016	660
+scroll	1032	650	llena	libre
+ESCRIBE	1033	660
+scroll	1049	651	llena	libre
+ESCRIBE	1049	660
+scroll	1066	651	llena	libre
+ESCRIBE	1066	660
+scroll	1082	651	llena	libre
+ESCRIBE	1082	660
+scroll	1099	652	llena	libre
+ESCRIBE	1099	660
+scroll	1116	652	llena	libre
+ESCRIBE	1116	660
+scroll	1132	652	llena	libre
+ESCRIBE	1133	660
+scroll	1149	653	llena	libre
+ESCRIBE	1149	660
+scroll	1165	652	llena	libre
+ESCRIBE	1165	660
+scroll	1183	653	llena	libre
+ESCRIBE	1183	660
+scroll	1199	652	llena	libre
+ESCRIBE	1199	660
+scroll	1216	653	llena	libre
+ESCRIBE	1216	660
+scroll	1233	653	llena	libre
+ESCRIBE	1233	660
+scroll	1249	654	llena	libre
+ESCRIBE	1249	660
+scroll	1265	654	llena	libre
+ESCRIBE	1266	660
+scroll	1283	654	llena	libre
+ESCRIBE	1283	660
+scroll	1299	654	llena	libre
+ESCRIBE	1299	660
+scroll	1316	655	llena	libre
+ESCRIBE	1316	660
+scroll	1333	654	llena	libre
+ESCRIBE	1333	660
+scroll	1349	655	llena	libre
+ESCRIBE	1349	660
+scroll	1366	655	llena	libre
+ESCRIBE	1366	660
+scroll	1383	655	llena	libre
+ESCRIBE	1383	660
+scroll	1399	655	llena	libre
+ESCRIBE	1399	660
+scroll	1416	655	llena	libre
+ESCRIBE	1416	660
+scroll	1432	655	llena	libre
+ESCRIBE	1433	660
+scroll	1449	656	llena	libre
+ESCRIBE	1449	660
+scroll	1466	656	llena	libre
+ESCRIBE	1466	660
+scroll	1482	656	llena	libre
+ESCRIBE	1483	660
+scroll	1499	656	llena	libre
+ESCRIBE	1499	660
+scroll	1516	656	llena	libre
+ESCRIBE	1516	660
+scroll	1533	656	llena	libre
+ESCRIBE	1533	660
+scroll	1549	656	llena	libre
+ESCRIBE	1549	660
+scroll	1566	656	llena	libre
+ESCRIBE	1566	660
+scroll	1582	656	llena	libre
+ESCRIBE	1582	660
+scroll	1600	657	llena	libre
+ESCRIBE	1600	660
+scroll	1616	656	llena	libre
+ESCRIBE	1616	660
+scroll	1632	657	llena	libre
+ESCRIBE	1632	660
+scroll	1650	657	llena	libre
+ESCRIBE	1650	660
+scroll	1666	657	llena	libre
+ESCRIBE	1666	660
+scroll	1682	657	llena	libre
+ESCRIBE	1683	660
+scroll	1699	657	llena	libre
+ESCRIBE	1699	660
+scroll	1716	657	llena	libre
+ESCRIBE	1716	660
+scroll	1733	657	llena	libre
+ESCRIBE	1733	660
+scroll	1749	657	llena	libre
+ESCRIBE	1749	660
+scroll	1766	657	llena	libre
+ESCRIBE	1766	660
+scroll	1782	657	llena	libre
+ESCRIBE	1782	660
+scroll	1799	658	llena	libre
+ESCRIBE	1799	660
+scroll	1816	658	llena	libre
+ESCRIBE	1816	660
+scroll	1832	658	llena	libre
+ESCRIBE	1833	660
+scroll	1849	658	llena	libre
+ESCRIBE	1849	660
+scroll	1866	658	llena	libre
+ESCRIBE	1866	660
+scroll	1882	658	llena	libre
+ESCRIBE	1883	660
+scroll	1899	658	llena	libre
+ESCRIBE	1899	660
+scroll	1916	658	llena	libre
+ESCRIBE	1916	660
+scroll	1932	658	llena	libre
+ESCRIBE	1933	660
+scroll	1949	658	llena	libre
+ESCRIBE	1949	660
+scroll	1966	658	llena	libre
+ESCRIBE	1966	660
+scroll	1982	658	llena	libre
+ESCRIBE	1983	660
+scroll	1999	658	llena	libre
+ESCRIBE	1999	660
+scroll	2016	658	llena	libre
+ESCRIBE	2016	660
+scroll	2032	658	llena	libre
+ESCRIBE	2033	660
+scroll	2048	658	llena	libre
+ESCRIBE	2048	660
+scroll	2066	658	llena	libre
+ESCRIBE	2066	660
+scroll	2082	658	llena	libre
+ESCRIBE	2082	660
+scroll	2099	658	llena	libre
+ESCRIBE	2099	660
+scroll	2116	658	llena	libre
+ESCRIBE	2116	660
+scroll	2132	658	llena	libre
+ESCRIBE	2133	660
+scroll	2149	659	llena	libre
+cuadro	2149	659	llena	libre
+scroll	2166	658	llena	libre
+ESCRIBE	2166	660
+cuadro	2166	660	llena	libre
+scroll	2182	659	llena	libre
+cuadro	2183	659	llena	libre
+scroll	2199	658	llena	libre
+ESCRIBE	2200	660
+cuadro	2200	660	llena	libre
+scroll	2215	659	llena	libre
+cuadro	2215	659	llena	libre
+scroll	2233	658	llena	libre
+ESCRIBE	2233	660
+cuadro	2233	660	llena	libre
+scroll	2249	659	llena	libre
+cuadro	2249	659	llena	libre
+scroll	2266	658	llena	libre
+ESCRIBE	2266	660
+cuadro	2266	660	llena	libre
+scroll	2283	659	llena	libre
+cuadro	2283	659	llena	libre
+scroll	2299	658	llena	libre
+ESCRIBE	2299	660
+cuadro	2300	660	llena	libre
+scroll	2316	659	llena	libre
+cuadro	2316	659	llena	libre
+scroll	2332	658	llena	libre
+ESCRIBE	2333	660
+cuadro	2333	660	llena	libre
+scroll	2349	659	llena	libre
+cuadro	2349	659	llena	libre
+scroll	2366	658	llena	libre
+ESCRIBE	2366	660
+cuadro	2366	660	llena	libre
+scroll	2382	659	llena	libre
+cuadro	2382	659	llena	libre
+scroll	2399	658	llena	libre
+ESCRIBE	2399	660
+cuadro	2399	660	llena	libre
+scroll	2416	659	llena	libre
+cuadro	2416	659	llena	libre
+scroll	2432	658	llena	libre
+ESCRIBE	2433	660
+cuadro	2433	660	llena	libre
+scroll	2449	659	llena	libre
+cuadro	2449	659	llena	libre
+scroll	2466	658	llena	libre
+ESCRIBE	2466	660
+cuadro	2466	660	llena	libre
+scroll	2482	659	llena	libre
+cuadro	2483	659	llena	libre
+scroll	2499	658	llena	libre
+ESCRIBE	2499	660
+cuadro	2499	660	llena	libre
+scroll	2516	659	llena	libre
+cuadro	2516	659	llena	libre
+scroll	2532	658	llena	libre
+ESCRIBE	2533	660
+cuadro	2533	660	llena	libre
+scroll	2549	659	llena	libre
+cuadro	2549	659	llena	libre
+scroll	2566	658	llena	libre
+ESCRIBE	2566	660
+cuadro	2566	660	llena	libre
+scroll	2582	659	llena	libre
+cuadro	2582	659	llena	libre
+scroll	2600	658	llena	libre
+ESCRIBE	2600	660
+cuadro	2600	660	llena	libre
+scroll	2616	659	llena	libre
+cuadro	2616	659	llena	libre
+scroll	2632	658	llena	libre
+ESCRIBE	2633	660
+cuadro	2633	660	llena	libre
+scroll	2649	659	llena	libre
+cuadro	2649	659	llena	libre
+scroll	2666	658	llena	libre
+ESCRIBE	2666	660
+cuadro	2666	660	llena	libre
+scroll	2682	660	llena	libre
+final: y=660 llena libre
