@@ -75,3 +75,15 @@ Busqué todo lo que combine anclaje o posiciones automáticas con escrituras de 
 
 - La excepción del gesto que baja de llena y vuelve a subir sin soltar (arriba).
 - Si se arregla el `irA` del ResizeObserver con un dedo puesto (hallazgo, arriba).
+
+## Comprobación del gestor en Safari de iPhone (simulador, iOS 27.0, iPhone 17)
+
+El operador no tenía simulador y solo midió en Chromium. El gestor levantó las dos versiones en local contra el respaldo (la de `main` y la de esta rama), con un registro temporal que anota cada evento de desplazamiento de la hoja (no está en el código), y repitió los gestos en Safari del simulador con toques reales. Lista llena y desplazada; llena = 482.
+
+| Gesto | `main` (producción) | Esta rama |
+|---|---|---|
+| Jalón rápido hacia abajo desde la lista desplazada (el del reporte) | 136 eventos en 2,48 s tras soltar, **60 escrituras** de la hoja contra el impulso y **120 cambios de sentido**; termina en llena | **1 escritura**, 0 a 1 cambios de sentido, termina en llena en 0,05 a 0,10 s |
+| Segundo jalón, ya en llena, para bajar la hoja | baja | baja a recogida (0) |
+| Arrastre lento con el dedo puesto que cruza el tope de la lista y se suelta sin impulso | no medido | sigue al dedo, un solo cambio de anclaje, al soltar va a asoma (347) sin cambios de sentido |
+
+Queda demostrado en WebKit de iOS el camino A (la escritura no detiene el impulso) y que el arreglo lo quita. **No probado:** un iPhone de verdad, ni la app de la tienda (Capacitor) ni la web instalada; el founder lo prueba al publicarse. Las trazas quedan fuera del repo (carpeta privada de investigaciones, `hoja-lugares-2026-11-12`).
