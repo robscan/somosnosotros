@@ -1,7 +1,8 @@
 import { etiquetaDisciplina } from "../artistas";
 import { conMayuscula, diaConMes, diaLargo, diaLocal, horaCorta } from "../fechas";
 import { etiquetaTipo } from "../lugares";
-import { conCreditoDeFoto, CUENTA_INSTAGRAM, hashtag, usuarioDeInstagram } from "./texto";
+import { bloqueDeLaSemana, TOPE_EVENTOS_FICHA, type ObraEnTexto } from "./semanaDeFicha";
+import { conCreditoDeFoto, CUENTA_INSTAGRAM, hashtag, revisarTexto, usuarioDeInstagram } from "./texto";
 
 /**
  * Lo que dicen la tarjeta y el texto de un artista o de un lugar destacado de la semana, y el aviso previo (OL-479; firmado en el prototipo de
@@ -74,17 +75,20 @@ export function proximaEnTexto(p: Proxima, ahora: Date): string {
   return `${dia}, ${horaCorta(p.inicio, p.zona)}${lugar}`;
 }
 
-export type ArtistaDestacado = { nombre: string; slug: string; descripcion: string; disciplina: string; detalle: string | null; ciudad: string; redes: unknown; proxima?: Proxima | null };
-export type LugarDestacado = { nombre: string; slug: string; descripcion: string; tipo: string; detalle?: string | null; ciudad: string; direccion: string | null; redes: unknown; semana: { titulo: string; inicio: string; zona: string }[] };
+/** OL-516: `semana`, sus eventos de la semana en que sale (las obras del carrusel, `obrasDeLaSemana`); el texto los lista. */
+export type ArtistaDestacado = { nombre: string; slug: string; descripcion: string; disciplina: string; detalle: string | null; ciudad: string; redes: unknown; proxima?: Proxima | null; semana?: ObraEnTexto[] };
+export type LugarDestacado = { nombre: string; slug: string; descripcion: string; tipo: string; detalle?: string | null; ciudad: string; direccion: string | null; redes: unknown; semana: ObraEnTexto[] };
 
-/** El texto del artista: la frase gancho, qué hace y su ciudad, su próxima fecha si la tiene, su ficha, su cuenta y el crédito, la invitación y
- *  de 3 a 4 etiquetas. */
-export function textoArtista(a: ArtistaDestacado, ahora: Date): string {
+/** El texto del artista: la frase gancho, qué hace y su ciudad, su próxima fecha si la tiene (o, OL-516, sus eventos de la semana, uno por renglón
+ *  y con su lugar), su ficha, su cuenta y el crédito, la invitación y de 3 a 4 etiquetas. `cuantas`: hasta cuántos eventos lista. */
+export function textoArtista(a: ArtistaDestacado, ahora: Date, cuantas = TOPE_EVENTOS_FICHA): string {
   const cuenta = usuarioDeInstagram(a.redes);
   const etiquetas = [hashtag(a.ciudad), "#ArtistasLocales", POR_DISCIPLINA[a.disciplina] ? `#${POR_DISCIPLINA[a.disciplina]}` : null, "#SomosNosotrxs"].filter(Boolean);
+  const bloque = bloqueDeLaSemana(a.semana ?? [], ahora, { conLugar: true, cuantas });
   return [
     gancho(a.descripcion),
-    [`${cejaArtista(a)} · ${a.ciudad}`, a.proxima ? `Próxima fecha: ${proximaEnTexto(a.proxima, ahora)}.` : null].filter(Boolean).join("\n"),
+    [`${cejaArtista(a)} · ${a.ciudad}`, !bloque && a.proxima ? `Próxima fecha: ${proximaEnTexto(a.proxima, ahora)}.` : null].filter(Boolean).join("\n"),
+    ...(bloque ? [bloque] : []),
     [`Lee su ficha en ${DOMINIO}/artistas/${a.slug} (enlace en la bio).`, ...(cuenta ? [`Más de su trabajo en @${cuenta}`, `Foto: @${cuenta}`] : [])].join("\n"),
     `Sigue a @${CUENTA_INSTAGRAM} para conocer a más artistas de tu ciudad.`,
     etiquetas.join(" "),
@@ -102,23 +106,25 @@ export function textoDeDestacado(
   quitadas: readonly string[] = [],
 ): string {
   const sinCuenta = !!c.cuenta && quitadas.includes(c.cuenta);
-  const texto = c.tipo === "artista" ? textoArtista(sinCuenta ? { ...c.datos, redes: [] } : c.datos, ahora) : textoLugar(sinCuenta ? { ...c.datos, redes: [] } : c.datos, ahora);
-  return conCreditoDeFoto(texto, c.credito ?? null);
+  // OL-516: si no cabe en lo que deja Instagram, la lista de la semana se recorta («Y N más en su ficha.») antes de rendirse.
+  const armar = (cuantas: number) =>
+    conCreditoDeFoto(c.tipo === "artista" ? textoArtista(sinCuenta ? { ...c.datos, redes: [] } : c.datos, ahora, cuantas) : textoLugar(sinCuenta ? { ...c.datos, redes: [] } : c.datos, ahora, cuantas), c.credito ?? null);
+  let cuantas = TOPE_EVENTOS_FICHA;
+  let texto = armar(cuantas);
+  while (cuantas > 1 && revisarTexto(texto).problema) texto = armar(--cuantas);
+  return texto;
 }
 
-/** «Taller de máscaras para familias (sáb 10, 11:00 am)». */
-const enSemana = (e: { titulo: string; inicio: string; zona: string }, ahora: Date) => `${e.titulo.trim()} (${diaConMes(e.inicio, ahora, e.zona).replace(/ de .*$/, "")}, ${horaCorta(e.inicio, e.zona)})`;
-const enLista = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} y ${xs.at(-1)}` : (xs[0] ?? ""));
-
-/** El texto del lugar: su frase gancho, qué es, dónde y lo que tiene esta semana, la ficha, su cuenta y el crédito (si tiene Instagram), la
- *  invitación y las etiquetas. */
-export function textoLugar(l: LugarDestacado, ahora: Date): string {
+/** El texto del lugar: su frase gancho, qué es y dónde, lo que tiene esta semana (OL-516: un renglón por evento, con su día y su hora, como en
+ *  «Esta semana»), la ficha, su cuenta y el crédito (si tiene Instagram), la invitación y las etiquetas. `cuantas`: hasta cuántos eventos lista. */
+export function textoLugar(l: LugarDestacado, ahora: Date, cuantas = TOPE_EVENTOS_FICHA): string {
   const cuenta = usuarioDeInstagram(l.redes);
   const etiquetas = [hashtag(l.ciudad), "#EspaciosCulturales", POR_TIPO_LUGAR[l.tipo] ? `#${POR_TIPO_LUGAR[l.tipo]}` : null, "#SomosNosotrxs"].filter(Boolean);
-  const semana = l.semana.slice(0, 3);
+  const bloque = bloqueDeLaSemana(l.semana, ahora, { conLugar: false, cuantas });
   return [
     gancho(l.descripcion),
-    [`${cejaLugar(l)} · ${l.ciudad}`, l.direccion?.trim() ? `📍 ${l.direccion.trim()}` : null, semana.length ? `Esta semana: ${enLista(semana.map((e) => enSemana(e, ahora)))}.` : null].filter(Boolean).join("\n"),
+    [`${cejaLugar(l)} · ${l.ciudad}`, l.direccion?.trim() ? `📍 ${l.direccion.trim()}` : null].filter(Boolean).join("\n"),
+    ...(bloque ? [bloque] : []),
     [`Lee su ficha en ${DOMINIO}/lugares/${l.slug} (enlace en la bio).`, ...(cuenta ? [`Más en @${cuenta}`, `Foto: @${cuenta}`] : [])].join("\n"),
     `Sigue a @${CUENTA_INSTAGRAM} para conocer más lugares de tu ciudad.`,
     etiquetas.join(" "),

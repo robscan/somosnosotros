@@ -6,6 +6,7 @@ import { Chip, Chips } from "@/components/ui/Chip";
 import hoja from "@/components/ui/Hoja.module.css";
 import { IconoPin } from "@/components/ui/Iconos";
 import admin from "@/app/admin/admin.module.css";
+import { lineaDelCarrusel } from "@/lib/instagram/semanaDeFicha";
 import { TOPE_CARACTERES } from "@/lib/instagram/texto";
 import propia from "./HojaInstagram.module.css";
 
@@ -119,5 +120,29 @@ export function ChipsFormato({ formato, onFormato }: { formato: "4x5" | "9x16"; 
         Historia 9:16
       </Chip>
     </Chips>
+  );
+}
+
+/**
+ * OL-516: el carrusel de una ficha con eventos esa semana, en las dos hojas (la del día de la semana y la de «Publicar en Instagram» de la ficha):
+ * «Sale con 3 imágenes: su tarjeta y sus 2 eventos de esta semana.» y todas las imágenes en su orden, en la misma tira del carrusel de la hoja de
+ * un evento (`HojaInstagram`, OL-464), sin mover ni quitar: salen las que dice la ficha. En una historia, la nota de que lleva la tarjeta sola.
+ */
+export function TiraDeFicha({ historia = false, titulos, eventos, imagenDe }: { historia?: boolean; titulos: string[]; eventos: number; imagenDe: (n: number) => string }) {
+  const linea = lineaDelCarrusel(titulos.length, eventos);
+  if (!linea) return null;
+  if (historia) return <p className={`${hoja.nota} ${propia.linea}`}>La historia lleva solo su tarjeta.</p>;
+  return (
+    <>
+      <p className={`${hoja.nota} ${propia.linea}`}>{linea}</p>
+      <ol className={propia.tira} aria-label="Imágenes del carrusel">
+        {titulos.map((t, n) => (
+          <li key={`${n}-${t}`} className={propia.lamina}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- la miniatura la dibuja el servidor a 240 de ancho, ya JPEG */}
+            <img className={propia.miniatura} src={imagenDe(n)} alt={`${n + 1}: ${n === 0 ? `su tarjeta (${t})` : t}`} width={240} height={300} loading="lazy" />
+          </li>
+        ))}
+      </ol>
+    </>
   );
 }

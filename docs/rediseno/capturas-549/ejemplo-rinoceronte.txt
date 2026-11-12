@@ -1,0 +1,46 @@
+Ejemplo OL-516 · Teatro El Rinoceronte Enamorado (lugar)
+Sale: jueves, 12 de noviembre de 2026, 10:00 a.m. (a mano, desde su ficha: la tarjeta sin «de la semana»).
+Lo hizo el trabajador de la app (lib/redes/trabajar.ts) con Instagram y Facebook de mentira; las fotos y los carteles, de sus direcciones públicas.
+
+Instagram: carrusel de 2 imágenes · la hoja dice: «Sale con 2 imágenes: su tarjeta y su evento de esta semana.»
+  1. La tarjeta · etiquetas: @elrinoenamorado · ejemplo-rinoceronte-1.jpg
+  2. Awkward Latino, de Disco Bamba (sin cartel: el diseño de Crear cartel) · etiquetas: @elrinoenamorado · ejemplo-rinoceronte-2.jpg
+  Coautor invitado: ninguno (un lugar solo se etiqueta)
+Historia 9:16: la tarjeta sola, etiquetas @elrinoenamorado · ejemplo-rinoceronte-historia.jpg
+Facebook: las 2 fotos, con el enlace a su ficha.
+Eventos de esa semana que cuentan (obras): 1 · Awkward Latino, de Disco Bamba (2 funciones)
+El texto cabe: sí (580 de 2 200 caracteres)
+
+──────── Texto de la publicación ────────
+Sala teatral independiente de la compañía El Rinoceronte Enamorado, fundada en 1994, con un espacio que combina escenario a la italiana y caja experimental.
+
+Foro · San Luis Potosí
+📍 Carlos Tovar 315, Centro, 78000, San Luis Potosí, S.L.P.
+
+Esta semana:
+Sáb 14, 8:00 pm y dom 15, 7:00 pm · Awkward Latino, de Disco Bamba
+
+Lee su ficha en somosnosotrxs.org/lugares/teatro-el-rinoceronte-enamorado (enlace en la bio).
+Más en @elrinoenamorado
+Foto: @elrinoenamorado
+
+Sigue a @smsnstrsapp para conocer más lugares de tu ciudad.
+
+#SanLuisPotosi #EspaciosCulturales #Foro #SomosNosotrxs
+
+──────── Texto en Facebook ────────
+Sala teatral independiente de la compañía El Rinoceronte Enamorado, fundada en 1994, con un espacio que combina escenario a la italiana y caja experimental.
+
+Foro · San Luis Potosí
+📍 Carlos Tovar 315, Centro, 78000, San Luis Potosí, S.L.P.
+
+Esta semana:
+Sáb 14, 8:00 pm y dom 15, 7:00 pm · Awkward Latino, de Disco Bamba
+
+Lee su ficha: https://somosnosotrxs.org/lugares/teatro-el-rinoceronte-enamorado?utm_source=facebook&utm_medium=post&utm_campaign=trabajo-ejemplo-rinoceronte
+Más en instagram.com/elrinoenamorado
+Foto: instagram.com/elrinoenamorado
+
+Sigue la página para conocer más lugares de tu ciudad.
+
+#SanLuisPotosi #EspaciosCulturales #Foro #SomosNosotrxs

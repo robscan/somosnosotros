@@ -134,6 +134,16 @@ const DIAS = {
   },
   // OL-505: un artista con portada y crédito en su ficha: su tarjeta lleva su foto de perfil, no la portada, y `prepararDia` no manda crédito.
   artistaConPortada: { ...ARTISTA, contenido: { ...ARTISTA.contenido, credito: null } },
+  // OL-516: un lugar con dos eventos esa semana (los dos con cartel): su carrusel de tres imágenes.
+  carrusel: {
+    ...ARTISTA, tipo: 'lugar', titulo: 'Jue 12 · 7:00 pm · Lugar', nombre: 'Centro de Difusión Cultural Raúl Gamboa', por: 'Lugar con 2 eventos esta semana, de San Luis Potosí, nunca en Instagram.', cuandoSale: 'hoy', ahora: '2026-11-12T16:00:00Z',
+    contenido: {
+      tipo: 'lugar', cuenta: 'ipbaslp_', credito: null, carrusel: { titulos: ['Centro de Difusión Cultural Raúl Gamboa', 'Fotovisión 31: charla sobre Miradas de libertad', 'Aires revolucionarios'], eventos: 2 },
+      datos: { nombre: 'Centro de Difusión Cultural Raúl Gamboa', slug: 'raul-gamboa', descripcion: 'Recinto de difusión del Instituto Potosino de Bellas Artes con un teatro, cuatro galerías y biblioteca.', tipo: 'casa_de_cultura', detalle: null, ciudad: 'San Luis Potosí', direccion: null, redes: [{ url: 'https://www.instagram.com/ipbaslp_' }],
+        semana: [{ titulo: 'Fotovisión 31: charla sobre Miradas de libertad', inicio: '2026-11-12T22:30:00Z', zona: 'America/Mexico_City' }, { titulo: 'Aires revolucionarios', inicio: '2026-11-14T01:30:00Z', zona: 'America/Mexico_City' }] },
+    },
+    aviso: null,
+  },
   descanso: { ...ARTISTA, tipo: 'descanso', titulo: 'Dom 18 · Descanso', nombre: 'Sin publicación', por: null, estado: 'descanso', abierto: false, hora: null, contenido: { tipo: 'descanso' }, aviso: null },
 };
 
@@ -306,4 +316,30 @@ test("un descanso: por qué y «Poner un lugar este día»", async (t) => {
   assert.match(await texto(hoja(p)), /Los domingos la cuenta descansa/);
   await tocar(p, hoja(p).getByRole("button", { name: "Poner un lugar este día" }));
   await p.waitForFunction(() => window.qa.acciones.some((a) => a[0] === "ponerLugarDia"));
+});
+
+test("OL-516: un lugar con eventos esa semana: «Sale con 3 imágenes…», las tres en la tira (la tarjeta y sus carteles, de la vista previa del día con `imagen=n`) y el texto con cada evento; la historia, la tarjeta sola", async (t) => {
+  const p = await abrir(t, "carrusel");
+  const h = hoja(p);
+  assert.match(await texto(h), /Sale con 3 imágenes: su tarjeta y sus 2 eventos de esta semana\./);
+  const minis = h.getByRole("list", { name: "Imágenes del carrusel" }).getByRole("img");
+  assert.equal(await minis.count(), 3);
+  const srcs = await minis.evaluateAll((xs) => xs.map((x) => x.getAttribute("src")));
+  assert.deepEqual(srcs.map((x) => new URL(x, "http://x").searchParams.get("imagen")), ["0", "1", "2"]);
+  assert.ok(srcs.every((x) => x.startsWith(`/api/instagram/semana/${ARTISTA.id}?`) && x.includes("mini=1")));
+  assert.equal(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, "la tira no desplaza la página");
+  assert.match(await hoja(p).locator('[name="texto"]').first().inputValue(), /^Esta semana:\nJue 12 · 4:30 pm · Fotovisión 31: charla sobre Miradas de libertad\nVie 13 · 7:30 pm · Aires revolucionarios$/m);
+  if (process.env.CAPTURAS) {
+    await h.getByRole("list", { name: "Imágenes del carrusel" }).evaluate((e) => e.scrollIntoView({ block: "center" }));
+    await p.screenshot({ path: `${process.env.CAPTURAS}/hoja-dia-carrusel.png` });
+  }
+  await tocar(p, h.getByRole("button", { name: "Historia 9:16" }));
+  assert.match(await texto(h), /La historia lleva solo su tarjeta\./);
+  assert.equal(await h.getByRole("list", { name: "Imágenes del carrusel" }).count(), 0);
+});
+
+test("OL-516: un día sin eventos esa semana no enseña tira", async (t) => {
+  const p = await abrir(t, "credito");
+  assert.equal(await hoja(p).getByRole("list", { name: "Imágenes del carrusel" }).count(), 0);
+  assert.doesNotMatch(await texto(hoja(p)), /Sale con \d imágenes/);
 });

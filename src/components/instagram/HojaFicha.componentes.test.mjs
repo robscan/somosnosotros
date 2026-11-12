@@ -7,7 +7,9 @@
  *   · la historia 9:16: su vista previa y que no lleva texto;
  *   · ya salió (y la semana la tiene programada): lo dice; «Publicar otra vez» pide confirmar, «Mejor no» vuelve y «Sí, publicar otra vez» manda
  *     `repetir`;
- *   · va en camino: lo dice y no hay botón; no se puede (dijo que no): la frase y sin botón.
+ *   · va en camino: lo dice y no hay botón; no se puede (dijo que no): la frase y sin botón;
+ *   · OL-516: con dos eventos esta semana, «Sale con 3 imágenes…», las tres en la tira (la tarjeta y sus eventos, de la ruta con `imagen=n`) y el
+ *     texto con cada evento y su día; en la historia, que lleva la tarjeta sola.
  * Capturas: `CAPTURAS=<carpeta>`.
  */
 import { after, before, test } from "node:test";
@@ -42,6 +44,21 @@ const FICHAS = {
   salio: { ...LUGAR, en: { salio: "Salió en Instagram hace 9 días", publicando: false, programada: "el mié 18 de nov" } },
   sinCuenta: { ...LUGAR, contenido: { ...LUGAR.contenido, cuenta: null, datos: { ...DATOS, redes: [] } }, ubicacion: null },
   enCamino: { ...LUGAR, en: { salio: null, publicando: true, programada: null } },
+  // OL-516: dos obras esta semana (una con dos funciones, sin cartel).
+  carrusel: {
+    ...LUGAR,
+    contenido: {
+      ...LUGAR.contenido,
+      datos: {
+        ...DATOS,
+        semana: [
+          { titulo: "Aires revolucionarios", inicio: "2026-11-14T01:30:00Z", zona: "America/Mexico_City", funciones: [{ inicio: "2026-11-14T01:30:00Z", fin: null }] },
+          { titulo: "Awkward Latino, de Disco Bamba", inicio: "2026-11-15T02:00:00Z", zona: "America/Mexico_City", funciones: [{ inicio: "2026-11-15T02:00:00Z", fin: null }, { inicio: "2026-11-16T01:00:00Z", fin: null }] },
+        ],
+      },
+    },
+    carrusel: { titulos: ["Teatro El Rino", "Aires revolucionarios", "Awkward Latino, de Disco Bamba"], eventos: 2 },
+  },
   fuera: { ok: false, mensaje: "Dijo que no a salir en Instagram. Se vuelve a poner desde «Fuera de Instagram», en este mismo menú." },
 };
 const ID = "eeee0000-0000-4000-8000-000000000515";
@@ -226,4 +243,37 @@ test("va en camino: lo dice y no hay botón ni mandos; si no se puede (dijo que 
   const otro = await abrir(t, "fuera");
   assert.match(await texto(hoja(otro).getByRole("alert")), /Dijo que no a salir en Instagram\./);
   assert.equal(await hoja(otro).getByRole("button", { name: /Publicar/ }).count(), 0);
+});
+
+test("OL-516: con eventos esta semana, la hoja enseña las tres imágenes que saldrán y el texto los nombra con su día; la historia, la tarjeta sola", async (t) => {
+  const p = await abrir(t, "carrusel");
+  const h = hoja(p);
+  assert.match(await texto(h), /Sale con 3 imágenes: su tarjeta y sus 2 eventos de esta semana\./);
+  const tira = h.getByRole("list", { name: "Imágenes del carrusel" });
+  const minis = tira.getByRole("img");
+  assert.equal(await minis.count(), 3);
+  assert.deepEqual(await minis.evaluateAll((xs) => xs.map((x) => [x.getAttribute("alt"), x.getAttribute("src")])), [
+    ["1: su tarjeta (Teatro El Rino)", `/api/instagram/ficha/${ID}?tipo=lugar&imagen=0&mini=1&rotulo=0`],
+    ["2: Aires revolucionarios", `/api/instagram/ficha/${ID}?tipo=lugar&imagen=1&mini=1&rotulo=0`],
+    ["3: Awkward Latino, de Disco Bamba", `/api/instagram/ficha/${ID}?tipo=lugar&imagen=2&mini=1&rotulo=0`],
+  ]);
+  // La tira se desliza dentro de la hoja, nunca la página.
+  assert.equal(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+  assert.match(await campo(p), /^Esta semana:\nVie 13 · 7:30 pm · Aires revolucionarios\nSáb 14, 8:00 pm y dom 15, 7:00 pm · Awkward Latino, de Disco Bamba$/m);
+  await tira.evaluate((e) => e.scrollIntoView({ block: "center" }));
+  await captura(p, "hoja-ficha-carrusel");
+  await tocar(p, h.getByRole("button", { name: "Historia 9:16" }));
+  assert.match(await texto(h), /La historia lleva solo su tarjeta\./);
+  assert.equal(await h.getByRole("list", { name: "Imágenes del carrusel" }).count(), 0);
+  await tocar(p, h.getByRole("button", { name: "Publicación 4:5" }));
+  await tocar(p, h.getByRole("button", { name: "Publicar ahora" }));
+  const [, tipo, id, pedido] = (await publicadas(p))[0];
+  assert.deepEqual([tipo, id, pedido], ["lugar", ID, { texto: null, quitadas: [], facebook: true }]);
+});
+
+test("OL-516: sin eventos esta semana, ni la línea ni la tira (la tarjeta sola, como antes)", async (t) => {
+  const p = await abrir(t);
+  const h = hoja(p);
+  assert.doesNotMatch(await texto(h), /Sale con \d imágenes/);
+  assert.equal(await h.getByRole("list", { name: "Imágenes del carrusel" }).count(), 0);
 });

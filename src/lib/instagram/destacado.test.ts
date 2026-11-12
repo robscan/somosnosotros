@@ -83,7 +83,8 @@ describe("el texto del lugar", () => {
   };
   it("su gancho, qué es, dónde, lo de esta semana, la ficha, la cuenta y el crédito", () => {
     const t = textoLugar(museo, AHORA);
-    expect(t).toContain("Museo · San Luis Potosí\n📍 Calzada de Guadalupe 705, Centro\nEsta semana: Taller de máscaras para familias (sáb 10, 11:00 am) y Visita guiada: Leonora y el teatro (dom 11, 7:00 pm).");
+    // OL-516: un renglón por evento, con el formato de «Esta semana».
+    expect(t).toContain("Museo · San Luis Potosí\n📍 Calzada de Guadalupe 705, Centro\n\nEsta semana:\nSáb 10 · 11:00 am · Taller de máscaras para familias\nDom 11 · 7:00 pm · Visita guiada: Leonora y el teatro\n\nLee su ficha");
     expect(t).toContain("Lee su ficha en somosnosotrxs.org/lugares/museo-leonora-carrington (enlace en la bio).\nMás en @museoleonora\nFoto: @museoleonora");
     expect(t).toContain("Sigue a @smsnstrsapp para conocer más lugares de tu ciudad.");
     expect(t.endsWith("#SanLuisPotosi #EspaciosCulturales #Museo #SomosNosotrxs")).toBe(true);
