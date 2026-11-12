@@ -30,7 +30,8 @@ const acciones = `
   export async function candidatosDia(id) {
     apuntar('candidatosDia', [id]);
     return { ok: true, titulo: 'Cambiar el lunes 12', nota: 'Van primero quienes tienen fecha en los próximos 30 días.', fuera: 'Valeria Quiroz ya va el vie 16.',
-      lista: [{ id: 'cccc0000-0000-4000-8000-000000000002', nombre: 'Ximena Urquidi', foto: null, linea: 'Sin fecha próxima · nunca en Instagram', redonda: true, href: '/artistas/ximena' }] };
+      lista: [{ id: 'cccc0000-0000-4000-8000-000000000002', nombre: 'Ximena Urquidi', foto: null, linea: 'Sin fecha próxima · nunca en Instagram', redonda: true, href: '/artistas/ximena' }],
+      yaSalieron: [{ id: 'cccc0000-0000-4000-8000-000000000514', nombre: 'Rino Teatro', foto: null, linea: 'Salió en Instagram hace 9 días', redonda: true, href: '/artistas/rino' }] };
   }
   export async function cambiarDia(...a) { apuntar('cambiarDia', a); window.qa.dia = { ...window.qa.dia, nombre: 'Ximena Urquidi', por: 'Elegido a mano.', aviso: { ...window.qa.dia.aviso, cuenta: 'ximena' } }; return listo(); }
   export async function quitarDia(...a) { apuntar('quitarDia', a); window.qa.dia = { ...window.qa.dia, estado: 'quitado' }; return listo(); }
@@ -199,6 +200,25 @@ test("«Cambiar»: los candidatos, elegir uno pide `cambiarDia` y vuelve al día
   assert.deepEqual(q.acciones.find((a) => a[0] === "cambiarDia"), ["cambiarDia", ARTISTA.id, "cccc0000-0000-4000-8000-000000000002"]);
   assert.equal(q.acciones.filter((a) => a[0] === "prepararDia").length, 2, "el día se vuelve a preparar");
   assert.ok(q.cambios >= 1, "la semana se entera");
+});
+
+test("OL-514: quien ya salió hace poco va aparte en «Cambiar»; elegirlo pide confirmar («Mejor no» vuelve) y «Sí, publicar otra vez» pide `cambiarDia`", async (t) => {
+  const p = await abrir(t);
+  await tocar(p, hoja(p).getByRole("button", { name: "Cambiar" }));
+  await p.getByRole("dialog", { name: "Cambiar el lunes 12" }).waitFor();
+  assert.match(await texto(hoja(p)), /Ya salieron en los últimos 6 meses\. Se pueden publicar otra vez:/);
+  if (process.env.CAPTURAS) await p.screenshot({ path: join(process.env.CAPTURAS, "514-cambiar-ya-salieron.png") });
+  await tocar(p, hoja(p).getByRole("link", { name: /Rino Teatro/ }));
+  await p.getByRole("dialog", { name: "¿Publicar otra vez a Rino Teatro?" }).waitFor();
+  assert.match(await texto(hoja(p)), /Salió en Instagram hace 9 días\. Vuelve a salir el lunes 12, con lo que su ficha dice ahora\./);
+  if (process.env.CAPTURAS) await p.screenshot({ path: join(process.env.CAPTURAS, "514-publicar-otra-vez.png") });
+  assert.equal((await qa(p)).acciones.some((a) => a[0] === "cambiarDia"), false, "elegirlo no lo cambia todavía");
+  await tocar(p, hoja(p).getByRole("button", { name: "Mejor no" }));
+  await p.getByRole("dialog", { name: "Cambiar el lunes 12" }).waitFor();
+  await tocar(p, hoja(p).getByRole("link", { name: /Rino Teatro/ }));
+  await tocar(p, hoja(p).getByRole("button", { name: "Sí, publicar otra vez" }));
+  await p.getByRole("dialog", { name: "Lun 12 · 7:00 pm · Artista" }).waitFor();
+  assert.deepEqual((await qa(p)).acciones.find((a) => a[0] === "cambiarDia"), ["cambiarDia", ARTISTA.id, "cccc0000-0000-4000-8000-000000000514"]);
 });
 
 test("«Avisar»: el mensaje listo; «Copiar y abrir su Instagram» lo copia, abre su conversación y anota el aviso", async (t) => {

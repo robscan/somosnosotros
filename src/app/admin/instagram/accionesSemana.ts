@@ -10,7 +10,7 @@ import { esUuid } from "@/lib/formulario";
 import { avisoPrevio, conversacionDe, saludoDe, type ArtistaDestacado, type LugarDestacado } from "@/lib/instagram/destacado";
 import { lineaDeSenal, porSenal } from "@/lib/instagram/elegir";
 import { cargarFicha, cargarSemana as cargarSemanaParaPublicar, creditoDeTarjeta, textoDeSemana } from "@/lib/instagram/ficha";
-import { estadoDelDia, lineaCandidato, lunesDe, motivoDe, motivoDeEvento, nombreDelDia, razonDelPedido, REGLA, diaIso, type Candidato, type EstadoDia, type EventoCandidato, type TipoDia } from "@/lib/instagram/semana";
+import { estadoDelDia, lineaCandidato, lineaYaSalio, lunesDe, motivoDe, motivoDeEvento, nombreDelDia, razonDelPedido, REGLA, diaIso, type Candidato, type EstadoDia, type EventoCandidato, type TipoDia } from "@/lib/instagram/semana";
 import { revisarTexto, type EventoIg } from "@/lib/instagram/texto";
 import { LARGO_CUERPO, LARGO_TITULO, recortar } from "@/lib/avisos";
 import { avisarAlTelefono } from "@/lib/redes/herramientas";
@@ -19,7 +19,7 @@ import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { cargarParaHoja } from "./datos";
-import { candidatos, cartelPublicable, comoCliente, leerDia, sugerenciaDelDia, zonaDeCiudad, type FilaDia } from "./semana";
+import { candidatos, cartelPublicable, comoCliente, leerDia, salieronHacePoco, sugerenciaDelDia, zonaDeCiudad, type FilaDia } from "./semana";
 
 /**
  * Lo que hace la hoja de un día de la semana de Instagram (OL-479; firmada en el prototipo de OL-477, bitácora 509): prepararla, «Cambiar» (los
@@ -188,8 +188,10 @@ export async function prepararDia(id: string): Promise<PreparadoDia> {
   };
 }
 
+type RenglonCandidato = { id: string; nombre: string; foto: string | null; linea: string; redonda: boolean; href: string };
 export type Candidatos =
-  | { ok: true; titulo: string; nota: string; lista: { id: string; nombre: string; foto: string | null; linea: string; redonda: boolean; href: string }[]; fuera: string | null }
+  // `yaSalieron` (OL-514): quienes salieron en los últimos 6 meses; elegir uno pide confirmar («Publicar otra vez»).
+  | { ok: true; titulo: string; nota: string; lista: RenglonCandidato[]; fuera: string | null; yaSalieron?: RenglonCandidato[] }
   | { ok: false; mensaje: string };
 
 /** Los candidatos de «Cambiar» para un día, en el orden de la regla, con por qué; y quién no entra. */
@@ -214,7 +216,7 @@ export async function candidatosDia(id: string): Promise<Candidatos> {
   }
   const tipo = d.tipo === "descanso" ? "lugar" : d.tipo === "lugar" ? "lugar" : "artista";
   if (d.tipo === "semana") return { ok: false, mensaje: "«Esta semana» lleva los eventos del fin con más señal; se arma sola." };
-  const todos = await candidatos(s, d.ciudad, tipo, lunesDe(d.fecha));
+  const [todos, salieron] = await Promise.all([candidatos(s, d.ciudad, tipo, lunesDe(d.fecha)), salieronHacePoco(s, tipo, diaLocal(ahora, zona), ahora)]);
   const mios = (c: Candidato) => c.id === d.artista_id || c.id === d.lugar_id;
   const libres = todos.filter((c) => !c.ocupado_en && !mios(c)).slice(0, 30);
   const ocupados = todos.filter((c) => c.ocupado_en && !mios(c)).slice(0, 3);
@@ -222,8 +224,13 @@ export async function candidatosDia(id: string): Promise<Candidatos> {
     tipo === "artista"
       ? `Van primero quienes tienen fecha en los próximos 30 días y luego los de ${(await s.from("ciudades").select("nombre").eq("slug", d.ciudad).maybeSingle<{ nombre: string }>()).data?.nombre ?? "la ciudad"}. Solo fichas completas (foto, descripción e Instagram), nadie que haya salido en los últimos 6 meses ni que haya dicho que no.`
       : "Van primero los lugares con eventos esa semana y luego los de la ciudad. Solo fichas con descripción (sin portada salen con el símbolo SN), nadie que haya salido en los últimos 6 meses ni que haya dicho que no.";
+  // OL-514: quien ya salió hace poco no entra a la rotación, pero se puede repetir a mano (con confirmación en la hoja).
+  const yaSalieron = salieron
+    .filter((x) => x.id !== d.artista_id && x.id !== d.lugar_id)
+    .slice(0, 20)
+    .map((x) => ({ id: x.id, nombre: x.nombre, foto: x.imagen, linea: lineaYaSalio(x.ultima_vez, ahora), redonda: tipo === "artista", href: `/${tipo === "artista" ? "artistas" : "lugares"}/${x.slug ?? x.id}` }));
   const fuera = ocupados.length ? `${ocupados.map((c) => `${c.nombre} ya va el ${diaConMes(`${c.ocupado_en}T18:00:00Z`, ahora, zona).replace(/ de \S+$/, "")}`).join("; ")}.` : null;
-  return { ok: true, titulo, nota, lista: libres.map((c) => ({ id: c.id, nombre: c.nombre, foto: tipo === "artista" ? c.foto : c.portada, linea: lineaCandidato(c, ahora), redonda: tipo === "artista", href: `/${tipo === "artista" ? "artistas" : "lugares"}/${c.slug}` })), fuera };
+  return { ok: true, titulo, nota, lista: libres.map((c) => ({ id: c.id, nombre: c.nombre, foto: tipo === "artista" ? c.foto : c.portada, linea: lineaCandidato(c, ahora), redonda: tipo === "artista", href: `/${tipo === "artista" ? "artistas" : "lugares"}/${c.slug}` })), fuera, yaSalieron };
 }
 
 export type Hecho = { ok: true } | { ok: false; mensaje: string };
@@ -260,6 +267,8 @@ async function poner(s: Supabase, d: FilaDia, tipo: "artista" | "lugar" | "event
   } else {
     const c = (await candidatos(s, d.ciudad, tipo, lunesDe(d.fecha))).find((x) => x.id === fichaId);
     if (c) motivo = motivoDe(c, tipo, d.fecha, ahora);
+    // OL-514: quien no está entre los candidatos y ya salió hace poco, sale otra vez porque se pidió.
+    else if ((await salieronHacePoco(s, tipo, "9999-12-31", ahora)).some((x) => x.id === fichaId)) motivo = "Elegido a mano: sale otra vez.";
   }
   const { error } = await s.rpc("instagram_semana_cambiar", { p_casilla: d.id, p_tipo: tipo, p_ficha: fichaId, p_motivo: motivo, p_reemplaza: reemplaza });
   return error ? frase(error) : { ok: true };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarSemana, cuandoDelDia, diaIso, diasDe, enlaceDeLaBio, estadoDelDia, lineaCandidato, lineaDelAviso, lineaDeLaQueViene, lineaDelPasado, lunesDe, lunesDeLaSemana, motivoDe, NADIE_ARTISTA, nadieConMaterial, otrosDeLaFalta, queFalta, rangoDeLaSemana, razonDelPedido, resumenDeLaFalta, resumenSemana, salePara, SIN_CARTEL_DIA, sugerirDia, tocaArmarLaQueViene, type Candidato, type EventoCandidato } from "./semana";
+import { armarSemana, cuandoDelDia, diaIso, diasDe, enlaceDeLaBio, estadoDelDia, lineaCandidato, lineaDelAviso, lineaYaSalio, lineaDeLaQueViene, lineaDelPasado, lunesDe, lunesDeLaSemana, motivoDe, NADIE_ARTISTA, nadieConMaterial, otrosDeLaFalta, queFalta, rangoDeLaSemana, razonDelPedido, resumenDeLaFalta, resumenSemana, salePara, SIN_CARTEL_DIA, sugerirDia, tocaArmarLaQueViene, type Candidato, type EventoCandidato } from "./semana";
 
 const ZONA = "America/Mexico_City";
 // Miércoles 7 de octubre de 2026, 10:00 en San Luis Potosí.
@@ -206,5 +206,14 @@ describe("OL-488: solo con material, y la sugerencia de un día sin publicación
     expect(otrosDeLaFalta(["descripcion"])).toBe("También le falta la descripción para entrar");
     expect(otrosDeLaFalta([])).toBeNull();
     expect(otrosDeLaFalta(null)).toBeNull();
+  });
+
+  it("OL-514: la línea de quien ya salió hace poco", () => {
+    const hace = (dias: number) => new Date(AHORA.getTime() - dias * 86_400_000).toISOString();
+    expect(lineaYaSalio(hace(0.2), AHORA)).toBe("Salió en Instagram hoy");
+    expect(lineaYaSalio(hace(1), AHORA)).toBe("Salió en Instagram ayer");
+    expect(lineaYaSalio(hace(9), AHORA)).toBe("Salió en Instagram hace 9 días");
+    expect(lineaYaSalio(hace(21), AHORA)).toBe("Salió en Instagram hace 3 semanas");
+    expect(lineaYaSalio(hace(122), AHORA)).toBe("Salió en Instagram hace 4 meses");
   });
 });

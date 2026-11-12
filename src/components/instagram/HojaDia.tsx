@@ -35,7 +35,7 @@ import { REFRESCO_MS } from "@/lib/redes/reglas";
 import propia from "./HojaInstagram.module.css";
 import styles from "./HojaDia.module.css";
 
-type Vista = "dia" | "cambiar" | "avisar" | "dijoNo";
+type Vista = "dia" | "cambiar" | "otraVez" | "avisar" | "dijoNo";
 const NO_SE_PUDO: Hecho = { ok: false, mensaje: "No se pudo guardar. Intenta de nuevo en un momento." };
 
 /**
@@ -44,7 +44,7 @@ const NO_SE_PUDO: Hecho = { ok: false, mensaje: "No se pudo guardar. Intenta de 
  * «Cambiar»; y el botón es «Publicar ahora» (si no se toca, sale solo a su hora), con «Quitar de la semana» abajo. Un artista o un lugar con
  * Instagram lleva su aviso previo («Avisar» → el mensaje listo y «Copiar y abrir su Instagram»; luego «Dijo que no», que pide confirmar). Lo
  * que se cambia (el texto, la etiqueta, Facebook) se guarda al cerrar: sale así a su hora. Ya publicado, dice dónde y lo que dio (visitas y
- * «van»). «Cambiar», «Avisar» y «Dijo que no» se muestran dentro de la misma hoja (filtrar no es navegar: nada se apila en el historial).
+ * «van»). OL-514: «Cambiar» lista también a quien ya salió en los últimos 6 meses; elegirlo pide confirmar («Sí, publicar otra vez»). «Cambiar», «Avisar» y «Dijo que no» se muestran dentro de la misma hoja (filtrar no es navegar: nada se apila en el historial).
  */
 export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerrar: () => void; onCambio?: () => void }) {
   const [prep, setPrep] = useState<PreparadoDia | null>(null);
@@ -55,6 +55,8 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
   const [propio, setPropio] = useState<string | null>(null);
   const [conFacebook, setConFacebook] = useState<boolean | null>(null);
   const [cand, setCand] = useState<Candidatos | null>(null);
+  // OL-514: a quién se va a publicar otra vez (ya salió hace poco): se confirma antes.
+  const [repetir, setRepetir] = useState<{ id: string; nombre: string; linea: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enviando, enviar] = useTransition();
 
@@ -205,6 +207,31 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
               <p className={hoja.nota}>Nadie más puede salir ese día por ahora.</p>
             )}
             {cand.fuera && <p className={hoja.nota}>{cand.fuera}</p>}
+            {!!cand.yaSalieron?.length && (
+              <>
+                <p className={hoja.nota}>Ya salieron en los últimos 6 meses. Se pueden publicar otra vez:</p>
+                <Grupo>
+                  {cand.yaSalieron.map((x) => (
+                    <Renglon
+                      key={x.id}
+                      href={x.href}
+                      foto={x.foto}
+                      redonda={x.redonda}
+                      titulo={x.nombre}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (enviando) return;
+                        setError(null);
+                        setRepetir({ id: x.id, nombre: x.nombre, linea: x.linea });
+                        setVista("otraVez");
+                      }}
+                    >
+                      <span className={renglonCss.envuelve}>{x.linea}</span>
+                    </Renglon>
+                  ))}
+                </Grupo>
+              </>
+            )}
           </>
         )}
         {error && (
@@ -217,6 +244,35 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
             Volver al día
           </button>
         </p>
+      </Hoja>
+    );
+  }
+  if (listo && repetir && vista === "otraVez") {
+    return (
+      <Hoja
+        etiqueta={`¿Publicar otra vez a ${repetir.nombre}?`}
+        titulo={`¿Publicar otra vez a ${repetir.nombre}?`}
+        onCerrar={cerrar}
+        pie={
+          <Boton type="button" onClick={() => hacer(() => cambiarDia(id, repetir.id))} disabled={enviando} aria-busy={enviando || undefined}>
+            Sí, publicar otra vez
+          </Boton>
+        }
+      >
+        <p className={hoja.nota}>
+          {repetir.linea}. Vuelve a salir {listo.cuandoSale}, con lo que su ficha dice ahora. La publicación anterior sigue en Instagram: si ya no la quieres, se borra desde la cuenta.
+        </p>
+        <p className={hoja.nota}>
+          ¿Te equivocaste?{" "}
+          <button type="button" className={admin.enlace} onClick={() => setVista("cambiar")} disabled={enviando}>
+            Mejor no
+          </button>
+        </p>
+        {error && (
+          <p className="aviso-error" role="alert">
+            {error}
+          </p>
+        )}
       </Hoja>
     );
   }

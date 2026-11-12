@@ -165,6 +165,43 @@ async function leerCandidatos(supabase: ClienteServidor, ciudad: string, tipo: "
   return error || !Array.isArray(data) ? null : (data as Candidato[]);
 }
 
+export type YaSalio = { id: string; slug: string | null; nombre: string; imagen: string | null; ultima_vez: string };
+
+/**
+ * OL-514: los artistas o los lugares que salieron en Instagram en los últimos 6 meses (los que `instagram_candidatos` deja fuera), del más
+ * reciente al más viejo, para «Publicar otra vez» en «Cambiar» (pedido del founder: una ficha salió sin su cuenta y hubo que repetirla). Solo
+ * fichas visibles que no dijeron que no y que no tienen ya un día por delante (`hoy`, en la zona de la ciudad). Lo lee la sesión de la
+ * administración (las tres tablas solo le responden a ella); si algo no se pudo leer, la lista va vacía.
+ */
+export async function salieronHacePoco(supabase: ClienteServidor, tipo: "artista" | "lugar", hoy: string, ahora = new Date()): Promise<YaSalio[]> {
+  const col = tipo === "artista" ? "artista_id" : "lugar_id";
+  const desde = new Date(ahora);
+  desde.setMonth(desde.getMonth() - 6);
+  const pubs = await supabase.from("instagram_publicaciones").select(`${col}, creado_en`).eq("estado", "publicada").not(col, "is", null).gte("creado_en", desde.toISOString()).order("creado_en", { ascending: false }).limit(300);
+  if (pubs.error) return [];
+  const ultima = new Map<string, string>();
+  for (const p of (pubs.data ?? []) as unknown as Record<string, string | null>[]) {
+    const id = p[col];
+    if (id && p.creado_en && !ultima.has(id)) ultima.set(id, p.creado_en);
+  }
+  const ids = [...ultima.keys()].slice(0, 40);
+  if (!ids.length) return [];
+  const [fichas, fuera, ocupadas] = await Promise.all([
+    tipo === "artista"
+      ? supabase.from("artistas").select("id, slug, nombre, foto, visible").in("id", ids)
+      : supabase.from("lugares").select("id, slug, nombre, portada, visible, privado").in("id", ids),
+    supabase.from("instagram_fuera").select(col).in(col, ids),
+    supabase.from("instagram_semana").select(col).in(col, ids).gte("fecha", hoy).in("estado", ["programado", "fallido"]).is("dijo_no_en", null),
+  ]);
+  if (fichas.error || fuera.error || ocupadas.error) return [];
+  const no = new Set([...(fuera.data ?? []), ...(ocupadas.data ?? [])].map((x) => (x as unknown as Record<string, string | null>)[col]));
+  const porId = new Map(((fichas.data ?? []) as { id: string; slug: string | null; nombre: string; foto?: string | null; portada?: string | null; visible: boolean; privado?: boolean }[]).map((f) => [f.id, f]));
+  return ids.flatMap((id) => {
+    const f = porId.get(id);
+    return f && f.visible && !f.privado && !no.has(id) ? [{ id, slug: f.slug, nombre: f.nombre, imagen: (tipo === "artista" ? f.foto : f.portada) ?? null, ultima_vez: ultima.get(id)! }] : [];
+  });
+}
+
 /** Los candidatos de la base para una semana (artistas o lugares), en el orden de la regla. */
 export async function candidatos(supabase: ClienteServidor, ciudad: string, tipo: "artista" | "lugar", lunes: string): Promise<Candidato[]> {
   return (await leerCandidatos(supabase, ciudad, tipo, lunes)) ?? [];
