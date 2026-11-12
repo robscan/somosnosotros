@@ -9,7 +9,7 @@ import { diaConMes, diaLargo, diaLocal, horaCorta, horaDeReloj } from "@/lib/fec
 import { esUuid } from "@/lib/formulario";
 import { avisoPrevio, conversacionDe, saludoDe, type ArtistaDestacado, type LugarDestacado } from "@/lib/instagram/destacado";
 import { lineaDeSenal, porSenal } from "@/lib/instagram/elegir";
-import { cargarFicha, cargarSemana as cargarSemanaParaPublicar, creditoDeTarjeta, textoDeSemana } from "@/lib/instagram/ficha";
+import { cargarFicha, cargarSemana as cargarSemanaParaPublicar, carruselEnHoja, creditoDeTarjeta, textoDeSemana, type CarruselEnHoja } from "@/lib/instagram/ficha";
 import { estadoDelDia, lineaCandidato, lunesDe, motivoDe, motivoDeEvento, nombreDelDia, razonDelPedido, REGLA, diaIso, type Candidato, type EstadoDia, type EventoCandidato, type TipoDia } from "@/lib/instagram/semana";
 import { revisarTexto, type EventoIg } from "@/lib/instagram/texto";
 import { LARGO_CUERPO, LARGO_TITULO, recortar } from "@/lib/avisos";
@@ -39,8 +39,9 @@ type Supabase = NonNullable<Awaited<ReturnType<typeof sesionAdmin>>>;
 export type ContenidoDia =
   // `credito`: el de la portada (OL-491), solo del lugar que sale L2 (`creditoDeTarjeta`, como `textoDeFicha`; OL-505: el artista ya no lleva
   // portada): la vista previa del texto lo dice igual que la publicación (OL-504).
-  | { tipo: "artista"; datos: ArtistaDestacado; cuenta: string | null; credito?: string | null }
-  | { tipo: "lugar"; datos: LugarDestacado; cuenta: string | null; credito?: string | null }
+  // OL-516: `carrusel`, las imágenes que saldrán (la tarjeta y sus eventos de esa semana).
+  | { tipo: "artista"; datos: ArtistaDestacado; cuenta: string | null; credito?: string | null; carrusel?: CarruselEnHoja }
+  | { tipo: "lugar"; datos: LugarDestacado; cuenta: string | null; credito?: string | null; carrusel?: CarruselEnHoja }
   | { tipo: "evento"; eventoId: string; evento: EventoIg; conCartel: boolean }
   | { tipo: "semana"; texto: string; imagenes: number }
   | { tipo: "descanso" };
@@ -127,7 +128,8 @@ export async function prepararDia(id: string): Promise<PreparadoDia> {
     grupo = f.grupo;
     ubicacion = f.ubicacion ? { nombre: f.ubicacion.nombre } : null;
     const credito = creditoDeTarjeta(f);
-    contenido = d.tipo === "artista" ? { tipo: "artista", datos: f.datos as ArtistaDestacado, cuenta, credito } : { tipo: "lugar", datos: f.datos as LugarDestacado, cuenta, credito };
+    const carrusel = carruselEnHoja(f, ahora);
+    contenido = d.tipo === "artista" ? { tipo: "artista", datos: f.datos as ArtistaDestacado, cuenta, credito, carrusel } : { tipo: "lugar", datos: f.datos as LugarDestacado, cuenta, credito, carrusel };
   } else if (d.tipo === "evento" && d.evento_id) {
     const h = await cargarParaHoja(s, d.evento_id, ahora);
     if (!h) return { ok: false, mensaje: "Ese evento ya no existe." };

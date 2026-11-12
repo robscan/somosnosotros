@@ -214,6 +214,18 @@ describe("coautores (OL-479)", () => {
     expect(pedidos[1].params.get("user_tags")).not.toBeNull();
     expect(pedidos[1].params.get("collaborators")).toBeNull();
   });
+  it("OL-516: en un carrusel, el coautor va en el contenedor del carrusel (no en sus imágenes); si no lo acepta, sale sin él y se dice", async () => {
+    const imagenes = [{ imagen: pedido.imagen, etiquetas: ["unleonmarinero"] }, { imagen: pedido.imagen, etiquetas: [] }];
+    const { traer, pedidos } = exito();
+    const r = await publicarCarrusel({ imagenes, texto: "x", ubicacion: null, coautores: ["unleonmarinero"] }, op(traer));
+    expect(r).toMatchObject({ ok: true, sinEtiquetas: false, sinCoautor: false });
+    const contenedores = pedidos.filter((p) => p.metodo === "POST" && p.ruta.endsWith("/media"));
+    expect(contenedores.map((p) => p.params.get("collaborators"))).toEqual([null, null, JSON.stringify(["unleonmarinero"])]);
+    const rechazo = exito({ "POST /17841400000000000/media": (p) => (p.get("collaborators") ? json({ error: { code: 100, error_subcode: 2207051 } }, 400) : json({ id: "900" })) });
+    expect(await publicarCarrusel({ imagenes, texto: "x", ubicacion: null, coautores: ["personal"] }, op(rechazo.traer))).toMatchObject({ ok: true, sinEtiquetas: false, sinCoautor: true });
+    const sinCoautor = exito();
+    expect(await publicarCarrusel({ imagenes, texto: "x", ubicacion: null }, op(sinCoautor.traer))).not.toHaveProperty("sinCoautor");
+  });
   it("el permiso no se reintenta sin coautor", async () => {
     const { traer, pedidos } = exito({ "POST /17841400000000000/media": () => json({ error: { code: 190 } }, 400) });
     expect(await publicar({ ...pedido, coautores: ["x"] }, op(traer))).toEqual({ ok: false, error: "permiso" });

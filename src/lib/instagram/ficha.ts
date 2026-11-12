@@ -1,13 +1,16 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cartelDescargable } from "../cartelDescarga";
+import { cargarParaCartel, type ParaCartel } from "../carteles/cargar";
 import { dibujarDestacado, dibujarPortadaSemana } from "../carteles/dibujar";
 import { configPublica } from "../config";
 import { diaConMes, diaLocal, horaCorta, localAIso } from "../fechas";
 import { cejaArtista, cejaLugar, proximaEnTarjeta, textoDeDestacado, textoSemana, tituloSemana, type ArtistaDestacado, type LugarDestacado, type Proxima } from "./destacado";
 import { selloDeFecha } from "../tarjetaInicio";
-import { bajarCartel, encajarCartel } from "./imagen";
-import { lunesDe } from "./semana";
+import type { ImagenCarrusel } from "./carrusel";
+import { armarImagen, bajarCartel, encajarCartel } from "./imagen";
+import { carruselDeFicha, obrasDeFilas, TOPE_EVENTOS_FICHA, ventanaDeLaSemana, type FilaDeFicha, type ObraDeLaSemana } from "./semanaDeFicha";
+import type { ClienteServidor } from "../supabase/servidor";
 import { usuarioDeInstagram } from "./texto";
 
 /**
@@ -34,8 +37,11 @@ export type FichaParaPublicar = {
   foto: string | null;
   /** El artista: su próxima fecha en 30 días. */
   proxima: (Proxima & { titulo: string }) | null;
-  /** El lugar: sus eventos de esa semana. */
-  semana: { titulo: string; inicio: string; zona: string }[];
+  /**
+   * Sus eventos de esa semana (OL-516: el lugar y el artista), ya como obras (`obrasDeLaSemana`): los que cuenta la píldora de la tarjeta del
+   * lugar y los del carrusel y del texto.
+   */
+  semana: ObraDeLaSemana[];
   datos: ArtistaDestacado | LugarDestacado;
   ubicacion: { id: string; nombre: string } | null;
 };
@@ -55,12 +61,25 @@ async function ubicacionDe(db: SupabaseClient, ciudadSlug: string, lugarId: stri
   return u ? { id: u.pagina_id, nombre: u.nombre ?? ciudad } : null;
 }
 
-/** El inicio y el fin (ISO) de la semana de un día, en una zona. */
-function semanaDe(fecha: string, zona: string): { desde: string; hasta: string } {
-  const lunes = lunesDe(fecha);
-  const [a, m, d] = lunes.split("-").map(Number);
-  const siguiente = new Date(Date.UTC(a, m - 1, d + 7)).toISOString().slice(0, 10);
-  return { desde: localAIso(`${lunes}T00:00`, zona) ?? `${lunes}T06:00:00Z`, hasta: localAIso(`${siguiente}T00:00`, zona) ?? `${siguiente}T06:00:00Z` };
+type FilaEventoSemana = Omit<FilaDeFicha, "lugar" | "artistas"> & { lugar: Uno<{ nombre: string; redes: unknown }>; eventos_artistas: { artista: Uno<{ redes: unknown }> }[] | null };
+
+/**
+ * OL-516: los eventos de una ficha en la semana del día en que sale (`fecha`; sin ella, la de hoy), en la zona de su ciudad (`ventanaDeLaSemana`):
+ * los que empiezan de su lunes a su domingo, visibles, sin borrador, cancelados ni retirados; ya como obras, sin los marcos de festival ni lo que
+ * ya terminó (`obrasDeFilas`). `delLugar`: el lugar no se repite en cada evento (es la ficha).
+ */
+async function eventosDeLaSemana(db: SupabaseClient, deQuien: { lugar: string } | { ids: string[] }, zona: string, ahora: Date, fecha: string | undefined, delLugar: boolean): Promise<ObraDeLaSemana[]> {
+  const v = ventanaDeLaSemana(fecha, ahora, zona);
+  const consulta = db
+    .from("eventos")
+    .select("id, slug, titulo, inicio, fin, zona, clase, imagen, cartel_huella, sitio_texto, lugar:lugares(nombre, redes), eventos_artistas(artista:artistas(redes))")
+    .eq("visible", true)
+    .eq("borrador", false)
+    .eq("cancelado", false)
+    .eq("retirado_por_admin", false);
+  const { data } = await ("lugar" in deQuien ? consulta.eq("lugar_id", deQuien.lugar) : consulta.in("id", deQuien.ids)).gte("inicio", v.desde).lt("inicio", v.hasta).order("inicio").limit(40);
+  const filas = ((data ?? []) as FilaEventoSemana[]).map(({ lugar, eventos_artistas, ...e }) => ({ ...e, lugar: uno(lugar), artistas: (eventos_artistas ?? []).map((x) => uno(x.artista)?.redes) }));
+  return obrasDeFilas(filas, v.desdeDia, delLugar);
 }
 
 /**
@@ -90,11 +109,13 @@ export async function cargarFicha(db: SupabaseClient, tipo: "artista" | "lugar",
     const p = prox.data;
     const lugar = p ? uno(p.lugar) : null;
     const proxima = p ? { titulo: p.titulo, inicio: p.inicio, zona: p.zona, lugar: lugar?.nombre ?? p.sitio_texto, lugarRedes: lugar?.redes ?? [] } : null;
+    // OL-516: sus eventos de la semana del día en que sale (o de hoy), para el carrusel y el texto.
+    const semana = ids.length ? await eventosDeLaSemana(db, { ids }, "America/Mexico_City", ahora, fecha, false) : [];
     const ciudadSlug = await slugDeCiudad(db, a.ciudad);
-    const datos: ArtistaDestacado = { nombre: a.nombre, slug: a.slug, descripcion: a.descripcion ?? "", disciplina: a.disciplina, detalle: a.detalle, ciudad: a.ciudad, redes: a.redes, proxima };
+    const datos: ArtistaDestacado = { nombre: a.nombre, slug: a.slug, descripcion: a.descripcion ?? "", disciplina: a.disciplina, detalle: a.detalle, ciudad: a.ciudad, redes: a.redes, proxima, semana };
     return {
       tipo, id: a.id, slug: a.slug, nombre: a.nombre, ciudad: a.ciudad, ciudadSlug, visible: a.visible, grupo: a.tipo !== "solista",
-      ceja: cejaArtista(a), cuenta: usuarioDeInstagram(a.redes), portada: a.portada, portadaCredito: a.portada_credito, foto: a.foto, proxima, semana: [], datos,
+      ceja: cejaArtista(a), cuenta: usuarioDeInstagram(a.redes), portada: a.portada, portadaCredito: a.portada_credito, foto: a.foto, proxima, semana, datos,
       ubicacion: await ubicacionDe(db, ciudadSlug, null, a.ciudad),
     };
   }
@@ -105,11 +126,7 @@ export async function cargarFicha(db: SupabaseClient, tipo: "artista" | "lugar",
     .maybeSingle<{ id: string; slug: string; nombre: string; tipo: string; detalle: string | null; descripcion: string | null; portada: string | null; portada_credito: string | null; redes: unknown; ciudad: string; direccion: string | null; visible: boolean; privado: boolean; zona: string | null }>();
   if (!l) return null;
   const zona = l.zona ?? "America/Mexico_City";
-  const s = semanaDe(fecha ?? diaLocal(ahora, zona), zona);
-  const { data: evs } = await db.from("eventos").select("titulo, inicio, zona").eq("visible", true).eq("borrador", false).eq("cancelado", false).eq("retirado_por_admin", false).eq("lugar_id", l.id).gte("inicio", s.desde).lt("inicio", s.hasta).order("inicio").limit(10);
-  // Lo que le queda de esa semana desde el día en que sale (o desde ahora, si ya es ese día o después).
-  const desdeDia = Math.max(ahora.getTime(), fecha ? new Date(localAIso(`${fecha}T00:00`, zona) ?? ahora).getTime() : 0);
-  const semana = ((evs ?? []) as { titulo: string; inicio: string; zona: string }[]).filter((e) => new Date(e.inicio).getTime() >= desdeDia);
+  const semana = await eventosDeLaSemana(db, { lugar: l.id }, zona, ahora, fecha, true);
   const ciudadSlug = await slugDeCiudad(db, l.ciudad);
   const datos: LugarDestacado = { nombre: l.nombre, slug: l.slug, descripcion: l.descripcion ?? "", tipo: l.tipo, detalle: l.detalle, ciudad: l.ciudad, direccion: l.direccion, redes: l.redes, semana };
   return {
@@ -182,6 +199,47 @@ export async function dibujarFicha(f: FichaParaPublicar, formato: "4x5" | "9x16"
     ancho,
   });
   return r.imagen;
+}
+
+// ===== OL-516: el carrusel de la ficha (su tarjeta y sus eventos de la semana)
+
+/** Las imágenes de la ficha: la tarjeta y, si tiene eventos esa semana, una por obra (hasta cinco). La misma lista en el trabajador y en la vista
+ *  previa (`/api/instagram/ficha/<id>?imagen=n`, `/api/instagram/semana/<día>?imagen=n`). */
+export const imagenesDeLaFicha = (f: FichaParaPublicar, ahora: Date): ImagenCarrusel[] => carruselDeFicha(f, ahora);
+
+/** Lo que las hojas enseñan del carrusel (OL-516): el nombre de cada imagen, en orden (la primera, la tarjeta), y cuántos eventos lleva. */
+export type CarruselEnHoja = { titulos: string[]; eventos: number };
+export function carruselEnHoja(f: FichaParaPublicar, ahora: Date): CarruselEnHoja {
+  return { titulos: imagenesDeLaFicha(f, ahora).map((i) => i.titulo), eventos: Math.min(f.semana.length, TOPE_EVENTOS_FICHA) };
+}
+
+/**
+ * La imagen de un evento del carrusel de la ficha, como las de «Esta semana» y las de los actos de un festival: su cartel completo a 4:5 con el
+ * margen de su color; sin cartel, el diseño de Crear cartel (el que sale al publicar un evento sin cartel, `armarImagen`). Un cartel que no se
+ * pudo bajar se queda fuera (null), como en «Esta semana». `datos`: lo del evento para el diseño (`cargarParaCartel`).
+ */
+export async function dibujarEventoDeFicha(item: ImagenCarrusel, datos: () => Promise<ParaCartel | null>, ancho = 1080): Promise<Buffer | null> {
+  if (item.imagen) {
+    const c = await bajarCartel(item.imagen);
+    return c ? encajarCartel(c.bytes, "4x5", false, ancho) : null;
+  }
+  const d = await datos();
+  return d ? armarImagen({ cartel: null, datos: d, formato: "4x5", recorte: false, diseno: 0, ancho }) : null;
+}
+
+/** Lo que el trabajador necesita para el diseño sin cartel: con la llave de servicio, a nombre de quien lo pidió (o de nadie: solo dibuja). */
+export const datosDelEvento = (db: SupabaseClient, eventoId: string, perfilId: string | null) => () =>
+  cargarParaCartel(db as unknown as ClienteServidor, eventoId, { perfilId: perfilId ?? "00000000-0000-0000-0000-000000000000" });
+
+/**
+ * La vista previa de la imagen `n` del carrusel de la ficha (0: la tarjeta, con o sin «de la semana»; luego sus eventos), con la sesión de la
+ * administración. Null si no existe esa imagen o no se pudo dibujar.
+ */
+export async function dibujarImagenDeFicha(db: SupabaseClient, f: FichaParaPublicar, n: number, ahora: Date, ancho: number, aMano: boolean): Promise<Buffer | null> {
+  if (n <= 0) return dibujarFicha(f, "4x5", ahora, ancho, aMano);
+  const item = imagenesDeLaFicha(f, ahora)[n];
+  if (!item) return null;
+  return dibujarEventoDeFicha(item, () => cargarParaCartel(db as unknown as ClienteServidor, item.clave), ancho);
 }
 
 // ===== «Esta semana»

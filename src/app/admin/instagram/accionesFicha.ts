@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import type { ArtistaDestacado, LugarDestacado } from "@/lib/instagram/destacado";
 import { esUuid } from "@/lib/formulario";
-import { cargarFicha, contenidoDeFicha, fichaConMaterial, textoDeFicha, type FichaParaPublicar } from "@/lib/instagram/ficha";
+import { cargarFicha, carruselEnHoja, contenidoDeFicha, fichaConMaterial, textoDeFicha, type CarruselEnHoja, type FichaParaPublicar } from "@/lib/instagram/ficha";
 import { lineaYaSalio } from "@/lib/instagram/semana";
 import { revisarTexto } from "@/lib/instagram/texto";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
@@ -43,7 +43,8 @@ export type ContenidoFicha =
   | { tipo: "lugar"; datos: LugarDestacado; cuenta: string | null; credito: string | null };
 
 export type PreparadaFicha =
-  | { ok: true; tipo: Tipo; nombre: string; contenido: ContenidoFicha; ubicacion: { nombre: string } | null; ciudad: { nombre: string }; en: EnInstagramDeFicha; ahora: string }
+  // OL-516: `carrusel`, las imágenes que saldrán (la tarjeta y sus eventos de esta semana); una sola, la tarjeta.
+  | { ok: true; tipo: Tipo; nombre: string; contenido: ContenidoFicha; carrusel: CarruselEnHoja; ubicacion: { nombre: string } | null; ciudad: { nombre: string }; en: EnInstagramDeFicha; ahora: string }
   | { ok: false; mensaje: string };
 
 /** Por qué no se puede publicar esta ficha, en una frase llana; null si se puede. */
@@ -68,6 +69,7 @@ export async function prepararFicha(tipo: Tipo, id: string): Promise<PreparadaFi
     tipo,
     nombre: f.nombre,
     contenido: contenidoDeFicha(f),
+    carrusel: carruselEnHoja(f, ahora),
     ubicacion: f.ubicacion ? { nombre: f.ubicacion.nombre } : null,
     ciudad: { nombre: f.ciudad },
     en: await enInstagramDeFicha(s, tipo, id, ahora),

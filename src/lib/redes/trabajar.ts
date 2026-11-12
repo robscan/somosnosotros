@@ -3,9 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ParaHoja } from "@/app/admin/instagram/datos";
 import type { PedidoFacebook, ResultadoFacebook } from "../facebook/api";
 import { enlaceConOrigen, enlaceFichaConOrigen, textoDeFacebook, textoDeFacebookFicha } from "../facebook/texto";
-import { textoDeFicha, textoDeSemana, type FichaParaPublicar, type SemanaParaPublicar } from "../instagram/ficha";
+import { imagenesDeLaFicha, textoDeFicha, textoDeSemana, type FichaParaPublicar, type SemanaParaPublicar } from "../instagram/ficha";
 import type { Pedido, PedidoCarrusel, Resultado } from "../instagram/api";
-import { etiquetasPorImagen, imagenesPedidas, type ImagenCarrusel } from "../instagram/carrusel";
+import { etiquetasPorImagen, imagenesPedidas, PORTADA, type ImagenCarrusel } from "../instagram/carrusel";
 import { sePuedePublicar } from "../instagram/elegir";
 import { FRASES, FRASES_FACEBOOK } from "../instagram/frases";
 import { armarTexto, etiquetasDeLaFoto, revisarTexto } from "../instagram/texto";
@@ -33,6 +33,9 @@ import { avisoDeTrabajo, MAX_REINTENTOS, trasFallo, type ClaveFallo, type Espejo
  *
  * OL-515: un artista o un lugar publicado a mano desde su ficha («Publicar en Instagram» del «···», `redes_encolar_ficha`) es el mismo trabajo sin
  * día de la semana (sin `pedido.casilla`): su tarjeta sale sin «de la semana», la marca de origen es la del trabajo y el aviso abre su ficha.
+ *
+ * OL-516: una ficha con eventos esa semana sale como carrusel: su tarjeta y una imagen por obra (`imagenesDeLaFicha`, hasta cinco); su historia
+ * sigue siendo la tarjeta sola y Facebook lleva todas las fotos. Sin eventos (o si ninguno se pudo dibujar), la tarjeta sola, como antes.
  */
 
 /** Lo que tarda como mucho cada paso (para no empezar uno que no cabe en lo que le queda a la función). */
@@ -58,6 +61,11 @@ export type Herramientas = {
    * app)? Sin él no se publica con la imagen de relleno. Sin esta herramienta, se da por bueno (la semana ya solo elige fichas con material).
    */
   conMaterial?: (f: FichaParaPublicar) => boolean;
+  /**
+   * OL-516: las imágenes de los eventos del carrusel de una ficha (su cartel a 4:5 o el diseño de Crear cartel), en el orden pedido; las que no
+   * se pudieron dibujar (un cartel que no se baja), fuera. Sin esta herramienta, la tarjeta sola.
+   */
+  dibujarEventos?: (db: SupabaseClient, items: ImagenCarrusel[], perfilId: string | null) => Promise<{ item: ImagenCarrusel; bytes: Buffer }[]>;
   cargarSemana: (db: SupabaseClient, eventos: readonly string[], ahora: Date) => Promise<SemanaParaPublicar | null>;
   imagenesSemana: (s: SemanaParaPublicar, ahora: Date) => Promise<{ bytes: Buffer; etiquetas: string[] }[]>;
   /** El aviso al teléfono de quien lo pidió. Nunca lanza. */
@@ -410,26 +418,35 @@ async function enFicha(dep: Dependencias, t: Trabajo): Promise<"corriendo" | "te
         bytes = null;
       }
       if (!bytes) return fallo(dep, t, "imagen", async () => (await anotarErrorInstagram(dep, t, "imagen", 1, formato), cerrar(dep, t, null, "fallido", { mensaje: FRASES.imagen }, "imagen", f.nombre)));
-      const subidas = await subirTodas(dep, t, [bytes]);
-      if (!subidas) return fallo(dep, t, "otro", async () => (await anotarErrorInstagram(dep, t, "otro", 1, formato), cerrar(dep, t, null, "fallido", { mensaje: FRASES.otro }, "otro", f.nombre)));
+      // OL-516: sus eventos de la semana, después de la tarjeta (los que no se pudieron dibujar, fuera; ninguno: la tarjeta sola).
+      const eventos = await imagenesDeEventos(dep, t, f, ahora);
+      const subidas = await subirTodas(dep, t, [bytes, ...eventos.map((x) => x.bytes)]);
+      const n = 1 + eventos.length;
+      if (!subidas) return fallo(dep, t, "otro", async () => (await anotarErrorInstagram(dep, t, "otro", n, formato), cerrar(dep, t, null, "fallido", { mensaje: FRASES.otro }, "otro", f.nombre)));
       avance.imagenes = subidas;
-      avance.claves = [];
+      // A quién se etiqueta en cada imagen, en el mismo orden (como «Esta semana»): la tarjeta, su cuenta; cada evento, las reglas del carrusel.
+      avance.claves = eventos.length ? etiquetasDelCarrusel(f, eventos.map((x) => x.item), etiquetas, quitadas).map((us) => us.join(",")) : [];
       await guardarAvance(dep.db, t, avance, dep.ahora());
     }
     if (!cabe(dep, "instagram")) return sinTiempo(dep, t);
+    const imagenes = avance.imagenes!;
     const usado = await dep.h.cupo();
     if (usado && usado.usadas >= usado.tope) {
-      await anotarErrorInstagram(dep, t, "cupo", 1, formato);
+      await anotarErrorInstagram(dep, t, "cupo", imagenes.length, formato);
       return cerrar(dep, t, null, "fallido", { mensaje: FRASES.cupo }, "cupo", f.nombre);
     }
     // El artista, invitado como coautor (si acepta, sale también en su perfil); un lugar, solo etiquetado.
     const coautores = tipo === "artista" ? etiquetas : [];
-    const r = await dep.h.publicar({ imagen: avance.imagenes![0], texto, etiquetas, ubicacion, historia: false, coautores });
+    const carrusel = imagenes.length > 1;
+    const porImagen = imagenes.map((_, i) => (avance.claves?.[i] ? avance.claves[i].split(",").filter(Boolean) : i === 0 ? etiquetas : []));
+    const r = carrusel
+      ? await dep.h.publicarCarrusel({ imagenes: imagenes.map((imagen, i) => ({ imagen, etiquetas: porImagen[i] })), texto, ubicacion, coautores })
+      : await dep.h.publicar({ imagen: imagenes[0], texto, etiquetas, ubicacion, historia: false, coautores });
     if (!r.ok) {
       const clave = r.error;
-      return fallo(dep, t, clave, async () => (await anotarErrorInstagram(dep, t, clave, 1, formato), cerrar(dep, t, null, "fallido", { mensaje: FRASES[clave] }, clave, f.nombre)));
+      return fallo(dep, t, clave, async () => (await anotarErrorInstagram(dep, t, clave, imagenes.length, formato), cerrar(dep, t, null, "fallido", { mensaje: FRASES[clave] }, clave, f.nombre)));
     }
-    await anotarPublicada(dep, t, avance, r, { formato, imagenes: avance.imagenes!, texto, etiquetas, ubicacion, coautores });
+    await anotarPublicada(dep, t, avance, r, { formato: carrusel ? "carrusel" : formato, imagenes, texto, etiquetas: carrusel ? [...new Set(porImagen.flat())] : etiquetas, ubicacion, coautores });
   }
 
   // La historia 9:16, una sola vez y sin reintentos: lo que importa ya salió.
@@ -449,6 +466,30 @@ async function enFicha(dep: Dependencias, t: Trabajo): Promise<"corriendo" | "te
   const espejo = await espejar(dep, t, { id: ig.fila, formato: ig.formato, imagenes: avance.imagenes ?? [] }, () => textoDeFacebookFicha(ig.texto ?? textoDeFicha(f, dep.ahora(), quitadas), f.cuenta, enlace));
   if (espejo === "reintentar") return "corriendo";
   return cerrar(dep, t, null, "publicado", { instagram: deInstagram, historia, facebook: espejo }, null, f.nombre);
+}
+
+/** OL-516: las imágenes de los eventos de la semana de la ficha (sin la tarjeta), en su orden. Nunca lanza: si algo falla, ninguna. */
+async function imagenesDeEventos(dep: Dependencias, t: Trabajo, f: FichaParaPublicar, ahora: Date): Promise<{ item: ImagenCarrusel; bytes: Buffer }[]> {
+  const items = imagenesDeLaFicha(f, ahora).slice(1);
+  if (!items.length || !dep.h.dibujarEventos) return [];
+  try {
+    return (await dep.h.dibujarEventos(dep.db, items, t.pedido_por)).slice(0, 9);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * OL-516: las etiquetas de cada imagen del carrusel de la ficha: la tarjeta, la cuenta de la ficha (como hoy); cada evento, las reglas del carrusel
+ * de «Esta semana» y del festival (`etiquetasPorImagen`: la cuenta de la ficha en todas y, en la de cada evento, su lugar y sus artistas), sin las
+ * quitadas en la hoja.
+ */
+function etiquetasDelCarrusel(f: FichaParaPublicar, eventos: ImagenCarrusel[], deLaTarjeta: string[], quitadas: string[]): string[][] {
+  const fuera = new Set(quitadas);
+  const permitidas = [...new Set([...deLaTarjeta, ...eventos.flatMap((i) => i.usuarios)])].filter((u) => !fuera.has(u));
+  const cuenta = f.cuenta && !fuera.has(f.cuenta) ? f.cuenta : null;
+  const tarjeta: ImagenCarrusel = { clave: PORTADA, titulo: f.nombre, imagen: null, eventos: [], usuarios: deLaTarjeta };
+  return etiquetasPorImagen([tarjeta, ...eventos], { lugar: cuenta, permitidas });
 }
 
 /** La historia de una ficha: la tarjeta alta, con su cuenta etiquetada; anotada como cualquier publicación. Nunca lanza. */

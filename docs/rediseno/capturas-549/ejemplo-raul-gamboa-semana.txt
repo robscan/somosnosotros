@@ -1,0 +1,49 @@
+Ejemplo OL-516 · Centro de Difusión Cultural Raúl Gamboa (lugar)
+Sale: miércoles, 18 de noviembre de 2026, 7:00 p.m. (el día de la semana de Instagram: la tarjeta dice «… de la semana»).
+Lo hizo el trabajador de la app (lib/redes/trabajar.ts) con Instagram y Facebook de mentira; las fotos y los carteles, de sus direcciones públicas.
+
+Instagram: carrusel de 3 imágenes · la hoja dice: «Sale con 3 imágenes: su tarjeta y sus 2 eventos de esta semana.»
+  1. La tarjeta · etiquetas: @ipbaslp_ · ejemplo-raul-gamboa-semana-1.jpg
+  2. Entre rieleras y juanes (sin cartel: el diseño de Crear cartel) · etiquetas: @ipbaslp_ · ejemplo-raul-gamboa-semana-2.jpg
+  3. Aires revolucionarios (su cartel, completo a 4:5 con el margen de su color) · etiquetas: @ipbaslp_ · ejemplo-raul-gamboa-semana-3.jpg
+  Coautor invitado: ninguno (un lugar solo se etiqueta)
+Historia 9:16: la tarjeta sola, etiquetas @ipbaslp_ · ejemplo-raul-gamboa-semana-historia.jpg
+Facebook: las 3 fotos, con el enlace a su ficha.
+Eventos de esa semana que cuentan (obras): 2 · Entre rieleras y juanes (1 función) · Aires revolucionarios (2 funciones)
+El texto cabe: sí (557 de 2 200 caracteres)
+
+──────── Texto de la publicación ────────
+Recinto de difusión del Instituto Potosino de Bellas Artes con el Teatro Arq.
+
+Casa de cultura · San Luis Potosí
+📍 Av. Universidad s/n esq. Negrete, Centro, 78000, San Luis Potosí, S.L.P.
+
+Esta semana:
+Mié 18 · 5:00 pm · Entre rieleras y juanes
+Jue 19 y vie 20 · 7:30 pm · Aires revolucionarios
+
+Lee su ficha en somosnosotrxs.org/lugares/centro-de-difusion-cultural-raul-gamboa (enlace en la bio).
+Más en @ipbaslp_
+Foto: @ipbaslp_
+
+Sigue a @smsnstrsapp para conocer más lugares de tu ciudad.
+
+#SanLuisPotosi #EspaciosCulturales #CasaDeCultura #SomosNosotrxs
+
+──────── Texto en Facebook ────────
+Recinto de difusión del Instituto Potosino de Bellas Artes con el Teatro Arq.
+
+Casa de cultura · San Luis Potosí
+📍 Av. Universidad s/n esq. Negrete, Centro, 78000, San Luis Potosí, S.L.P.
+
+Esta semana:
+Mié 18 · 5:00 pm · Entre rieleras y juanes
+Jue 19 y vie 20 · 7:30 pm · Aires revolucionarios
+
+Lee su ficha: https://somosnosotrxs.org/lugares/centro-de-difusion-cultural-raul-gamboa?utm_source=facebook&utm_medium=post&utm_campaign=semana-casilla-del-ejemplo
+Más en instagram.com/ipbaslp_
+Foto: instagram.com/ipbaslp_
+
+Sigue la página para conocer más lugares de tu ciudad.
+
+#SanLuisPotosi #EspaciosCulturales #CasaDeCultura #SomosNosotrxs

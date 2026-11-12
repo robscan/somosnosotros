@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ParaHoja } from "@/app/admin/instagram/datos";
 import type { FichaParaPublicar, SemanaParaPublicar } from "../instagram/ficha";
+import type { ImagenCarrusel } from "../instagram/carrusel";
+import { obrasDeLaSemana } from "../instagram/semanaDeFicha";
 import { baseFalsa, type Fila } from "../rutinas/baseFalsa";
 import { reclamarTrabajo } from "./cola";
 import { correrUnTrabajo, FRASE_SIN_MATERIAL, PLAZOS_MS, type Herramientas } from "./trabajar";
@@ -442,6 +444,116 @@ describe("la semana de Instagram (OL-479)", () => {
       expect(texto).toContain("Lee su ficha en somosnosotrxs.org/lugares/teatro-rino");
       expect(texto).not.toContain("@teatrorino");
       expect(sinFb.h.publicarEnPagina).not.toHaveBeenCalled();
+    });
+  });
+  describe("OL-516: la ficha con eventos esa semana sale como carrusel", () => {
+    const LUGAR = "b0000000-0000-4000-8000-000000000516";
+    // Jueves 12 de noviembre de 2026, 10:00 en San Luis Potosí: dos obras del lugar (una con cartel y una sin él, con dos funciones).
+    const HOY = new Date("2026-11-12T16:00:00Z");
+    const ZONA = "America/Mexico_City";
+    const semana = obrasDeLaSemana(
+      [
+        { id: "e1", titulo: "Aires revolucionarios", inicio: "2026-11-14T01:30:00Z", fin: null, zona: ZONA, imagen: "https://x.test/aires.jpg", usuarios: ["compania"] },
+        { id: "e2", titulo: "Awkward Latino", inicio: "2026-11-15T02:00:00Z", fin: null, zona: ZONA, imagen: null, usuarios: [] },
+        { id: "e3", titulo: "Awkward Latino", inicio: "2026-11-16T01:00:00Z", fin: null, zona: ZONA, imagen: null, usuarios: ["discobamba"] },
+      ],
+      HOY,
+    );
+    const conEventos = (o: Partial<FichaParaPublicar> = {}): FichaParaPublicar =>
+      ficha({
+        tipo: "lugar", id: LUGAR, slug: "teatro-rino", nombre: "Teatro El Rino", cuenta: "teatrorino", foto: null, ceja: "Foro", semana,
+        datos: { nombre: "Teatro El Rino", slug: "teatro-rino", descripcion: "Sala de teatro independiente con temporadas propias y de compañías invitadas.", tipo: "foro", ciudad: "San Luis Potosí", direccion: null, redes: [{ url: "https://www.instagram.com/teatrorino" }], semana },
+        ...o,
+      });
+    const dibujaTodos = () => vi.fn(async (_db: unknown, items: ImagenCarrusel[]) => items.map((item) => ({ item, bytes: Buffer.from(`evento-${item.clave}`) })));
+    const correr = (pedido: Record<string, unknown>, f: FichaParaPublicar, h: Partial<Herramientas> = {}) => {
+      const p = preparar([trabajo({ id: "tc", evento_id: null, artista_id: f.tipo === "artista" ? f.id : null, lugar_id: f.tipo === "lugar" ? f.id : null, pedido: { tipo: f.tipo, facebook: true, texto: null, quitadas: [], ...pedido } })], {
+        cargarFicha: vi.fn(async () => f),
+        dibujarFicha: vi.fn(async (_f, formato) => Buffer.from(`tarjeta-${formato}`)),
+        dibujarEventos: dibujaTodos(),
+        ...h,
+      });
+      p.tablas.instagram_semana = [{ id: CASILLA, trabajo_id: "tc", estado: "programado" }];
+      p.pasar(HOY.getTime() - T0.getTime());
+      return p;
+    };
+
+    it("a mano: la tarjeta y una imagen por obra, en orden; cada evento con las reglas del carrusel; el texto los nombra con su día; anotado como carrusel; la historia, la tarjeta sola; Facebook con todas", async () => {
+      const { dep, h, tablas } = correr({}, conEventos());
+      expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+      const pedidos = (h.dibujarEventos as ReturnType<typeof vi.fn>).mock.calls[0][1] as ImagenCarrusel[];
+      expect(pedidos.map((i) => [i.clave, i.imagen])).toEqual([["e1", "https://x.test/aires.jpg"], ["e2", null]]);
+      expect((h.dibujarEventos as ReturnType<typeof vi.fn>).mock.calls[0][2]).toBe(ADMIN);
+      expect(h.dibujarFicha).toHaveBeenCalledTimes(2);
+      const enviado = (h.publicarCarrusel as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(enviado.imagenes.map((i: { etiquetas: string[] }) => i.etiquetas)).toEqual([["teatrorino"], ["teatrorino", "compania"], ["teatrorino", "discobamba"]]);
+      expect(enviado.coautores).toEqual([]);
+      expect(enviado.ubicacion).toBe("108000000000458");
+      expect(enviado.texto).toContain("Esta semana:\nVie 13 · 7:30 pm · Aires revolucionarios\nSáb 14, 8:00 pm y dom 15, 7:00 pm · Awkward Latino");
+      // La historia: la tarjeta alta sola (sin carrusel).
+      const historia = (h.publicar as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
+      expect(historia).toEqual([expect.objectContaining({ historia: true, texto: null, etiquetas: ["teatrorino"] })]);
+      expect(tablas.instagram_publicaciones.map((x) => [x.lugar_id, x.formato, x.imagenes])).toEqual([[LUGAR, "carrusel", 3], [LUGAR, "9x16", 1]]);
+      expect((tablas.instagram_publicaciones[0].carrusel as string[]).length).toBe(3);
+      const fb = (h.publicarEnPagina as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(fb.imagenes).toHaveLength(3);
+      expect(tablas.facebook_publicaciones).toEqual([expect.objectContaining({ lugar_id: LUGAR, formato: "carrusel", estado: "publicada" })]);
+      expect((tablas.redes_trabajos[0].resultado as { instagram: { formato: string; imagenes: number } }).instagram).toMatchObject({ formato: "carrusel", imagenes: 3 });
+    });
+
+    it("el día de la semana: la tarjeta con «de la semana» y el mismo carrusel; su día queda publicado", async () => {
+      const { dep, h, tablas } = correr({ casilla: CASILLA }, conEventos());
+      expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+      expect((h.dibujarFicha as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[3])).toEqual([{ aMano: false }, { aMano: false }]);
+      expect((h.publicarCarrusel as ReturnType<typeof vi.fn>).mock.calls[0][0].imagenes).toHaveLength(3);
+      expect(tablas.instagram_semana[0].estado).toBe("publicado");
+    });
+
+    it("un cartel que no se pudo bajar se queda fuera; si ningún evento se armó, sale la tarjeta sola como antes, sin fallar", async () => {
+      const uno = correr({}, conEventos(), { dibujarEventos: vi.fn(async (_db, items: ImagenCarrusel[]) => items.filter((i) => !i.imagen).map((item) => ({ item, bytes: Buffer.from("diseño") }))) });
+      expect((await correrUnTrabajo(uno.dep)).estado).toBe("terminada");
+      expect((uno.h.publicarCarrusel as ReturnType<typeof vi.fn>).mock.calls[0][0].imagenes.map((i: { etiquetas: string[] }) => i.etiquetas)).toEqual([["teatrorino"], ["teatrorino", "discobamba"]]);
+      const ninguno = correr({}, conEventos(), { dibujarEventos: vi.fn(async () => []) });
+      expect((await correrUnTrabajo(ninguno.dep)).estado).toBe("terminada");
+      expect(ninguno.h.publicarCarrusel).not.toHaveBeenCalled();
+      expect((ninguno.h.publicar as ReturnType<typeof vi.fn>).mock.calls[0][0]).toMatchObject({ historia: false, etiquetas: ["teatrorino"] });
+      expect(ninguno.tablas.instagram_publicaciones.map((x) => [x.formato, x.imagenes])).toEqual([["4x5", 1], ["9x16", 1]]);
+      const falla = correr({}, conEventos(), { dibujarEventos: vi.fn(async () => Promise.reject(new Error("sharp"))) });
+      expect((await correrUnTrabajo(falla.dep)).estado).toBe("terminada");
+      expect(falla.tablas.instagram_publicaciones[0]).toMatchObject({ formato: "4x5", imagenes: 1 });
+    });
+
+    it("sin eventos esa semana: ni se piden imágenes de eventos; la misma publicación 4:5 de siempre", async () => {
+      const { dep, h, tablas } = correr({}, conEventos({ semana: [] }));
+      expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+      expect(h.dibujarEventos).not.toHaveBeenCalled();
+      expect(h.publicarCarrusel).not.toHaveBeenCalled();
+      expect(tablas.instagram_publicaciones.map((x) => [x.formato, x.imagenes])).toEqual([["4x5", 1], ["9x16", 1]]);
+    });
+
+    it("la cuenta quitada en la hoja no va en ninguna imagen; el artista va invitado como coautor del carrusel", async () => {
+      const q = correr({ quitadas: ["teatrorino", "compania"] }, conEventos());
+      expect((await correrUnTrabajo(q.dep)).estado).toBe("terminada");
+      expect((q.h.publicarCarrusel as ReturnType<typeof vi.fn>).mock.calls[0][0].imagenes.map((i: { etiquetas: string[] }) => i.etiquetas)).toEqual([[], [], ["discobamba"]]);
+      const artista = correr({}, ficha({ semana, datos: { ...ficha().datos, semana } as FichaParaPublicar["datos"] }));
+      expect((await correrUnTrabajo(artista.dep)).estado).toBe("terminada");
+      const enviado = (artista.h.publicarCarrusel as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(enviado.coautores).toEqual(["valeriaquiroz"]);
+      expect(enviado.imagenes[0].etiquetas).toEqual(["valeriaquiroz"]);
+      expect(artista.tablas.instagram_publicaciones[0]).toMatchObject({ artista_id: ARTISTA, formato: "carrusel", imagenes: 3, coautores: ["valeriaquiroz"] });
+    });
+
+    it("se retoma sin volver a dibujar: las etiquetas de cada imagen quedan en el avance", async () => {
+      const { dep, h, tablas, fijarHasta } = correr({}, conEventos());
+      // Solo cabe el paso de las imágenes en esta llamada.
+      fijarHasta(dep.ahora().getTime() + PLAZOS_MS.imagenes + 1000);
+      await correrUnTrabajo(dep);
+      expect(h.publicarCarrusel).not.toHaveBeenCalled();
+      expect((tablas.redes_trabajos[0].avance as { claves: string[] }).claves).toEqual(["teatrorino", "teatrorino,compania", "teatrorino,discobamba"]);
+      fijarHasta(dep.ahora().getTime() + 290_000);
+      expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+      expect(h.dibujarEventos).toHaveBeenCalledTimes(1);
+      expect((h.publicarCarrusel as ReturnType<typeof vi.fn>).mock.calls[0][0].imagenes[2].etiquetas).toEqual(["teatrorino", "discobamba"]);
     });
   });
 });

@@ -8,7 +8,7 @@ import admin from "@/app/admin/admin.module.css";
 import { prepararFicha, publicarFicha, type PreparadaFicha } from "@/app/admin/instagram/accionesFicha";
 import { textoDeDestacado } from "@/lib/instagram/destacado";
 import { CUENTA_INSTAGRAM } from "@/lib/instagram/texto";
-import MandosPublicacion, { ChipsFormato } from "./MandosPublicacion";
+import MandosPublicacion, { ChipsFormato, TiraDeFicha } from "./MandosPublicacion";
 import propia from "./HojaInstagram.module.css";
 
 const NO_SE_PUDO = "No se pudo publicar. Revisa tu conexión e inténtalo otra vez.";
@@ -123,6 +123,8 @@ export default function HojaFicha({ tipo, id, onCerrar, onPublicado }: { tipo: "
           {!enCamino && <ChipsFormato formato={formato} onFormato={setFormato} />}
           {/* eslint-disable-next-line @next/next/no-img-element -- la imagen la dibuja el servidor a 720 de ancho, ya JPEG */}
           <img key={formato} className={propia.vista} data-formato={formato} src={`/api/instagram/ficha/${id}?tipo=${tipo}&formato=${formato}&rotulo=0`} alt={`${formato === "4x5" ? "Tarjeta" : "Historia"}: ${listo.nombre}`} width={720} height={formato === "4x5" ? 900 : 1280} />
+          {/* OL-516: con eventos esta semana, todas las imágenes que saldrán. */}
+          {listo.carrusel && <TiraDeFicha historia={formato === "9x16"} titulos={listo.carrusel.titulos} eventos={listo.carrusel.eventos} imagenDe={(n) => `/api/instagram/ficha/${id}?tipo=${tipo}&imagen=${n}&mini=1&rotulo=0`} />}
           {enCamino ? (
             <p className={hoja.nota} role="status">
               Ya se está publicando. Te avisamos en el teléfono cuando salga.

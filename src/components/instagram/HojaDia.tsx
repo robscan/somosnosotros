@@ -29,7 +29,7 @@ import { textoDeDestacado } from "@/lib/instagram/destacado";
 import { armarTexto, CUENTA_INSTAGRAM, etiquetasDeLaFoto } from "@/lib/instagram/texto";
 import { horaDeReloj } from "@/lib/fechas";
 import { REFRESCO_MS } from "@/lib/redes/reglas";
-import MandosPublicacion, { ChipsFormato } from "./MandosPublicacion";
+import MandosPublicacion, { ChipsFormato, TiraDeFicha } from "./MandosPublicacion";
 import propia from "./HojaInstagram.module.css";
 import styles from "./HojaDia.module.css";
 
@@ -312,6 +312,8 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
           {ficha && !pub && <ChipsFormato formato={formato} onFormato={setFormato} />}
           {/* eslint-disable-next-line @next/next/no-img-element -- la imagen la dibuja el servidor a 720 de ancho, ya JPEG */}
           {src && <img key={src} className={propia.vista} data-formato={formato} src={src} alt={`${formato === "4x5" ? "Tarjeta" : "Historia"}: ${listo.nombre}`} width={720} height={formato === "4x5" ? 900 : 1280} />}
+          {/* OL-516: con eventos esa semana, todas las imágenes que saldrán. */}
+          {ficha && !pub && c.carrusel && <TiraDeFicha historia={formato === "9x16"} titulos={c.carrusel.titulos} eventos={c.carrusel.eventos} imagenDe={(n) => `/api/instagram/semana/${id}?imagen=${n}&mini=1&f=${encodeURIComponent(deQuien)}`} />}
           {pub && !pub.fallo ? (
             <>
               <div role="status">

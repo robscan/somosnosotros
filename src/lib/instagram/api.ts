@@ -146,7 +146,8 @@ async function publicarImagen(p: Pedido, o: Opciones): Promise<Resultado> {
 }
 
 export type ImagenDelCarrusel = { imagen: string; etiquetas: string[] };
-export type PedidoCarrusel = { imagenes: ImagenDelCarrusel[]; texto: string | null; ubicacion: string | null };
+/** `coautores` (OL-516): las cuentas invitadas como coautoras del carrusel (`collaborators` en el contenedor del carrusel, como en una imagen). */
+export type PedidoCarrusel = { imagenes: ImagenDelCarrusel[]; texto: string | null; ubicacion: string | null; coautores?: string[] };
 
 /** Espera a que un contenedor diga FINISHED (null) o devuelve la clave del error. */
 async function esperarContenedor(traer: typeof fetch, c: { token: string }, id: string, o: Opciones): Promise<ErrorInstagram | null> {
@@ -207,19 +208,29 @@ async function publicarVarias(p: PedidoCarrusel, o: Opciones): Promise<Resultado
   }
   const params: Record<string, string> = { media_type: "CAROUSEL", children: hijos.join(",") };
   if (p.texto) params.caption = p.texto;
-  let carrusel = await llamarGraph(traer, "POST", `/${c.usuario}/media`, p.ubicacion ? { ...params, location_id: p.ubicacion } : params, c.token);
+  const conUbicacion = p.ubicacion ? { ...params, location_id: p.ubicacion } : params;
+  // OL-516: el artista invitado como coautor del carrusel; si Instagram no lo acepta, una vez sin él (y se dice: `sinCoautor`).
+  const conCoautores = !!p.coautores?.length;
+  let sinCoautor = false;
+  let carrusel = await llamarGraph(traer, "POST", `/${c.usuario}/media`, conCoautores ? { ...conUbicacion, collaborators: JSON.stringify(p.coautores!.slice(0, 3)) } : conUbicacion, c.token);
+  if (!carrusel.id && conCoautores && ["otro", "imagen"].includes(claveDeError(carrusel.error))) {
+    sinCoautor = true;
+    const sinEl = await llamarGraph(traer, "POST", `/${c.usuario}/media`, conUbicacion, c.token);
+    carrusel = sinEl;
+  }
   if (!carrusel.id && p.ubicacion && ["otro", "imagen"].includes(claveDeError(carrusel.error))) {
     const segundo = await llamarGraph(traer, "POST", `/${c.usuario}/media`, params, c.token);
     if (segundo.id) {
       carrusel = segundo;
       sinEtiquetas = true;
+      sinCoautor = conCoautores;
     }
   }
   if (!carrusel.id) return { ok: false, error: claveDeError(carrusel.error) };
   const espera = await esperarContenedor(traer, c, carrusel.id, o);
   if (espera) return { ok: false, error: espera };
   const r = await publicarContenedor(traer, c, carrusel.id);
-  return r.ok ? { ...r, sinEtiquetas } : r;
+  return r.ok ? { ...r, sinEtiquetas, ...(conCoautores ? { sinCoautor } : {}) } : r;
 }
 
 /** Cuántas publicaciones van en las últimas 24 horas y cuántas deja Instagram (100). Null si no se pudo leer. */
