@@ -46,6 +46,15 @@
     },
     {
       "regla": "toque",
+      "elemento": "button.Chip/chip.Chip/quitar.Chip/toque.Chip/activo",
+      "pantalla": "s50-ficha-publicar-instagram",
+      "anchos": [
+        320
+      ],
+      "porque": "OL-515: el chip de quitar la etiqueta (`ui/Chip`, variante «quitar») es el mismo de la hoja de un día de la semana y de la hoja de un evento; a 320 su área de toque mide 36 de alto (a 390 pasa). No se cambia el componente compartido en esta pieza; por confirmar con el gestor si se agranda en todas."
+    },
+    {
+      "regla": "toque",
       "elemento": "input[file]",
       "porque": "Permanente: el campo de archivo es invisible (1×1); lo que se toca es el botón que lo abre, que mide más de 44."
     },
@@ -205,6 +214,7 @@
     "s46-admin-instagram": { "nodos": [145, 145, 181, 181], "profundidad": [9, 9, 9, 9] },
     "s47-admin-instagram-hoja": { "nodos": [178, 178, 214, 214], "profundidad": [9, 9, 9, 9] },
     "s48-admin-instagram-semana": { "nodos": [81, 81, 117, 117], "profundidad": [9, 9, 9, 9] },
-    "s49-admin-instagram-dia": { "nodos": [145, 145, 181, 181], "profundidad": [9, 9, 9, 9] }
+    "s49-admin-instagram-dia": { "nodos": [145, 145, 181, 181], "profundidad": [9, 9, 9, 9] },
+    "s50-ficha-publicar-instagram": { "nodos": [126, 126, 161, 161], "profundidad": [12, 12, 12, 12] }
   }
 }

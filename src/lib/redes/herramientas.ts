@@ -74,7 +74,7 @@ export function herramientasReales(): Herramientas {
     publicarCarrusel: async (p) => publicarCarrusel(p, await conToken()),
     publicarEnPagina: async (p) => publicarEnPagina(p, await conToken()),
     cargarFicha: (db, tipo, id, ahora) => cargarFicha(db, tipo, id, ahora),
-    dibujarFicha: (f, formato, ahora) => dibujarFicha(f, formato, ahora),
+    dibujarFicha: (f, formato, ahora, o) => dibujarFicha(f, formato, ahora, undefined, !!o?.aMano),
     conMaterial: (f) => fichaConMaterial(f),
     cargarSemana: (db, eventos, ahora) => cargarSemana(db, eventos, ahora),
     imagenesSemana: (s, ahora) => imagenesDeSemana(s, ahora),

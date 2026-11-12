@@ -3,8 +3,9 @@ import { esUuid } from "@/lib/formulario";
 import { ERROR_FICHA, leerFicha } from "@/lib/leerFicha";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
-import { fueraDeInstagram } from "@/app/admin/instagram/semana";
+import { enInstagramDeFicha, fueraDeInstagram } from "@/app/admin/instagram/semana";
 import FueraDeInstagram from "@/components/instagram/FueraDeInstagram";
+import { HojaPublicarFicha, RenglonPublicarFicha } from "@/components/instagram/PublicarDesdeFicha";
 import ContarVistaFicha from "@/components/ContarVistaFicha";
 import Link from "next/link";
 import { nombreVisible } from "@/lib/perfil";
@@ -276,6 +277,8 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse(a) ? await cargarDestacado("artista", a.id) : null;
   const fuera = esAdmin ? await fueraDeInstagram(supabase, "artista", a.id) : null;
+  // OL-515: «Publicar en Instagram» en el «···», solo la administración, si la ficha se ve y no dijo que no.
+  const enInstagram = esAdmin && a.visible && !fuera ? await enInstagramDeFicha(supabase, "artista", a.id) : null;
   const porConfirmar = !!a.origen && !a.autor;
   const esAutor = !!actual && actual.perfil.id === a.creado_por;
   const estaLigado = !!actual && ligados.some((l) => l.perfil_id === actual.perfil.id);
@@ -333,6 +336,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
             </form>
           </li>
         )}
+        {enInstagram && <RenglonPublicarFicha salio={enInstagram.salio} publicando={enInstagram.publicando} />}
         {fuera && <FueraDeInstagram tipo="artista" id={a.id} cuando={fuera} />}
         <li>
           <Reportar tipo="artista" objetoId={a.id} volver={hrefArtista(a)} conSesion={!!actual} />
@@ -466,6 +470,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         )}
       </div>
 
+      {enInstagram && <HojaPublicarFicha tipo="artista" id={a.id} />}
       <Seguir
         que="artista"
         nombre={a.nombre}

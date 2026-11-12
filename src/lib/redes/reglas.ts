@@ -98,10 +98,11 @@ export type ResultadoTrabajo = {
  * el permiso…» o «No se pudo publicar <título>: <motivo llano>». Abre la lista de Instagram con la hoja de ese evento, que dice lo que pasó y
  * lleva a la publicación con «Ver» (abrir instagram.com dentro de la app instalada la sacaría de la app).
  */
-export function avisoDeTrabajo(t: { id: string; evento_id: string | null; titulo: string; red: Red; estado: "publicado" | "fallido"; error: ClaveFallo | null; resultado: ResultadoTrabajo | null; casilla?: string | null }): AvisoPush {
+export function avisoDeTrabajo(t: { id: string; evento_id: string | null; titulo: string; red: Red; estado: "publicado" | "fallido"; error: ClaveFallo | null; resultado: ResultadoTrabajo | null; casilla?: string | null; ficha?: string | null }): AvisoPush {
   const titulo = t.titulo.length > 80 ? `${t.titulo.slice(0, 79)}…` : t.titulo;
   // OL-479: lo que programó la semana abre su día en la pestaña «Semana».
-  const url = t.casilla ? `/admin/instagram?pestana=semana&dia=${t.casilla}` : `/admin/instagram?evento=${t.evento_id}`;
+  // OL-515: lo que se publicó desde la ficha de un artista o de un lugar (sin día de la semana) abre esa ficha.
+  const url = t.casilla ? `/admin/instagram?pestana=semana&dia=${t.casilla}` : !t.evento_id && t.ficha ? t.ficha : `/admin/instagram?evento=${t.evento_id}`;
   const tag = `redes-${t.id}`;
   if (t.estado === "fallido") {
     return { titulo: "No se publicó", cuerpo: `No se pudo publicar ${titulo}: ${motivoLlano(t.red, t.error ?? "otro")}.`, url, tag };

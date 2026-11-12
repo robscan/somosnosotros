@@ -1572,6 +1572,33 @@ Object.assign(rpcs, {
     t.redes_trabajos.push(fila);
     return { id: fila.id };
   },
+  // OL-515 (migración 20261112100000): «Publicar en Instagram» desde la ficha de un artista o de un lugar, con la regla de la base en corto (se ve,
+  // no dijo que no, el artista con su foto propia; duplicado si va en camino; repetido si ya salió y no se confirma; el pedido limpio y sin
+  // `casilla`). Los permisos, el candado y la regla entera, en PostgreSQL (`supabase/tests/pg/redes-encolar-ficha.test.mjs`).
+  redes_encolar_ficha: ({ p_tipo, p_ficha, p_pedido = {}, p_repetir = false }, t, { sub } = {}) => {
+    if (sub !== ADMIN) return errorSql("42501", "Solo la administración publica en redes.");
+    if (!["artista", "lugar"].includes(p_tipo) || (p_pedido && (typeof p_pedido !== "object" || Array.isArray(p_pedido)))) return errorSql("22023", "Pedido inválido.");
+    if (p_pedido && ("casilla" in p_pedido || "eventos" in p_pedido)) return errorSql("22023", "Pedido inválido: una publicación desde la ficha no es de un día de la semana.");
+    const col = p_tipo === "artista" ? "artista_id" : "lugar_id";
+    const f = (p_tipo === "artista" ? t.artistas : t.lugares).find((x) => x.id === p_ficha);
+    if (!f) return errorSql("23503", "No existe esa ficha.");
+    if (f.visible === false || (p_tipo === "lugar" && f.privado)) return errorSql("22023", "Esa ficha está oculta: no se publica.");
+    if (t.instagram_fuera.some((x) => x[col] === p_ficha)) return errorSql("22023", "Esa ficha está fuera de Instagram.");
+    if (p_tipo === "artista" && !propioIg(f.foto)) return errorSql("22023", "A esa ficha le falta material: su foto.");
+    const pronto = Date.now() + 60_000;
+    const vivo = t.redes_trabajos.find((x) => x[col] === p_ficha && (x.estado === "publicando" || (x.estado === "en_cola" && (!x.pedido?.casilla || Date.parse(x.siguiente_en) <= pronto))));
+    if (vivo) return { duplicado: vivo.id };
+    if (!p_repetir) {
+      const salio = t.instagram_publicaciones.filter((x) => x[col] === p_ficha && x.estado === "publicada").map((x) => x.creado_en).sort().at(-1);
+      if (salio) return { repetido: salio };
+    }
+    const q = p_pedido ?? {};
+    const pedido = { tipo: p_tipo, facebook: q.facebook !== false, texto: typeof q.texto === "string" && q.texto.trim() ? q.texto.trim().slice(0, 5000) : null, quitadas: Array.isArray(q.quitadas) ? q.quitadas.filter((x) => typeof x === "string").slice(0, 60) : [] };
+    const ahora = new Date().toISOString();
+    const fila = { id: crypto.randomUUID(), evento_id: null, artista_id: p_tipo === "artista" ? p_ficha : null, lugar_id: p_tipo === "lugar" ? p_ficha : null, red: "instagram", formato: "4x5", pedido, estado: "en_cola", avance: {}, resultado: null, intentos: 0, fallos: 0, error: null, turno: 0, ocupada_hasta: null, siguiente_en: ahora, avisado_en: null, pedido_por: sub, creado_en: ahora, actualizado_en: ahora, terminado_en: null };
+    t.redes_trabajos.push(fila);
+    return { id: fila.id };
+  },
   ciudad_slug: ({ p_ciudad }) => slugCiudad(p_ciudad),
   instagram_sugerencias: ({ p_ciudad = null, p_dias = 7 }, t, { sub } = {}) => {
     if (sub !== ADMIN) return [];

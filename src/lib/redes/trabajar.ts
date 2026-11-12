@@ -30,6 +30,9 @@ import { avisoDeTrabajo, MAX_REINTENTOS, trasFallo, type ClaveFallo, type Espejo
  * (si Instagram no lo acepta, sale sin él y se dice) y se anota a nombre de la ficha; «Esta semana» (`enSemana`) es un carrusel con su portada y
  * los carteles del fin. Los dos se espejan en Facebook como un evento, con el enlace a la ficha. Al terminar, su día queda publicado o «no se
  * pudo» (`cerrarCasilla`) y el aviso abre ese día.
+ *
+ * OL-515: un artista o un lugar publicado a mano desde su ficha («Publicar en Instagram» del «···», `redes_encolar_ficha`) es el mismo trabajo sin
+ * día de la semana (sin `pedido.casilla`): su tarjeta sale sin «de la semana», la marca de origen es la del trabajo y el aviso abre su ficha.
  */
 
 /** Lo que tarda como mucho cada paso (para no empezar uno que no cabe en lo que le queda a la función). */
@@ -48,7 +51,8 @@ export type Herramientas = {
   publicarEnPagina: (p: PedidoFacebook) => Promise<ResultadoFacebook>;
   /** OL-479: una ficha (artista o lugar) para su día, su tarjeta en JPEG, y «Esta semana» con sus imágenes (la portada y los carteles). */
   cargarFicha: (db: SupabaseClient, tipo: "artista" | "lugar", id: string, ahora: Date) => Promise<FichaParaPublicar | null>;
-  dibujarFicha: (f: FichaParaPublicar, formato: "4x5" | "9x16", ahora: Date) => Promise<Buffer>;
+  /** `aMano` (OL-515): publicada desde la ficha, sin día de la semana: la tarjeta sin «de la semana». */
+  dibujarFicha: (f: FichaParaPublicar, formato: "4x5" | "9x16", ahora: Date, o?: { aMano?: boolean }) => Promise<Buffer>;
   /**
    * OL-488 y OL-505: ¿la ficha tiene el material que la tarjeta puede dibujar (la foto del artista, en el Storage de la
    * app)? Sin él no se publica con la imagen de relleno. Sin esta herramienta, se da por bueno (la semana ya solo elige fichas con material).
@@ -122,7 +126,7 @@ async function cerrar(dep: Dependencias, t: Trabajo, h: ParaHoja | null, estado:
   if (escrito) await cerrarCasilla(dep.db, t, estado, ahora);
   if (escrito && (await marcarAvisado(dep.db, t.id, ahora))) {
     const nombre = h?.titulo ?? titulo ?? (await tituloDe(dep.db, t));
-    await dep.h.avisar(dep.db, t.pedido_por, avisoDeTrabajo({ id: t.id, evento_id: t.evento_id, titulo: nombre, red: t.red, estado, error, resultado, casilla: t.pedido.casilla ?? null }));
+    await dep.h.avisar(dep.db, t.pedido_por, avisoDeTrabajo({ id: t.id, evento_id: t.evento_id, titulo: nombre, red: t.red, estado, error, resultado, casilla: t.pedido.casilla ?? null, ficha: t.artista_id ? `/artistas/${t.artista_id}` : t.lugar_id ? `/lugares/${t.lugar_id}` : null }));
   }
   return estado === "publicado" ? "terminada" : "fallida";
 }
@@ -401,7 +405,7 @@ async function enFicha(dep: Dependencias, t: Trabajo): Promise<"corriendo" | "te
       if (!cabe(dep, "imagenes")) return sinTiempo(dep, t);
       let bytes: Buffer | null = null;
       try {
-        bytes = await dep.h.dibujarFicha(f, formato, ahora);
+        bytes = await dep.h.dibujarFicha(f, formato, ahora, { aMano: !t.pedido.casilla });
       } catch {
         bytes = null;
       }
@@ -450,7 +454,7 @@ async function enFicha(dep: Dependencias, t: Trabajo): Promise<"corriendo" | "te
 /** La historia de una ficha: la tarjeta alta, con su cuenta etiquetada; anotada como cualquier publicación. Nunca lanza. */
 async function historiaDeFicha(dep: Dependencias, t: Trabajo, f: FichaParaPublicar, etiquetas: string[]): Promise<{ ok: boolean; permalink: string | null }> {
   try {
-    const bytes = await dep.h.dibujarFicha(f, "9x16", dep.ahora());
+    const bytes = await dep.h.dibujarFicha(f, "9x16", dep.ahora(), { aMano: !t.pedido.casilla });
     const [url] = (await subirTodas(dep, t, [bytes])) ?? [];
     if (!url) return { ok: false, permalink: null };
     const r = await dep.h.publicar({ imagen: url, texto: null, etiquetas, ubicacion: null, historia: true });

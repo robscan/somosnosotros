@@ -196,6 +196,18 @@ PASOS["admin-instagram-dia"] = async (page) => {
   await aquietar(page);
 };
 
+// OL-515: la ficha de un lugar con la hoja «Publicar en Instagram» abierta desde su «···» (la administración): la tarjeta sin «de la semana», a
+// quién etiqueta, la ubicación, el texto y Facebook, con «Publicar ahora» en el pie.
+PASOS["ficha-publicar-instagram"] = async (page) => {
+  await page.getByRole("button", { name: "Más acciones" }).first().click();
+  await page.getByRole("dialog", { name: "Más acciones" }).getByRole("button", { name: /Publicar en Instagram/ }).click();
+  const hoja = page.getByRole("dialog", { name: "Publicar en Instagram" });
+  await hoja.waitFor();
+  await page.waitForFunction(() => !document.querySelector('[role="dialog"] [aria-label="Preparando la vista previa"]'));
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"] img')].every((i) => i.complete));
+  await aquietar(page);
+};
+
 // ---------- procesos ----------
 const hijos = [];
 process.on("exit", () => hijos.forEach((h) => h.exitCode === null && h.kill()));

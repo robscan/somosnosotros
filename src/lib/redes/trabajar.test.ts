@@ -274,6 +274,8 @@ describe("la semana de Instagram (OL-479)", () => {
     const { dep, tablas, h } = conSemana([deFicha()], { avisar: vi.fn(async (_db, _u, a) => void avisos.push({ url: a.url, cuerpo: a.cuerpo })) });
     expect(await correrUnTrabajo(dep)).toMatchObject({ corrida: "tf", estado: "terminada" });
     expect((h.dibujarFicha as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[1])).toEqual(["4x5", "9x16"]);
+    // OL-515: la semana dibuja la tarjeta con «de la semana».
+    expect((h.dibujarFicha as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[3])).toEqual([{ aMano: false }, { aMano: false }]);
     expect(h.publicar).toHaveBeenCalledWith(expect.objectContaining({ etiquetas: ["valeriaquiroz"], coautores: ["valeriaquiroz"], historia: false, ubicacion: "108000000000458", texto: expect.stringContaining("Lee su ficha en somosnosotrxs.org/artistas/valeria-quiroz") }));
     // La publicación y, después, su historia (la tarjeta alta, etiquetada, sin texto ni coautor).
     expect(tablas.instagram_publicaciones).toEqual([expect.objectContaining({ artista_id: ARTISTA, estado: "publicada", formato: "4x5", coautores: ["valeriaquiroz"] }), expect.objectContaining({ artista_id: ARTISTA, estado: "publicada", formato: "9x16", etiquetas: ["valeriaquiroz"] })]);
@@ -378,5 +380,68 @@ describe("la semana de Instagram (OL-479)", () => {
     expect(tablas.instagram_publicaciones[0]).toMatchObject({ evento_id: EVENTO, formato: "carrusel", imagenes: 2 });
     expect((h.publicarEnPagina as ReturnType<typeof vi.fn>).mock.calls[0][0].texto).not.toContain("enlace en la bio");
     expect(tablas.instagram_semana[0].estado).toBe("publicado");
+  });
+
+  describe("OL-515: publicado a mano desde su ficha (sin día de la semana)", () => {
+    const LUGAR = "b0000000-0000-4000-8000-000000000515";
+    const lugar = (o: Partial<FichaParaPublicar> = {}): FichaParaPublicar =>
+      ficha({
+        tipo: "lugar", id: LUGAR, slug: "teatro-rino", nombre: "Teatro El Rino", cuenta: "teatrorino", foto: null, ceja: "Teatro",
+        datos: { nombre: "Teatro El Rino", slug: "teatro-rino", descripcion: "Sala de teatro independiente con temporadas propias y de compañías invitadas.", tipo: "foro", ciudad: "San Luis Potosí", direccion: null, redes: [{ url: "https://www.instagram.com/teatrorino" }], semana: [] },
+        ...o,
+      });
+    // Un trabajo como lo guarda `redes_encolar_ficha`: sin `casilla` ni evento.
+    const aMano = (tipo: "artista" | "lugar", pedido: Record<string, unknown> = {}) =>
+      trabajo({ id: "tm", evento_id: null, artista_id: tipo === "artista" ? ARTISTA : null, lugar_id: tipo === "lugar" ? LUGAR : null, pedido: { tipo, facebook: true, texto: null, quitadas: [], ...pedido } });
+    const conFicha = (filas: Fila[], f: FichaParaPublicar) => {
+      const avisos: { url: string; cuerpo: string }[] = [];
+      const p = preparar(filas, { cargarFicha: vi.fn(async () => f), dibujarFicha: vi.fn(async () => Buffer.from("tarjeta")), avisar: vi.fn(async (_db, _u, a) => void avisos.push({ url: a.url, cuerpo: a.cuerpo })) });
+      // Un día de la semana de otra ficha: no se toca.
+      p.tablas.instagram_semana = [{ id: CASILLA, trabajo_id: "otro", estado: "programado" }];
+      return { ...p, avisos };
+    };
+
+    it("un lugar: su tarjeta 4:5 y su historia sin «de la semana», con su cuenta etiquetada; anotado a su nombre, espejo en Facebook con la marca del trabajo, sin tocar la semana, y el aviso abre su ficha", async () => {
+      const { dep, h, tablas, avisos } = conFicha([aMano("lugar")], lugar());
+      expect(await correrUnTrabajo(dep)).toMatchObject({ corrida: "tm", estado: "terminada" });
+      expect((h.dibujarFicha as ReturnType<typeof vi.fn>).mock.calls.map((c) => [c[1], c[3]])).toEqual([["4x5", { aMano: true }], ["9x16", { aMano: true }]]);
+      const llamadas = (h.publicar as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
+      expect(llamadas[0]).toMatchObject({ etiquetas: ["teatrorino"], coautores: [], historia: false, ubicacion: "108000000000458", texto: expect.stringContaining("Más en @teatrorino") });
+      expect(llamadas[1]).toMatchObject({ historia: true, texto: null, etiquetas: ["teatrorino"] });
+      expect(tablas.instagram_publicaciones.map((x) => [x.lugar_id, x.formato, x.estado])).toEqual([[LUGAR, "4x5", "publicada"], [LUGAR, "9x16", "publicada"]]);
+      expect(tablas.instagram_publicaciones[0]).toMatchObject({ etiquetas: ["teatrorino"], publicado_por: ADMIN });
+      expect(tablas.facebook_publicaciones).toEqual([expect.objectContaining({ lugar_id: LUGAR, estado: "publicada" })]);
+      const fb = (h.publicarEnPagina as ReturnType<typeof vi.fn>).mock.calls[0][0].texto as string;
+      expect(fb).toContain("Lee su ficha: https://somosnosotrxs.org/lugares/teatro-rino?utm_source=facebook&utm_medium=post&utm_campaign=trabajo-tm");
+      expect(tablas.instagram_semana).toEqual([{ id: CASILLA, trabajo_id: "otro", estado: "programado" }]);
+      expect(tablas.redes_trabajos[0]).toMatchObject({ estado: "publicado", error: null });
+      expect(avisos).toEqual([{ url: `/lugares/${LUGAR}`, cuerpo: "Se publicó en Instagram y Facebook · Teatro El Rino" }]);
+    });
+
+    it("un artista: su cuenta etiquetada e invitada como coautora, sin «de la semana», y el aviso abre su ficha", async () => {
+      const { dep, h, tablas, avisos } = conFicha([aMano("artista")], ficha());
+      expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+      expect((h.dibujarFicha as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[3])).toEqual([{ aMano: true }, { aMano: true }]);
+      expect(h.publicar).toHaveBeenCalledWith(expect.objectContaining({ etiquetas: ["valeriaquiroz"], coautores: ["valeriaquiroz"], historia: false }));
+      expect(tablas.instagram_publicaciones.map((x) => [x.artista_id, x.formato])).toEqual([[ARTISTA, "4x5"], [ARTISTA, "9x16"]]);
+      expect((h.publicarEnPagina as ReturnType<typeof vi.fn>).mock.calls[0][0].texto).toContain("utm_campaign=trabajo-tm");
+      expect(tablas.instagram_semana[0].estado).toBe("programado");
+      expect(avisos).toEqual([{ url: `/artistas/${ARTISTA}`, cuerpo: "Se publicó en Instagram y Facebook · Valeria Quiroz" }]);
+    });
+
+    it("el texto que se escribió en la hoja manda (también en Facebook); sin la cuenta quitada no se etiqueta; sin Facebook no se espeja", async () => {
+      const { dep, h } = conFicha([aMano("lugar", { texto: "Esta noche, teatro en el Rino.", quitadas: ["teatrorino"] })], lugar());
+      expect((await correrUnTrabajo(dep)).estado).toBe("terminada");
+      const llamadas = (h.publicar as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0]);
+      expect(llamadas[0]).toMatchObject({ texto: "Esta noche, teatro en el Rino.", etiquetas: [], coautores: [] });
+      expect(llamadas[1]).toMatchObject({ historia: true, etiquetas: [] });
+      expect((h.publicarEnPagina as ReturnType<typeof vi.fn>).mock.calls[0][0].texto).toContain("Esta noche, teatro en el Rino.");
+      const sinFb = conFicha([aMano("lugar", { facebook: false, quitadas: ["teatrorino"] })], lugar());
+      expect((await correrUnTrabajo(sinFb.dep)).estado).toBe("terminada");
+      const texto = (sinFb.h.publicar as ReturnType<typeof vi.fn>).mock.calls[0][0].texto as string;
+      expect(texto).toContain("Lee su ficha en somosnosotrxs.org/lugares/teatro-rino");
+      expect(texto).not.toContain("@teatrorino");
+      expect(sinFb.h.publicarEnPagina).not.toHaveBeenCalled();
+    });
   });
 });

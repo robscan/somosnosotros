@@ -13,6 +13,7 @@ import { FRASES, FRASES_FACEBOOK, type ClaveError } from "@/lib/instagram/frases
 import { leerEstadoTrabajo, leerReciente, type EstadoTrabajo, type Reciente } from "@/lib/redes/reglas";
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { encolarFicha, pedidoLimpio, type PedidoFicha } from "./colaFicha";
 import { cargarParaHoja } from "./datos";
 import { cargarSinSalir } from "./sinSalir";
 import type { EventoIg } from "@/lib/instagram/texto";
@@ -267,6 +268,15 @@ export async function volverAPublicar(ids: string[]): Promise<Vueltos> {
       if (error?.code === "55000") yaIban++;
       else if (error || !data) fallaron.push(x.id);
       else enCamino++;
+      continue;
+    }
+    // OL-515: lo que se publicó a mano desde la ficha de un artista o de un lugar (sin día de la semana) vuelve por `redes_encolar_ficha`, con su
+    // mismo pedido. Ya se había confirmado al pedirlo (`repetir`): si salió antes, sale otra vez; si ya va en camino, cuenta como «ya iba».
+    if (!x.evento_id && (x.artista_id || x.lugar_id)) {
+      const r = await encolarFicha(s.supabase, x.artista_id ? "artista" : "lugar", (x.artista_id ?? x.lugar_id)!, pedidoLimpio(x.pedido as Partial<PedidoFicha>), true);
+      if (r.ok) enCamino++;
+      else if ("duplicado" in r) yaIban++;
+      else fallaron.push(x.id);
       continue;
     }
     const { data, error } = await s.supabase.rpc("redes_encolar", { p_evento: x.evento_id, p_red: x.red, p_formato: x.formato, p_pedido: x.pedido, p_repetir: false });

@@ -2,14 +2,11 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Boton from "@/components/ui/Boton";
-import CampoLargo from "@/components/ui/CampoLargo";
-import Casilla from "@/components/ui/Casilla";
-import { Chip, Chips } from "@/components/ui/Chip";
 import Girando from "@/components/ui/Girando";
 import Grupo from "@/components/ui/Grupo";
 import Hoja from "@/components/ui/Hoja";
 import hoja from "@/components/ui/Hoja.module.css";
-import { IconoFacebook, IconoInstagram, IconoOjo, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
+import { IconoFacebook, IconoInstagram, IconoOjo, IconoPersonas } from "@/components/ui/Iconos";
 import Renglon from "@/components/ui/Renglon";
 import renglonCss from "@/components/ui/Renglon.module.css";
 import admin from "@/app/admin/admin.module.css";
@@ -28,10 +25,11 @@ import {
   type Hecho,
   type PreparadoDia,
 } from "@/app/admin/instagram/accionesSemana";
-import { textoArtista, textoLugar } from "@/lib/instagram/destacado";
-import { armarTexto, conCreditoDeFoto, CUENTA_INSTAGRAM, etiquetasDeLaFoto, TOPE_CARACTERES } from "@/lib/instagram/texto";
+import { textoDeDestacado } from "@/lib/instagram/destacado";
+import { armarTexto, CUENTA_INSTAGRAM, etiquetasDeLaFoto } from "@/lib/instagram/texto";
 import { horaDeReloj } from "@/lib/fechas";
 import { REFRESCO_MS } from "@/lib/redes/reglas";
+import MandosPublicacion, { ChipsFormato } from "./MandosPublicacion";
 import propia from "./HojaInstagram.module.css";
 import styles from "./HojaDia.module.css";
 
@@ -103,15 +101,13 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
   // lo escrito a mano manda.
   const armado = !c || !ahora
     ? ""
-    : c.tipo === "artista"
-      ? conCreditoDeFoto(textoArtista(cuenta && q.includes(cuenta) ? { ...c.datos, redes: [] } : c.datos, ahora), c.credito)
-      : c.tipo === "lugar"
-        ? conCreditoDeFoto(textoLugar(cuenta && q.includes(cuenta) ? { ...c.datos, redes: [] } : c.datos, ahora), c.credito)
-        : c.tipo === "evento"
-          ? armarTexto(c.evento, ahora, q)
-          : c.tipo === "semana"
-            ? c.texto
-            : "";
+    : c.tipo === "artista" || c.tipo === "lugar"
+      ? textoDeDestacado(c, ahora, q)
+      : c.tipo === "evento"
+        ? armarTexto(c.evento, ahora, q)
+        : c.tipo === "semana"
+          ? c.texto
+          : "";
   const texto = propio ?? listo?.guardado.texto ?? armado;
   const etiquetas = !c ? [] : c.tipo === "evento" ? etiquetasDeLaFoto(c.evento, q) : cuenta && !q.includes(cuenta) ? [cuenta] : [];
   const todas = !c ? [] : c.tipo === "evento" ? etiquetasDeLaFoto(c.evento) : cuenta ? [cuenta] : [];
@@ -313,16 +309,7 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
         </>
       ) : (
         <>
-          {ficha && !pub && (
-            <Chips ariaLabel="Formato">
-              <Chip activo={formato === "4x5"} onClick={() => setFormato("4x5")}>
-                Publicación 4:5
-              </Chip>
-              <Chip activo={formato === "9x16"} onClick={() => setFormato("9x16")}>
-                Historia 9:16
-              </Chip>
-            </Chips>
-          )}
+          {ficha && !pub && <ChipsFormato formato={formato} onFormato={setFormato} />}
           {/* eslint-disable-next-line @next/next/no-img-element -- la imagen la dibuja el servidor a 720 de ancho, ya JPEG */}
           {src && <img key={src} className={propia.vista} data-formato={formato} src={src} alt={`${formato === "4x5" ? "Tarjeta" : "Historia"}: ${listo.nombre}`} width={720} height={formato === "4x5" ? 900 : 1280} />}
           {pub && !pub.fallo ? (
@@ -440,48 +427,22 @@ export default function HojaDia({ id, onCerrar, onCambio }: { id: string; onCerr
                   )}
                 </>
               )}
-              {formato === "9x16" ? (
-                <p className={hoja.nota}>La historia sale con la publicación y dura 24 horas: no lleva texto.</p>
-              ) : (
-                <>
-                  {todas.length > 0 ? (
-                    <>
-                      <p className={`${hoja.nota} ${propia.linea}`}>
-                        {etiquetas.length ? (listo.tipo === "artista" ? "Se etiqueta en la foto, se menciona en el texto y se invita a su cuenta como coautora:" : "Se etiqueta en la foto y se menciona en el texto:") : "Sin etiquetas."}
-                        {q.length > 0 && (
-                          <>
-                            {" "}
-                            <button type="button" className={admin.enlace} onClick={() => setQuitadas([])}>
-                              Volver a etiquetar
-                            </button>
-                          </>
-                        )}
-                      </p>
-                      {etiquetas.length > 0 && (
-                        <Chips ariaLabel="Etiquetas en la foto" envuelve>
-                          {etiquetas.map((u) => (
-                            <Chip key={u} variante="quitar" onClick={() => setQuitadas([...q, u])}>
-                              {`@${u}`}
-                            </Chip>
-                          ))}
-                        </Chips>
-                      )}
-                    </>
-                  ) : listo.tipo === "lugar" ? (
-                    <p className={`${hoja.nota} ${propia.linea}`}>Este lugar no tiene Instagram en su ficha: sale sin etiqueta y sin crédito.</p>
-                  ) : listo.tipo === "semana" ? (
-                    <p className={`${hoja.nota} ${propia.linea}`}>Cada cartel lleva etiquetado su lugar, si tiene Instagram.</p>
-                  ) : null}
-                  <p className={`${hoja.nota} ${propia.ubicacion}`}>
-                    <IconoPin width={16} height={16} />
-                    <span>{listo.ubicacion ? `Ubicación: ${listo.ubicacion.nombre}` : `Sin ubicación: falta la de ${listo.ciudad.nombre} en Ciudades.`}</span>
-                  </p>
-                  <CampoLargo id="campo-texto-dia" name="texto" etiqueta="Texto de la publicación" value={texto} onChange={(e) => setPropio(e.target.value)} maxLength={TOPE_CARACTERES} mostrarContador contadorSiempre disabled={!listo.abierto} />
-                </>
-              )}
-              {listo.abierto && (
-                <Casilla titulo="También en Facebook" detalle="En la página Somos Nosotrxs, con el enlace a su ficha." marcada={fb} disabled={enviando} onCambio={setConFacebook} />
-              )}
+              <MandosPublicacion
+                historia={formato === "9x16"}
+                etiquetas={etiquetas}
+                todas={todas}
+                hayQuitadas={q.length > 0}
+                onQuitar={(u) => setQuitadas([...q, u])}
+                onVolverAEtiquetar={() => setQuitadas([])}
+                leyenda={listo.tipo === "artista" ? "Se etiqueta en la foto, se menciona en el texto y se invita a su cuenta como coautora:" : "Se etiqueta en la foto y se menciona en el texto:"}
+                sinEtiquetas={listo.tipo === "lugar" ? "Este lugar no tiene Instagram en su ficha: sale sin etiqueta y sin crédito." : listo.tipo === "semana" ? "Cada cartel lleva etiquetado su lugar, si tiene Instagram." : null}
+                ubicacion={listo.ubicacion ? `Ubicación: ${listo.ubicacion.nombre}` : `Sin ubicación: falta la de ${listo.ciudad.nombre} en Ciudades.`}
+                idCampo="campo-texto-dia"
+                texto={texto}
+                onTexto={setPropio}
+                editable={listo.abierto}
+                facebook={listo.abierto ? { marcada: fb, onCambio: setConFacebook, disabled: enviando } : null}
+              />
               {programado && (
                 <p className={`${hoja.nota} ${propia.trasCasilla}`}>
                   Sale sola {sale} en @{CUENTA_INSTAGRAM}
