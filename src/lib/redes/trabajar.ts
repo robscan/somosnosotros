@@ -122,7 +122,7 @@ async function cerrar(dep: Dependencias, t: Trabajo, h: ParaHoja | null, estado:
   if (escrito) await cerrarCasilla(dep.db, t, estado, ahora);
   if (escrito && (await marcarAvisado(dep.db, t.id, ahora))) {
     const nombre = h?.titulo ?? titulo ?? (await tituloDe(dep.db, t));
-    await dep.h.avisar(dep.db, t.pedido_por, avisoDeTrabajo({ id: t.id, evento_id: t.evento_id, titulo: nombre, red: t.red, estado, error, resultado, casilla: t.pedido.casilla ?? null }));
+    await dep.h.avisar(dep.db, t.pedido_por, avisoDeTrabajo({ id: t.id, evento_id: t.evento_id, titulo: nombre, red: t.red, estado, error, resultado, casilla: t.pedido.casilla ?? null, ficha: t.artista_id ? `/artistas/${t.artista_id}` : t.lugar_id ? `/lugares/${t.lugar_id}` : null }));
   }
   return estado === "publicado" ? "terminada" : "fallida";
 }

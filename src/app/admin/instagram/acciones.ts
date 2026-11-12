@@ -14,6 +14,7 @@ import { leerEstadoTrabajo, leerReciente, type EstadoTrabajo, type Reciente } fr
 import { dispararPaso, origenPropio } from "@/lib/rutinas/disparar";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { cargarParaHoja } from "./datos";
+import { publicarFicha } from "./accionesFicha";
 import { cargarSinSalir } from "./sinSalir";
 import type { EventoIg } from "@/lib/instagram/texto";
 
@@ -267,6 +268,14 @@ export async function volverAPublicar(ids: string[]): Promise<Vueltos> {
       if (error?.code === "55000") yaIban++;
       else if (error || !data) fallaron.push(x.id);
       else enCamino++;
+      continue;
+    }
+    // OL-515: lo que se publicó desde la ficha de un artista o de un lugar (sin día de la semana) vuelve por su misma acción.
+    if (!x.evento_id && (x.artista_id || x.lugar_id)) {
+      const r = await publicarFicha(x.artista_id ? "artista" : "lugar", (x.artista_id ?? x.lugar_id)!, true);
+      if (r.ok) enCamino++;
+      else if ("yaIba" in r && r.yaIba) yaIban++;
+      else fallaron.push(x.id);
       continue;
     }
     const { data, error } = await s.supabase.rpc("redes_encolar", { p_evento: x.evento_id, p_red: x.red, p_formato: x.formato, p_pedido: x.pedido, p_repetir: false });

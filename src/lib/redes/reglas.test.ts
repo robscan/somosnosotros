@@ -56,6 +56,9 @@ describe("el aviso al terminar", () => {
     expect(avisoDeTrabajo({ ...base, resultado: { facebook: { ok: false, error: "permiso", mensaje: "…" } } }).cuerpo).toBe("Se publicó en Instagram · Cultura Mística. Facebook: falta el permiso de la página de Facebook.");
   });
   it("solo en Facebook", () => {
+    // OL-515: lo publicado desde la ficha de un artista o de un lugar (sin evento ni día de la semana) abre esa ficha.
+    expect(avisoDeTrabajo({ ...base, evento_id: null, ficha: "/lugares/abc", resultado: { facebook: null } }).url).toBe("/lugares/abc");
+    expect(avisoDeTrabajo({ ...base, evento_id: null, ficha: "/lugares/abc", casilla: "dia1", resultado: { facebook: null } }).url).toBe("/admin/instagram?pestana=semana&dia=dia1");
     expect(avisoDeTrabajo({ ...base, red: "facebook", resultado: { facebook: { ok: true, permalink: null } } }).cuerpo).toBe("Se publicó en Facebook · Cultura Mística");
   });
   it("no se pudo: «No se pudo publicar <título>: <motivo llano>»", () => {
