@@ -7,6 +7,7 @@ import { CerrarMenu } from "@/components/ui/MenuAcciones";
 import renglon from "@/components/ui/Renglon.module.css";
 import { CUENTA_INSTAGRAM } from "@/lib/instagram/texto";
 import { enCamino } from "@/lib/redes/reglas";
+import HojaFicha from "./HojaFicha";
 import HojaInstagram from "./HojaInstagram";
 
 const ABRIR = "sn:instagram";
@@ -48,4 +49,43 @@ export function HojaInstagramDeFicha({ eventoId }: { eventoId: string }) {
   }, []);
   // La ficha se refresca al guardar y al terminar, como antes (OL-506 solo quita las recargas de la lista de Administración).
   return abierta ? <HojaInstagram eventoId={eventoId} onCerrar={() => setAbierta(false)} onPublicado={() => router.refresh()} onTrabajo={(e) => !enCamino(e) && router.refresh()} /> : null;
+}
+
+const ABRIR_FICHA = "sn:instagram-ficha";
+
+/**
+ * «Publicar en Instagram» en el «···» de la ficha de un artista o de un lugar (OL-515; pedido del founder: «así como ya pasa con el evento»):
+ * solo la administración y solo si la ficha se ve y no dijo que no (lo decide la página). El renglón dice cómo va: «Publicando…», «Salió en
+ * Instagram hace 9 días» o la cuenta donde sale. Abre la hoja de vista previa, que vive fuera del menú (`HojaPublicarFicha`).
+ */
+export function RenglonPublicarFicha({ salio, publicando = false }: { salio: string | null; publicando?: boolean }) {
+  const cerrarMenu = useContext(CerrarMenu);
+  return (
+    <li>
+      <button
+        type="button"
+        className={renglon.ajuste}
+        onClick={() => {
+          cerrarMenu();
+          window.dispatchEvent(new Event(ABRIR_FICHA));
+        }}
+      >
+        <IconoInstagram width={20} height={20} />
+        <b>Publicar en Instagram</b>
+        <small>{publicando ? "Publicando…" : (salio ?? `En @${CUENTA_INSTAGRAM}`)}</small>
+      </button>
+    </li>
+  );
+}
+
+/** La hoja de vista previa de la ficha de un artista o de un lugar: se abre cuando el renglón del «···» lo pide. */
+export function HojaPublicarFicha({ tipo, id }: { tipo: "artista" | "lugar"; id: string }) {
+  const [abierta, setAbierta] = useState(false);
+  const router = useRouter();
+  useEffect(() => {
+    const abrir = () => setAbierta(true);
+    window.addEventListener(ABRIR_FICHA, abrir);
+    return () => window.removeEventListener(ABRIR_FICHA, abrir);
+  }, []);
+  return abierta ? <HojaFicha tipo={tipo} id={id} onCerrar={() => setAbierta(false)} onPublicado={() => router.refresh()} /> : null;
 }

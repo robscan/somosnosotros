@@ -1,7 +1,7 @@
 import { etiquetaDisciplina } from "../artistas";
 import { conMayuscula, diaConMes, diaLargo, diaLocal, horaCorta } from "../fechas";
 import { etiquetaTipo } from "../lugares";
-import { CUENTA_INSTAGRAM, hashtag, usuarioDeInstagram } from "./texto";
+import { conCreditoDeFoto, CUENTA_INSTAGRAM, hashtag, usuarioDeInstagram } from "./texto";
 
 /**
  * Lo que dicen la tarjeta y el texto de un artista o de un lugar destacado de la semana, y el aviso previo (OL-479; firmado en el prototipo de
@@ -89,6 +89,21 @@ export function textoArtista(a: ArtistaDestacado, ahora: Date): string {
     `Sigue a @${CUENTA_INSTAGRAM} para conocer a más artistas de tu ciudad.`,
     etiquetas.join(" "),
   ].join("\n\n");
+}
+
+/**
+ * El texto que arma el sistema para un artista o un lugar, sin su cuenta si la administración la quitó (`quitadas`: sin mención ni «Foto: @cuenta»)
+ * y con el crédito de la portada (`credito`, OL-491/OL-504). Lo mismo en el trabajador (`textoDeFicha`) y en las dos hojas que lo enseñan y lo
+ * dejan editar (la del día de la semana y la de «Publicar en Instagram» de la ficha, OL-515).
+ */
+export function textoDeDestacado(
+  c: { tipo: "artista"; datos: ArtistaDestacado; cuenta: string | null; credito?: string | null } | { tipo: "lugar"; datos: LugarDestacado; cuenta: string | null; credito?: string | null },
+  ahora: Date,
+  quitadas: readonly string[] = [],
+): string {
+  const sinCuenta = !!c.cuenta && quitadas.includes(c.cuenta);
+  const texto = c.tipo === "artista" ? textoArtista(sinCuenta ? { ...c.datos, redes: [] } : c.datos, ahora) : textoLugar(sinCuenta ? { ...c.datos, redes: [] } : c.datos, ahora);
+  return conCreditoDeFoto(texto, c.credito ?? null);
 }
 
 /** «Taller de máscaras para familias (sáb 10, 11:00 am)». */

@@ -4,11 +4,11 @@ import { cartelDescargable } from "../cartelDescarga";
 import { dibujarDestacado, dibujarPortadaSemana } from "../carteles/dibujar";
 import { configPublica } from "../config";
 import { diaConMes, diaLocal, horaCorta, localAIso } from "../fechas";
-import { cejaArtista, cejaLugar, proximaEnTarjeta, textoArtista, textoLugar, textoSemana, tituloSemana, type ArtistaDestacado, type LugarDestacado, type Proxima } from "./destacado";
+import { cejaArtista, cejaLugar, proximaEnTarjeta, textoDeDestacado, textoSemana, tituloSemana, type ArtistaDestacado, type LugarDestacado, type Proxima } from "./destacado";
 import { selloDeFecha } from "../tarjetaInicio";
 import { bajarCartel, encajarCartel } from "./imagen";
 import { lunesDe } from "./semana";
-import { conCreditoDeFoto, usuarioDeInstagram } from "./texto";
+import { usuarioDeInstagram } from "./texto";
 
 /**
  * Lo que la semana de Instagram necesita de una ficha (artista o lugar) y de «Esta semana» para enseñarlo en la hoja del día y para publicarlo
@@ -140,20 +140,31 @@ export function creditoDeTarjeta(f: Pick<FichaParaPublicar, "tipo" | "portada" |
 /** El texto que arma el sistema; sin la cuenta si la administración la quitó (`quitadas`): sin mención ni «Foto: @cuenta». Con el crédito de la
  *  portada de un lugar L2 (`creditoDeTarjeta`), su línea «Foto: …» lo dice. */
 export function textoDeFicha(f: FichaParaPublicar, ahora: Date, quitadas: readonly string[] = [], supabaseUrl = configPublica().supabaseUrl): string {
-  const sinCuenta = !!f.cuenta && quitadas.includes(f.cuenta);
-  const datos = sinCuenta ? { ...f.datos, redes: [] } : f.datos;
-  const texto = f.tipo === "artista" ? textoArtista(datos as ArtistaDestacado, ahora) : textoLugar(datos as LugarDestacado, ahora);
-  return conCreditoDeFoto(texto, creditoDeTarjeta(f, supabaseUrl));
+  return textoDeDestacado(contenidoDeFicha(f, supabaseUrl), ahora, quitadas);
+}
+
+/** Lo que las hojas necesitan para armar el mismo texto en el teléfono (`textoDeDestacado`): los datos, la cuenta y el crédito de la portada. */
+export function contenidoDeFicha(f: FichaParaPublicar, supabaseUrl = configPublica().supabaseUrl) {
+  const credito = creditoDeTarjeta(f, supabaseUrl);
+  return f.tipo === "artista"
+    ? { tipo: "artista" as const, datos: f.datos as ArtistaDestacado, cuenta: f.cuenta, credito }
+    : { tipo: "lugar" as const, datos: f.datos as LugarDestacado, cuenta: f.cuenta, credito };
 }
 
 /** La razón de la publicación, en versalitas arriba del nombre. */
 export const RAZON = { artista: "Artista de la semana", lugar: "Lugar de la semana" } as const;
+/**
+ * OL-515: publicada a mano desde su ficha (sin día de la semana) no es «de la semana»: la misma ceja de la tarjeta Repisa, solo con qué es. Por
+ * confirmar con el founder (bitácora 548).
+ */
+export const RAZON_A_MANO = { artista: "Artista", lugar: "Lugar" } as const;
 
 /**
  * La tarjeta de la ficha en JPEG (1080, o el ancho de la vista previa), con «Repisa» (OL-505): el artista con su foto de perfil en el círculo; el
- * lugar con su portada en el arco (L2) o, si no tiene o no se puede bajar, el arco con el símbolo SN (L1).
+ * lugar con su portada en el arco (L2) o, si no tiene o no se puede bajar, el arco con el símbolo SN (L1). `aMano` (OL-515): publicada desde su
+ * ficha, sin «de la semana» en la razón.
  */
-export async function dibujarFicha(f: FichaParaPublicar, formato: "4x5" | "9x16", ahora: Date, ancho?: number): Promise<Buffer> {
+export async function dibujarFicha(f: FichaParaPublicar, formato: "4x5" | "9x16", ahora: Date, ancho?: number, aMano = false): Promise<Buffer> {
   const imagen = await bajarCartel(f.tipo === "artista" ? f.foto : f.portada);
   const n = f.semana.length;
   const r = await dibujarDestacado({
@@ -162,7 +173,7 @@ export async function dibujarFicha(f: FichaParaPublicar, formato: "4x5" | "9x16"
     formato,
     foto: imagen?.bytes ?? null,
     nombre: f.nombre,
-    razon: RAZON[f.tipo],
+    razon: (aMano ? RAZON_A_MANO : RAZON)[f.tipo],
     ceja: f.ceja,
     ciudad: f.ciudad,
     cuenta: f.cuenta,

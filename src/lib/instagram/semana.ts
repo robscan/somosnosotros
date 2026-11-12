@@ -117,6 +117,13 @@ export function ultimaVezTexto(iso: string | null, ahora: Date): string {
   return `en Instagram hace ${meses === 1 ? "1 mes" : `${meses} meses`}`;
 }
 
+/** OL-515: «Salió en Instagram hoy», «… ayer», «… hace 9 días», «… hace 3 semanas», «… hace 4 meses»: la línea de una ficha que ya salió, en «Publicar en Instagram» de su ficha. */
+export function lineaYaSalio(iso: string, ahora: Date): string {
+  const dias = Math.max(0, Math.floor((ahora.getTime() - new Date(iso).getTime()) / 86_400_000));
+  const hace = dias === 0 ? "hoy" : dias === 1 ? "ayer" : dias < 14 ? `hace ${dias} días` : dias < 61 ? `hace ${Math.round(dias / 7)} semanas` : `hace ${Math.round(dias / 30.4)} meses`;
+  return `Salió en Instagram ${hace}`;
+}
+
 /** Por qué lo eligió el sistema, en una línea: «Artista con fecha ese mismo viernes en el Teatro de la Paz, de San Luis Potosí, nunca en Instagram.» */
 export function motivoDe(c: Candidato, tipo: "artista" | "lugar", fecha: string, ahora: Date): string {
   const ciudad = `de ${c.ciudad}`;

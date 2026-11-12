@@ -15,6 +15,7 @@ import {
   lineaDeLaQueViene,
   lineaDelEstado,
   lineaDelPasado,
+  lineaYaSalio,
   lunesDe,
   lunesDeLaSemana,
   nadieConMaterial,
@@ -518,6 +519,37 @@ export async function fueraDeInstagram(supabase: ClienteServidor | null, tipo: "
   if (!supabase) return null;
   const { data } = await supabase.from("instagram_fuera").select("desde").eq(tipo === "artista" ? "artista_id" : "lugar_id", id).maybeSingle<{ desde: string }>();
   return data ? `el ${diaConMes(data.desde, ahora, ZONA_INICIAL)}` : null;
+}
+
+export type EnInstagramDeFicha = {
+  /** «Salió en Instagram hace 9 días»; null si nunca ha salido. */
+  salio: string | null;
+  /** Va en camino ahora mismo (en la cola sin esperar a un día por venir de la semana, o publicándose). */
+  publicando: boolean;
+  /** «el mié 18 de nov»: el día de la semana de Instagram en que ya está programada; null si no lo está. */
+  programada: string | null;
+};
+
+/**
+ * OL-515: cómo va un artista o un lugar en Instagram, para «Publicar en Instagram» de su ficha: cuándo salió por última vez, si va en camino y si
+ * la semana ya lo tiene programado. Solo responde a la administración (las tres tablas solo le dejan leer a ella); sin cliente, nada. «En camino»
+ * es la misma regla con la que `redes_encolar_ficha` dice «duplicado».
+ */
+export async function enInstagramDeFicha(supabase: ClienteServidor | null, tipo: "artista" | "lugar", id: string, ahora = new Date()): Promise<EnInstagramDeFicha> {
+  if (!supabase) return { salio: null, publicando: false, programada: null };
+  const col = tipo === "artista" ? "artista_id" : "lugar_id";
+  const pronto = new Date(ahora.getTime() + 60_000).toISOString();
+  const [ultima, cola, dia] = await Promise.all([
+    supabase.from("instagram_publicaciones").select("creado_en").eq(col, id).eq("estado", "publicada").order("creado_en", { ascending: false }).limit(1).maybeSingle<{ creado_en: string }>(),
+    // Lo que la semana programó para más tarde no está «Publicando…» (como en la lista de eventos, OL-479).
+    supabase.from("redes_trabajos").select("id").eq(col, id).in("estado", ["en_cola", "publicando"]).or(`pedido->>casilla.is.null,siguiente_en.lte.${pronto},estado.eq.publicando`).limit(1),
+    supabase.from("instagram_semana").select("programado_para").eq(col, id).eq("estado", "programado").is("dijo_no_en", null).gt("programado_para", pronto).order("programado_para").limit(1).maybeSingle<{ programado_para: string }>(),
+  ]);
+  return {
+    salio: ultima.data ? lineaYaSalio(ultima.data.creado_en, ahora) : null,
+    publicando: !!cola.data?.length,
+    programada: dia.data ? `el ${diaConMes(dia.data.programado_para, ahora, ZONA_INICIAL)}` : null,
+  };
 }
 
 export { db as comoCliente, uno };

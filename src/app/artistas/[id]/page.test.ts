@@ -28,7 +28,7 @@ function chain(resultado: unknown) {
   const promesa = Promise.resolve(resultado);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const objeto: any = {};
-  for (const metodo of ["select", "eq", "in", "or", "order", "limit", "not", "upsert"]) objeto[metodo] = () => objeto;
+  for (const metodo of ["select", "eq", "in", "or", "order", "limit", "not", "upsert", "is", "gt"]) objeto[metodo] = () => objeto;
   objeto.maybeSingle = () => promesa;
   objeto.single = () => promesa;
   objeto.then = (resuelto: (v: unknown) => void, rechazado: (e: unknown) => void) => promesa.then(resuelto, rechazado);

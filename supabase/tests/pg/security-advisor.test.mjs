@@ -112,7 +112,7 @@ const AUTH_GRUPOS = [
     "panel_fichas()", "panel_lugares(text,text,integer,integer)", "panel_lugares(text,text,text,integer,integer)",
     "panel_pendientes()", "panel_persona(uuid)", "panel_personas_conteos()", "panel_personas_conteos(text)",
     "panel_personas(text,text,integer,integer)", "panel_personas(text,text,text,integer,integer)", "panel_propuestas(uuid)",
-    "panel_resumen()", "redes_encolar(uuid,text,text,jsonb,boolean)", "redes_reciente(uuid,text,text)",
+    "panel_resumen()", "redes_encolar(uuid,text,text,jsonb,boolean)", "redes_encolar_ficha(text,uuid,jsonb,boolean)", "redes_reciente(uuid,text,text)",
     "rol_en_para_admin(uuid,timestamp with time zone)", "vistas_por_origen(integer)",
   ]],
   ["la propia cuenta: actúan solo sobre auth.uid()", [
